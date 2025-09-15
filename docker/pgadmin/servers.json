@@ -1,0 +1,22 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Lisa Docker",
+      "Group": "Lisa Group",
+      "Port": 5432,
+      "Username": "postgres",
+      "Host": "postgres_temp",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    },
+    "2": {
+      "Name": "Lisa Test Server",
+      "Group": "Lisa Group",
+      "Port": 5432,
+      "Username": "postgres",
+      "Host": "10.10.1.64",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    }
+  }
+}

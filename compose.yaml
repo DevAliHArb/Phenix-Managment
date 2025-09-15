@@ -1,0 +1,52 @@
+services:
+  phenix-hr-api:
+    container_name: phenix-hr-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8000"
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+    depends_on:
+      - postgres_temp
+    networks:
+      - backend-net
+
+  postgres_temp:
+    container_name: postgres_temp
+    image: "postgres:12.11-alpine3.16"
+    restart: always
+    environment:
+      POSTGRES_DB: phenix_hr_system
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - 5437:5432
+    volumes:
+      - ./docker/postgres/data:/var/lib/postgresql/data
+      - ./docker/postgres/dumps:/dumps
+    networks:
+      - backend-net
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "email@example.com"
+      PGADMIN_DEFAULT_PASSWORD: "123456"
+      PGADMIN_LISTEN_ADDRESS: "0.0.0.0"
+    ports:
+      - "5555:80"
+    depends_on:
+      - postgres_temp
+    volumes:
+      - ./docker/postgres/dumps:/var/lib/pgadmin/storage
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge
