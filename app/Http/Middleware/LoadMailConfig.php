@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
-use App\Models\CompanySettings;
+// use App\Models\CompanySettings;
 
 class LoadMailConfig
 {
@@ -15,8 +15,7 @@ class LoadMailConfig
     public function handle(Request $request, Closure $next)
     {
         // Fetch mail configuration from company_settings table
-        $mailConfig = CompanySettings::select('mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption')
-            ->first();
+    $mailConfig = null; // CompanySettings reference removed
 
         if ($mailConfig) {
             Config::set('mail.mailers.smtp.host', $mailConfig->mail_host);

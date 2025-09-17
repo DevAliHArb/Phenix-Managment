@@ -190,10 +190,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     
-    public function companySettings()
-    {
-        return $this->hasone(CompanySettings::class);
-    }
+    // public function companySettings() { /* CompanySettings reference removed */ }
 
     public function bookreview()
 {

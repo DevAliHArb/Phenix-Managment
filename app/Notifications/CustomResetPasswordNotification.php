@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\CompanySettings;
+// use App\Models\CompanySettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -21,7 +21,7 @@ class CustomResetPasswordNotification extends ResetPasswordNotification
     {
         parent::__construct($token);
         $this->type = $type;
-        $this->siteName = CompanySettings::whereNotNull('site_name')->value('site_name') ?? 'Template';
+    $this->siteName = 'Template'; // CompanySettings reference removed
         $this->fromEmail = $settings->mail_from_address ?? Config::get('mail.from.address');
     }
 

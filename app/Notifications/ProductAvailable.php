@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\CompanySettings;
+// use App\Models\CompanySettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -26,7 +26,7 @@ class ProductAvailable extends Notification
     public function __construct(Product $product)
     {
         $this->product = $product;
-        $this->siteName = CompanySettings::whereNotNull('site_name')->value('site_name') ?? 'Template';
+    $this->siteName = 'Template'; // CompanySettings reference removed
         $this->fromEmail = $settings->mail_from_address ?? Config::get('mail.from.address');
     }
 

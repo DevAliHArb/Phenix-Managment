@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\CompanySettings;
+// use App\Models\CompanySettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -29,7 +29,7 @@ class OrderStatusChanged extends Notification
         $this->orderInvoice = $orderInvoice;
         $this->orderItems = $items;
         $this->statusName = $statusName;
-        $this->siteName = CompanySettings::whereNotNull('site_name')->value('site_name') ?? 'Template';
+    $this->siteName = 'Template'; // CompanySettings reference removed
         $this->fromEmail = $settings->mail_from_address ?? FacadesConfig::get('mail.from.address');
     }
 

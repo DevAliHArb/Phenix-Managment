@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\CompanySettings;
+// use App\Models\CompanySettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -22,7 +22,7 @@ class AccountDeletionNotification extends Notification
     {
         $this->user = $user;
         $this->type = $user->type;
-        $this->siteName = CompanySettings::whereNotNull('site_name')->value('site_name') ?? 'Template';
+    $this->siteName = 'Template'; // CompanySettings reference removed
         $this->fromEmail = $settings->mail_from_address ?? Config::get('mail.from.address');
     }
 
