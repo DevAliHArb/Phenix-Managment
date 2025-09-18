@@ -40,16 +40,27 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
-        $employee = Employee::create($request->validate([
-            'name' => 'required|string',
-            'image' => 'nullable|string',
-            'position_id' => 'required|integer|exists:lookup,id',
-            'birthdate' => 'required|date',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date',
-            'employment_type' => 'required|string',
-        ]));
-        return redirect()->route('employees.index')->with('success', 'Employee created successfully');
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'image' => 'required|url|max:255',
+                'position_id' => 'required|integer|exists:lookup,id',
+                'birthdate' => 'required|date|before:today',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+                'employment_type' => 'required|string|max:100',
+            ]);
+            $employee = Employee::create($validated);
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'redirect' => route('employees.index')]);
+            }
+            return redirect()->route('employees.index')->with('success', 'Employee created successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+            }
+            throw $e;
+        }
     }
 
     public function edit($id)
