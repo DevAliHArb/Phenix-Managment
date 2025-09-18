@@ -5,10 +5,9 @@
 @endsection
 
 @section('content')
-<div class="container" style="max-width: 600px;">
-    <div class="headerContainer" style="max-width: 600px;">
+<div class="container">
+    <div class="headerContainer" >
     <h1>Add Employee</h1>
-    <a href="{{ route('employees.index') }}" class="btn btn-secondary mb-3">Back</a>
 
     </div>
 
@@ -24,33 +23,78 @@
 
     <form action="{{ route('employees.store') }}" method="POST" novalidate id="employeeForm">
         @csrf
+        <div class="formContainer">
         <div class="mb-3">
-            <label for="name" class="form-label">Name</label>
-            <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
-            @error('name')
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name') }}" required>
+            @error('first_name')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
-            <label for="image" class="form-label">Image URL</label>
-            <input type="text" name="image" class="form-control @error('image') is-invalid @enderror" value="{{ old('image') }}">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name') }}" required>
+            @error('last_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address') }}" required>
+            @error('address')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="date_of_birth" class="form-label">Date of Birth</label>
+            <input type="date" name="date_of_birth" class="form-control @error('date_of_birth') is-invalid @enderror" value="{{ old('date_of_birth') }}" required>
+            @error('date_of_birth')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="phone" class="form-label">Phone</label>
+            <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone') }}" required>
+            @error('phone')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="current_position_id" class="form-label">Current Position</label>
+            <select name="current_position_id" class="form-control @error('current_position_id') is-invalid @enderror" required>
+                <option value="">Select Position</option>
+                @foreach($positions as $position)
+                    <option value="{{ $position->id }}" {{ old('current_position_id') == $position->id ? 'selected' : '' }}>{{ $position->name }}</option>
+                @endforeach
+            </select>
+            @error('current_position_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="image" class="form-label">Image</label>
+            <input type="file" accept="image/*" id="imageInput" class="form-control @error('image') is-invalid @enderror" required>
+            <input type="hidden" name="image" id="imageBase64" value="{{ old('image') }}">
             @error('image')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
+            <div id="imagePreview" style="margin-top:10px;"></div>
         </div>
         <div class="mb-3">
-            <label for="position_id" class="form-label">Position ID</label>
-            <input type="number" name="position_id" class="form-control @error('position_id') is-invalid @enderror" value="{{ old('position_id') }}" required>
-            @error('position_id')
+            <label for="working_days" class="form-label">Working Days</label>
+            <select name="working_days[]" class="form-control @error('working_days') is-invalid @enderror" multiple required>
+                <option value="sunday" {{ (collect(old('working_days'))->contains('sunday')) ? 'selected' : '' }}>Sunday</option>
+                <option value="monday" {{ (collect(old('working_days'))->contains('monday')) ? 'selected' : '' }}>Monday</option>
+                <option value="tuesday" {{ (collect(old('working_days'))->contains('tuesday')) ? 'selected' : '' }}>Tuesday</option>
+                <option value="wednesday" {{ (collect(old('working_days'))->contains('wednesday')) ? 'selected' : '' }}>Wednesday</option>
+                <option value="thursday" {{ (collect(old('working_days'))->contains('thursday')) ? 'selected' : '' }}>Thursday</option>
+                <option value="friday" {{ (collect(old('working_days'))->contains('friday')) ? 'selected' : '' }}>Friday</option>
+                <option value="saturday" {{ (collect(old('working_days'))->contains('saturday')) ? 'selected' : '' }}>Saturday</option>
+            </select>
+            @error('working_days')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
-        <div class="mb-3">
-            <label for="birthdate" class="form-label">Birthdate</label>
-            <input type="date" name="birthdate" class="form-control @error('birthdate') is-invalid @enderror" value="{{ old('birthdate') }}" required>
-            @error('birthdate')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
+            <small class="form-text text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple days.</small>
         </div>
         <div class="mb-3">
             <label for="start_date" class="form-label">Start Date</label>
@@ -61,19 +105,75 @@
         </div>
         <div class="mb-3">
             <label for="end_date" class="form-label">End Date</label>
-            <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date') }}">
+            <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date') }}" required>
             @error('end_date')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
-            <label for="employment_type" class="form-label">Employment Type</label>
-            <input type="text" name="employment_type" class="form-control @error('employment_type') is-invalid @enderror" value="{{ old('employment_type') }}" required>
-            @error('employment_type')
+            <label for="status" class="form-label">Status</label>
+            <select name="status" class="form-control @error('status') is-invalid @enderror" required>
+                <option value="">Select Status</option>
+                <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
+                <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+            </select>
+            @error('status')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-            <button type="submit" class="btn btn-primary w-100" id="addEmployeeBtn">Add</button>
+        <div class="mb-3">
+            <label for="working_hours_from" class="form-label">Working Hours From</label>
+            <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from') }}" required>
+            @error('working_hours_from')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="working_hours_to" class="form-label">Working Hours To</label>
+            <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to') }}" required>
+            @error('working_hours_to')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="yearly_vacations_total" class="form-label">Yearly Vacations Total</label>
+            <input type="number" name="yearly_vacations_total" class="form-control @error('yearly_vacations_total') is-invalid @enderror" value="{{ old('yearly_vacations_total') }}" required>
+            @error('yearly_vacations_total')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="yearly_vacations_used" class="form-label">Yearly Vacations Used</label>
+            <input type="number" name="yearly_vacations_used" class="form-control @error('yearly_vacations_used') is-invalid @enderror" value="{{ old('yearly_vacations_used') }}" required>
+            @error('yearly_vacations_used')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="yearly_vacations_left" class="form-label">Yearly Vacations Left</label>
+            <input type="number" name="yearly_vacations_left" class="form-control @error('yearly_vacations_left') is-invalid @enderror" value="{{ old('yearly_vacations_left') }}" required>
+            @error('yearly_vacations_left')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="sick_leave_used" class="form-label">Sick Leave Used</label>
+            <input type="number" name="sick_leave_used" class="form-control @error('sick_leave_used') is-invalid @enderror" value="{{ old('sick_leave_used') }}" required>
+            @error('sick_leave_used')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="last_salary" class="form-label">Last Salary</label>
+            <input type="number" step="0.01" name="last_salary" class="form-control @error('last_salary') is-invalid @enderror" value="{{ old('last_salary') }}" required>
+            @error('last_salary')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        
+             <a href="{{ route('employees.index') }}" class="btn btn-secondary mb-3">Back</a>
+            <button type="submit" class="btn btn-primary mb-3" id="addEmployeeBtn">Add</button>
+        </div>
         </form>
 
         <!-- Error Popup Modal -->
@@ -95,6 +195,24 @@
 
         <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Image file to base64
+            const imageInput = document.getElementById('imageInput');
+            const imageBase64 = document.getElementById('imageBase64');
+            const imagePreview = document.getElementById('imagePreview');
+            imageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        imageBase64.value = evt.target.result;
+                        imagePreview.innerHTML = '<img src="' + evt.target.result + '" alt="Preview" style="max-width:120px;max-height:120px;border-radius:8px;">';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    imageBase64.value = '';
+                    imagePreview.innerHTML = '';
+                }
+            });
             const form = document.getElementById('employeeForm');
             const addBtn = document.getElementById('addEmployeeBtn');
             addBtn.addEventListener('click', function(e) {
@@ -109,15 +227,11 @@
 
                 // Name
                 if (!name) errors.push('Name is required.');
-                // Image URL
+                // Image (base64)
                 if (!image) {
-                    errors.push('Image URL is required.');
-                } else {
-                    try {
-                        new URL(image);
-                    } catch {
-                        errors.push('Image URL must be a valid URL.');
-                    }
+                    errors.push('Image is required.');
+                } else if (!image.startsWith('data:image/')) {
+                    errors.push('Image must be a valid image file.');
                 }
                 // Position ID
                 if (!position_id) errors.push('Position ID is required.');

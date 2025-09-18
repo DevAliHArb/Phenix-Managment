@@ -35,24 +35,39 @@ class EmployeeController extends Controller
         return view('employees.show', compact('employee'));
     }
 
-    public function create()
+     public function create()
     {
-        return view('employees.create');
+    $positions = \App\Models\Lookup::where('parent_id', 1)->get();
+    $employmentTypes = \App\Models\Lookup::where('parent_id', 7)->get();
+    return view('employees.create', compact('positions', 'employmentTypes'));
     }
 
     public function store(Request $request)
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'image' => 'required|string',
-                'position_id' => 'required|integer|exists:lookup,id',
-                'birthdate' => 'required|date|before:today',
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'address' => 'required|string|max:255',
+                'date_of_birth' => 'required|date|before:today',
+                'phone' => 'required|string|max:20',
+                // 'image' => 'required|url|max:255',
+                'current_position_id' => 'required|integer|exists:lookup,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
-                'employment_type' => 'required|string|max:100',
+                'status' => 'required|in:active,inactive',
+                'working_hours_from' => 'required|date_format:H:i',
+                'working_hours_to' => 'required|date_format:H:i|after:working_hours_from',
+                'working_days' => 'required|array|min:1',
+                'working_days.*' => 'in:sunday,monday,tuesday,wednesday,thursday,friday,saturday',
+                'yearly_vacations_total' => 'integer|min:0',
+                'yearly_vacations_used' => 'integer|min:0',
+                'yearly_vacations_left' => 'integer|min:0',
+                'sick_leave_used' => 'integer|min:0',
+                'last_salary' => 'numeric|min:0',
+                'employment_type' => 'string|max:100',
             ]);
-            $validated['image'] = AttachmentHelper::handleAttachment($validated['image']); // Default status
+            $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);
             $employee = Employee::create($validated);
 
             // Handle attachments
