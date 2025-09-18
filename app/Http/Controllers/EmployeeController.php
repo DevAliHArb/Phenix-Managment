@@ -9,13 +9,27 @@ class EmployeeController extends Controller
 {
     public function index()
     {
-        $employees = Employee::with('position', 'positionImprovements')->get();
+        $employees = Employee::with([
+            'position',
+            'positionImprovements',
+            'attachments',
+            'yearlyVacations',
+            'sickLeaves',
+            'lateEarlyRecords'
+        ])->get();
         return view('employees.index', compact('employees'));
     }
 
     public function show($id)
     {
-        $employee = Employee::findOrFail($id);
+        $employee = Employee::with([
+            'position',
+            'positionImprovements',
+            'attachments',
+            'yearlyVacations',
+            'sickLeaves',
+            'lateEarlyRecords'
+        ])->findOrFail($id);
         return view('employees.show', compact('employee'));
     }
 

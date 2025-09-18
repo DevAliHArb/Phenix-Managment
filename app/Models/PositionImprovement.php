@@ -24,4 +24,9 @@ class PositionImprovement extends Model
     {
         return $this->belongsTo(Lookup::class);
     }
+
+        public function salaries()
+        {
+            return $this->hasMany(Salary::class);
+        }
 }

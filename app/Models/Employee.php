@@ -30,4 +30,24 @@ class Employee extends Model
     {
         return $this->hasMany(PositionImprovement::class);
     }
+
+    public function attachments()
+    {
+        return $this->hasMany(EmployeeAttachment::class);
+    }
+
+    public function yearlyVacations()
+    {
+        return $this->hasMany(YearlyVacation::class);
+    }
+
+    public function sickLeaves()
+    {
+        return $this->hasMany(SickLeave::class);
+    }
+
+    public function lateEarlyRecords()
+    {
+        return $this->hasMany(LateEarlyRecord::class);
+    }
 }

@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('employee_id');
             $table->date('start_date');
             $table->date('end_date')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
 
             $table->foreign('position_id')->references('id')->on('lookup');
