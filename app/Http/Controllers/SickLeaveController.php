@@ -27,7 +27,22 @@ class SickLeaveController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $validated = $request->validate([
+                // Add your validation rules here
+            ]);
+            $model = new \App\Models\SickLeave();
+            $model->create($validated);
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'redirect' => route('sick_leaves.index')]);
+            }
+            return redirect()->route('sick_leaves.index')->with('success', 'Sick leave created successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -51,7 +66,22 @@ class SickLeaveController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try {
+            $validated = $request->validate([
+                // Add your validation rules here
+            ]);
+            $model = \App\Models\SickLeave::findOrFail($id);
+            $model->update($validated);
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'redirect' => route('sick_leaves.index')]);
+            }
+            return redirect()->route('sick_leaves.index')->with('success', 'Sick leave updated successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+            }
+            throw $e;
+        }
     }
 
     /**

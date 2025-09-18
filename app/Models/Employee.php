@@ -10,13 +10,24 @@ class Employee extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
+        'address',
+        'date_of_birth',
+        'phone',
         'image',
-        'position_id',
-        'birthdate',
+        'current_position_id',
         'start_date',
         'end_date',
-        'employment_type',
+        'status',
+        'working_hours_from',
+        'working_hours_to',
+        'working_days',
+        'yearly_vacations_total',
+        'yearly_vacations_used',
+        'yearly_vacations_left',
+        'sick_leave_used',
+        'last_salary',
     ];
 
     protected $dates = ['birthdate', 'start_date', 'end_date', 'deleted_at'];

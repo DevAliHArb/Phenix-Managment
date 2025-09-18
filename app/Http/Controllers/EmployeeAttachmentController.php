@@ -27,7 +27,22 @@ class EmployeeAttachmentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+            try {
+                $validated = $request->validate([
+                    // Add your validation rules here
+                ]);
+                $model = new \App\Models\EmployeeAttachment();
+                $model->create($validated);
+                if ($request->ajax()) {
+                    return response()->json(['success' => true, 'redirect' => route('employee_attachments.index')]);
+                }
+                return redirect()->route('employee_attachments.index')->with('success', 'Attachment created successfully');
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+                }
+                throw $e;
+            }
     }
 
     /**
@@ -51,7 +66,22 @@ class EmployeeAttachmentController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+            try {
+                $validated = $request->validate([
+                    // Add your validation rules here
+                ]);
+                $model = \App\Models\EmployeeAttachment::findOrFail($id);
+                $model->update($validated);
+                if ($request->ajax()) {
+                    return response()->json(['success' => true, 'redirect' => route('employee_attachments.index')]);
+                }
+                return redirect()->route('employee_attachments.index')->with('success', 'Attachment updated successfully');
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+                }
+                throw $e;
+            }
     }
 
     /**

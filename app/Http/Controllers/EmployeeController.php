@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\EmployeeAttachment;
+use App\Helpers\AttachmentHelper;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
@@ -43,14 +45,28 @@ class EmployeeController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'image' => 'required|url|max:255',
+                'image' => 'required|string',
                 'position_id' => 'required|integer|exists:lookup,id',
                 'birthdate' => 'required|date|before:today',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'employment_type' => 'required|string|max:100',
             ]);
+            $validated['image'] = AttachmentHelper::handleAttachment($validated['image']); // Default status
             $employee = Employee::create($validated);
+
+            // Handle attachments
+            if ($request->has('attachments')) {
+                foreach ($request->attachments as $attachment) {
+                    $url = AttachmentHelper::handleAttachment($attachment);
+                    EmployeeAttachment::create([
+                        'employee_id' => $employee->id,
+                        'image' => $url,
+                        'type' => 'attachment',
+                    ]);
+                }
+            }
+
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employees.index')]);
             }
@@ -71,17 +87,42 @@ class EmployeeController extends Controller
 
     public function update(Request $request, $id)
     {
-        $employee = Employee::findOrFail($id);
-        $employee->update($request->validate([
-            'name' => 'sometimes|string',
-            'image' => 'nullable|string',
-            'position_id' => 'sometimes|integer|exists:lookup,id',
-            'birthdate' => 'sometimes|date',
-            'start_date' => 'sometimes|date',
-            'end_date' => 'nullable|date',
-            'employment_type' => 'sometimes|string',
-        ]));
-        return redirect()->route('employees.index')->with('success', 'Employee updated successfully');
+        try {
+            $validated = $request->validate([
+                'name' => 'sometimes|string',
+                'image' => 'nullable|string',
+                'position_id' => 'sometimes|integer|exists:lookup,id',
+                'birthdate' => 'sometimes|date',
+                'start_date' => 'sometimes|date',
+                'end_date' => 'nullable|date',
+                'employment_type' => 'sometimes|string',
+            ]);
+            $employee = Employee::findOrFail($id);
+            $validated['image'] = AttachmentHelper::handleAttachment($validated['image']); 
+            $employee->update($validated);
+
+            // Handle attachments
+            if ($request->has('attachments')) {
+                foreach ($request->attachments as $attachment) {
+                    $url = AttachmentHelper::handleAttachment($attachment);
+                    EmployeeAttachment::create([
+                        'employee_id' => $employee->id,
+                        'image' => $url,
+                        'type' => 'attachment',
+                    ]);
+                }
+            }
+
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'redirect' => route('employees.index')]);
+            }
+            return redirect()->route('employees.index')->with('success', 'Employee updated successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+            }
+            throw $e;
+        }
     }
 
     public function destroy($id)

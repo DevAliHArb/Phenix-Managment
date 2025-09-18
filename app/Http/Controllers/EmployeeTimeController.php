@@ -27,19 +27,29 @@ class EmployeeTimeController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'acc_number' => 'required|string',
-            'date' => 'required|date',
-            'clock_in' => 'required',
-            'clock_out' => 'nullable',
-            'total_time' => 'nullable|integer',
-            'off_day' => 'nullable|boolean',
-            'reason' => 'nullable|string',
-        ]);
-        $data['off_day'] = $request->has('off_day');
-        $employeeTime = EmployeeTime::create($data);
-        return redirect()->route('employee_times.index')->with('success', 'Time log created successfully');
+        try {
+            $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'acc_number' => 'required|string',
+                'date' => 'required|date',
+                'clock_in' => 'required',
+                'clock_out' => 'nullable',
+                'total_time' => 'nullable|integer',
+                'off_day' => 'nullable|boolean',
+                'reason' => 'nullable|string',
+            ]);
+            $validated['off_day'] = $request->has('off_day');
+            $employeeTime = EmployeeTime::create($validated);
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
+            }
+            return redirect()->route('employee_times.index')->with('success', 'Time log created successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+            }
+            throw $e;
+        }
     }
 
     public function edit($id)
@@ -51,20 +61,30 @@ class EmployeeTimeController extends Controller
 
     public function update(Request $request, $id)
     {
-        $data = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'acc_number' => 'sometimes|string',
-            'date' => 'sometimes|date',
-            'clock_in' => 'sometimes',
-            'clock_out' => 'nullable',
-            'total_time' => 'nullable|integer',
-            'off_day' => 'nullable|boolean',
-            'reason' => 'nullable|string',
-        ]);
-        $data['off_day'] = $request->has('off_day');
-        $employeeTime = EmployeeTime::findOrFail($id);
-        $employeeTime->update($data);
-        return redirect()->route('employee_times.index')->with('success', 'Time log updated successfully');
+        try {
+            $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'acc_number' => 'sometimes|string',
+                'date' => 'sometimes|date',
+                'clock_in' => 'sometimes',
+                'clock_out' => 'nullable',
+                'total_time' => 'nullable|integer',
+                'off_day' => 'nullable|boolean',
+                'reason' => 'nullable|string',
+            ]);
+            $validated['off_day'] = $request->has('off_day');
+            $employeeTime = EmployeeTime::findOrFail($id);
+            $employeeTime->update($validated);
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
+            }
+            return redirect()->route('employee_times.index')->with('success', 'Time log updated successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+            }
+            throw $e;
+        }
     }
 
     public function destroy($id)
