@@ -78,14 +78,21 @@
         addBtn.addEventListener('click', function(e) {
             e.preventDefault();
             const formData = new FormData(form);
+                // Log all form data key-value pairs for debugging
+                for (let [key, value] of formData.entries()) {
+                    console.log(key + ':', value);
+                }
+            const csrfToken = form.querySelector('input[name="_token"]').value;
             fetch(form.action, {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
                 },
                 body: formData
             })
             .then(async response => {
+                console.log(response);
                 if (response.ok) {
                     window.location.href = "{{ route('yearly-vacations.index') }}";
                 } else if (response.status === 422) {

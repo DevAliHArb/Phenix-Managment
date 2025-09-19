@@ -12,7 +12,7 @@ class SickLeaveController extends Controller
     public function index()
     {
     $items = \App\Models\SickLeave::all();
-    return view('sick_leaves.index', compact('items'));
+    return view('sick-leaves.index', compact('items'));
     }
 
     /**
@@ -20,7 +20,7 @@ class SickLeaveController extends Controller
      */
     public function create()
     {
-    return view('sick_leaves.create');
+    return view('sick-leaves.create');
     }
 
     /**
@@ -30,14 +30,16 @@ class SickLeaveController extends Controller
     {
         try {
             $validated = $request->validate([
-                // Add your validation rules here
+                'employee_id' => 'required|exists:employees,id',
+                'date' => 'required|date',
+                'reason' => 'required|string|max:255',
+                'attachment' => 'nullable|string|max:255',
             ]);
-            $model = new \App\Models\SickLeave();
-            $model->create($validated);
+            \App\Models\SickLeave::create($validated);
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('sick_leaves.index')]);
+                return response()->json(['success' => true, 'redirect' => route('sick-leaves.index')]);
             }
-            return redirect()->route('sick_leaves.index')->with('success', 'Sick leave created successfully');
+            return redirect()->route('sick-leaves.index')->with('success', 'Sick leave created successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
@@ -52,7 +54,7 @@ class SickLeaveController extends Controller
     public function show(string $id)
     {
     $item = \App\Models\SickLeave::findOrFail($id);
-    return view('sick_leaves.show', compact('item'));
+    return view('sick-leaves.show', compact('item'));
     }
 
     /**
@@ -61,7 +63,7 @@ class SickLeaveController extends Controller
     public function edit(string $id)
     {
     $item = \App\Models\SickLeave::findOrFail($id);
-    return view('sick_leaves.edit', compact('item'));
+    return view('sick-leaves.edit', compact('item'));
     }
 
     /**
@@ -71,14 +73,17 @@ class SickLeaveController extends Controller
     {
         try {
             $validated = $request->validate([
-                // Add your validation rules here
+                'employee_id' => 'required|exists:employees,id',
+                'date' => 'required|date',
+                'reason' => 'required|string|max:255',
+                'attachment' => 'nullable|string|max:255',
             ]);
             $model = \App\Models\SickLeave::findOrFail($id);
             $model->update($validated);
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('sick_leaves.index')]);
+                return response()->json(['success' => true, 'redirect' => route('sick-leaves.index')]);
             }
-            return redirect()->route('sick_leaves.index')->with('success', 'Sick leave updated successfully');
+            return redirect()->route('sick-leaves.index')->with('success', 'Sick leave updated successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
@@ -94,6 +99,6 @@ class SickLeaveController extends Controller
     {
     $item = \App\Models\SickLeave::findOrFail($id);
     $item->delete();
-    return redirect()->route('sick_leaves.index')->with('success', 'Sick leave deleted successfully');
+    return redirect()->route('sick-leaves.index')->with('success', 'Sick leave deleted successfully');
     }
 }

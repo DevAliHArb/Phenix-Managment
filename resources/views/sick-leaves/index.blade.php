@@ -12,7 +12,7 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
     <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
-        <a href="{{ route('sick_leaves.create') }}" class="btn btn-primary">Add Sick Leave</a>
+        <a href="{{ route('sick-leaves.create') }}" class="btn btn-primary">Add Sick Leave</a>
     </div>
     </div>
     <div style="overflow-x:auto;">
@@ -40,8 +40,8 @@
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('sick_leaves.edit', $item->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                        <form action="{{ route('sick_leaves.destroy', $item->id) }}" method="POST" style="display:inline-block;">
+                        <a href="{{ route('sick-leaves.edit', $item->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <form action="{{ route('sick-leaves.destroy', $item->id) }}" method="POST" style="display:inline-block;">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>

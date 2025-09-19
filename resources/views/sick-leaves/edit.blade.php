@@ -18,7 +18,7 @@
             </ul>
         </div>
     @endif
-    <form action="{{ route('sick_leaves.update', $item->id) }}" method="POST" enctype="multipart/form-data" novalidate>
+    <form action="{{ route('sick-leaves.update', $item->id) }}" method="POST" enctype="multipart/form-data" novalidate>
         @csrf
         @method('PUT')
         <div class="formContainer">

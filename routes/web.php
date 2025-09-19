@@ -24,4 +24,4 @@ use App\Http\Controllers\SickLeaveController;
 Route::resource('employees', EmployeeController::class);
 Route::resource('employee_times', EmployeeTimeController::class);
 Route::resource('yearly-vacations', YearlyVacationController::class);
-Route::resource('sick_leaves', SickLeaveController::class);
+Route::resource('sick-leaves', SickLeaveController::class);

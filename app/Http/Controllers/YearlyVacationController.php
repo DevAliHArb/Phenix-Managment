@@ -31,24 +31,24 @@ class YearlyVacationController extends Controller
      */
     public function store(Request $request)
     {
-            try {
-                $validated = $request->validate([
-                    // Add your validation rules here
-                ]);
-                $model = new YearlyVacation();
-                $model->create($validated);
-                if ($request->ajax()) {
-                    return response()->json(['success' => true, 'redirect' => route('yearly_vacations.index')]);
-                }
-                return redirect()->route('yearly_vacations.index')->with('success', 'Yearly vacation created successfully');
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                if ($request->ajax()) {
-                    return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
-                }
-                throw $e;
+        try {
+            $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'date' => 'required|date',
+                'reason' => 'required|string|max:255',
+            ]);
+            YearlyVacation::create($validated);
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'redirect' => route('yearly-vacations.index')]);
             }
+            return redirect()->route('yearly-vacations.index')->with('success', 'Yearly vacation created successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
+            }
+            throw $e;
+        }
     }
-
     /**
      * Display the specified resource.
      */
