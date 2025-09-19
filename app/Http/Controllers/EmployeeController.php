@@ -52,7 +52,7 @@ class EmployeeController extends Controller
                 'date_of_birth' => 'required|date|before:today',
                 'phone' => 'required|string|max:20',
                 // 'image' => 'required|url|max:255',
-                'current_position_id' => 'required|integer|exists:lookup,id',
+                'position_id' => 'required|integer|exists:lookup,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'required|in:active,inactive',

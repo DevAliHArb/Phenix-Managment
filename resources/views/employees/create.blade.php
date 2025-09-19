@@ -60,14 +60,14 @@
             @enderror
         </div>
         <div class="mb-3">
-            <label for="current_position_id" class="form-label">Current Position</label>
-            <select name="current_position_id" class="form-control @error('current_position_id') is-invalid @enderror" required>
+            <label for="position_id" class="form-label">Current Position</label>
+            <select name="position_id" class="form-control @error('position_id') is-invalid @enderror" required>
                 <option value="">Select Position</option>
                 @foreach($positions as $position)
-                    <option value="{{ $position->id }}" {{ old('current_position_id') == $position->id ? 'selected' : '' }}>{{ $position->name }}</option>
+                    <option value="{{ $position->id }}" {{ old('position_id') == $position->id ? 'selected' : '' }}>{{ $position->name }}</option>
                 @endforeach
             </select>
-            @error('current_position_id')
+            @error('position_id')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>

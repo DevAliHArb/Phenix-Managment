@@ -16,7 +16,7 @@ class Employee extends Model
         'date_of_birth',
         'phone',
         'image',
-        'current_position_id',
+        'position_id',
         'start_date',
         'end_date',
         'status',
