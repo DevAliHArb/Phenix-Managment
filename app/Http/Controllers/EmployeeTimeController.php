@@ -6,6 +6,29 @@ use App\Models\EmployeeTime;
 use Illuminate\Http\Request;
 
 class EmployeeTimeController extends Controller
+    public function importExcel(Request $request)
+    {
+        $validator = \Validator::make($request->all(), [
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $import = new \App\Imports\EmployeeTimeImport();
+            \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('excel_file'));
+
+            // You can extend EmployeeTimeImport to collect results if needed
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Employee times import completed',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()], 500);
+        }
+    }
 {
     public function index()
     {
