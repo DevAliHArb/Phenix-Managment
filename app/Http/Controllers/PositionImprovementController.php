@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PositionImprovement;
 use Illuminate\Http\Request;
 
 class PositionImprovementController extends Controller
@@ -11,8 +12,8 @@ class PositionImprovementController extends Controller
      */
     public function index()
     {
-    $items = \App\Models\PositionImprovement::all();
-    return view('position_improvements.index', compact('items'));
+    $items = PositionImprovement::all();
+    return view('position-improvements.index', compact('items'));
     }
 
     /**
@@ -20,7 +21,7 @@ class PositionImprovementController extends Controller
      */
     public function create()
     {
-    return view('position_improvements.create');
+    return view('position-improvements.create');
     }
 
     /**
@@ -32,12 +33,12 @@ class PositionImprovementController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $model = new \App\Models\PositionImprovement();
+            $model = new PositionImprovement();
             $model->create($validated);
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('position_improvements.index')]);
+                return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }
-            return redirect()->route('position_improvements.index')->with('success', 'Position improvement created successfully');
+            return redirect()->route('position-improvements.index')->with('success', 'Position improvement created successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
@@ -51,8 +52,8 @@ class PositionImprovementController extends Controller
      */
     public function show(string $id)
     {
-    $item = \App\Models\PositionImprovement::findOrFail($id);
-    return view('position_improvements.show', compact('item'));
+    $item = PositionImprovement::findOrFail($id);
+    return view('position-improvements.show', compact('item'));
     }
 
     /**
@@ -60,8 +61,8 @@ class PositionImprovementController extends Controller
      */
     public function edit(string $id)
     {
-    $item = \App\Models\PositionImprovement::findOrFail($id);
-    return view('position_improvements.edit', compact('item'));
+    $item = PositionImprovement::findOrFail($id);
+    return view('position-improvements.edit', compact('item'));
     }
 
     /**
@@ -73,12 +74,12 @@ class PositionImprovementController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $model = \App\Models\PositionImprovement::findOrFail($id);
+            $model = PositionImprovement::findOrFail($id);
             $model->update($validated);
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('position_improvements.index')]);
+                return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }
-            return redirect()->route('position_improvements.index')->with('success', 'Position improvement updated successfully');
+            return redirect()->route('position-improvements.index')->with('success', 'Position improvement updated successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
@@ -92,8 +93,8 @@ class PositionImprovementController extends Controller
      */
     public function destroy(string $id)
     {
-    $item = \App\Models\PositionImprovement::findOrFail($id);
+    $item = PositionImprovement::findOrFail($id);
     $item->delete();
-    return redirect()->route('position_improvements.index')->with('success', 'Position improvement deleted successfully');
+    return redirect()->route('position-improvements.index')->with('success', 'Position improvement deleted successfully');
     }
 }

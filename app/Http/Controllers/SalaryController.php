@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class SalaryController extends Controller
 {
+    public function create()
+    {
+        return view('salary.create');
+    }
+
     public function index()
     {
         $items = Salary::all();
