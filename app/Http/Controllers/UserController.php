@@ -25,21 +25,16 @@ class UserController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $item = User::create($validated);
+            \App\Models\User::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('user.index')]);
             }
-            return redirect()->route('user.index')->with('success', 'Created successfully');
+            return redirect()->route('user.index')->with('success', 'User created successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
             }
             throw $e;
-        } catch (\Exception $e) {
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -49,22 +44,17 @@ class UserController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $item = User::findOrFail($id);
-            $item->update($validated);
+            $model = \App\Models\User::findOrFail($id);
+            $model->update($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('user.index')]);
             }
-            return redirect()->route('user.index')->with('success', 'Updated successfully');
+            return redirect()->route('user.index')->with('success', 'User updated successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
             }
             throw $e;
-        } catch (\Exception $e) {
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 }

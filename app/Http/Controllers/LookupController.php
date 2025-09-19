@@ -25,21 +25,16 @@ class LookupController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $item = Lookup::create($validated);
+            \App\Models\Lookup::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('lookup.index')]);
             }
-            return redirect()->route('lookup.index')->with('success', 'Created successfully');
+            return redirect()->route('lookup.index')->with('success', 'Lookup created successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
             }
             throw $e;
-        } catch (\Exception $e) {
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -49,22 +44,17 @@ class LookupController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $item = Lookup::findOrFail($id);
-            $item->update($validated);
+            $model = \App\Models\Lookup::findOrFail($id);
+            $model->update($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('lookup.index')]);
             }
-            return redirect()->route('lookup.index')->with('success', 'Updated successfully');
+            return redirect()->route('lookup.index')->with('success', 'Lookup updated successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
             }
             throw $e;
-        } catch (\Exception $e) {
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 }

@@ -32,8 +32,7 @@ class PositionController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $model = new \App\Models\Lookup();
-            $model->create($validated);
+            \App\Models\Lookup::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('positions.index')]);
             }

@@ -33,8 +33,7 @@ class PositionImprovementController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $model = new PositionImprovement();
-            $model->create($validated);
+            \App\Models\PositionImprovement::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }
@@ -74,7 +73,7 @@ class PositionImprovementController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $model = PositionImprovement::findOrFail($id);
+            $model = \App\Models\PositionImprovement::findOrFail($id);
             $model->update($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);

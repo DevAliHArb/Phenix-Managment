@@ -39,7 +39,7 @@ class EmployeeTimeController extends Controller
                 'reason' => 'nullable|string',
             ]);
             $validated['off_day'] = $request->has('off_day');
-            $employeeTime = EmployeeTime::create($validated);
+            \App\Models\EmployeeTime::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
             }
@@ -73,8 +73,8 @@ class EmployeeTimeController extends Controller
                 'reason' => 'nullable|string',
             ]);
             $validated['off_day'] = $request->has('off_day');
-            $employeeTime = EmployeeTime::findOrFail($id);
-            $employeeTime->update($validated);
+            $model = \App\Models\EmployeeTime::findOrFail($id);
+            $model->update($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
             }

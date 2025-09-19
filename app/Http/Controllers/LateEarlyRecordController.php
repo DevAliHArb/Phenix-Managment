@@ -32,8 +32,7 @@ class LateEarlyRecordController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            $model = new \App\Models\LateEarlyRecord();
-            $model->create($validated);
+            \App\Models\LateEarlyRecord::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('late_early_records.index')]);
             }
