@@ -58,8 +58,6 @@ class EmployeeController extends Controller
                 'status' => 'required|in:active,inactive',
                 'working_hours_from' => 'required|date_format:H:i',
                 'working_hours_to' => 'required|date_format:H:i|after:working_hours_from',
-                'working_days' => 'required|array|min:1',
-                'working_days.*' => 'in:sunday,monday,tuesday,wednesday,thursday,friday,saturday',
                 'yearly_vacations_total' => 'integer|min:0',
                 'yearly_vacations_used' => 'integer|min:0',
                 'yearly_vacations_left' => 'integer|min:0',
