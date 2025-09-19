@@ -11,7 +11,8 @@ class SickLeaveController extends Controller
      */
     public function index()
     {
-        //
+    $items = \App\Models\SickLeave::all();
+    return view('sick_leaves.index', compact('items'));
     }
 
     /**
@@ -19,7 +20,7 @@ class SickLeaveController extends Controller
      */
     public function create()
     {
-        //
+    return view('sick_leaves.create');
     }
 
     /**
@@ -50,7 +51,8 @@ class SickLeaveController extends Controller
      */
     public function show(string $id)
     {
-        //
+    $item = \App\Models\SickLeave::findOrFail($id);
+    return view('sick_leaves.show', compact('item'));
     }
 
     /**
@@ -58,7 +60,8 @@ class SickLeaveController extends Controller
      */
     public function edit(string $id)
     {
-        //
+    $item = \App\Models\SickLeave::findOrFail($id);
+    return view('sick_leaves.edit', compact('item'));
     }
 
     /**
@@ -89,6 +92,8 @@ class SickLeaveController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+    $item = \App\Models\SickLeave::findOrFail($id);
+    $item->delete();
+    return redirect()->route('sick_leaves.index')->with('success', 'Sick leave deleted successfully');
     }
 }

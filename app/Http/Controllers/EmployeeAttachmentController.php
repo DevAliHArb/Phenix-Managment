@@ -11,7 +11,8 @@ class EmployeeAttachmentController extends Controller
      */
     public function index()
     {
-        //
+    $items = \App\Models\EmployeeAttachment::all();
+    return view('employee_attachments.index', compact('items'));
     }
 
     /**
@@ -19,7 +20,7 @@ class EmployeeAttachmentController extends Controller
      */
     public function create()
     {
-        //
+    return view('employee_attachments.create');
     }
 
     /**
@@ -50,7 +51,8 @@ class EmployeeAttachmentController extends Controller
      */
     public function show(string $id)
     {
-        //
+    $item = \App\Models\EmployeeAttachment::findOrFail($id);
+    return view('employee_attachments.show', compact('item'));
     }
 
     /**
@@ -58,7 +60,8 @@ class EmployeeAttachmentController extends Controller
      */
     public function edit(string $id)
     {
-        //
+    $item = \App\Models\EmployeeAttachment::findOrFail($id);
+    return view('employee_attachments.edit', compact('item'));
     }
 
     /**
@@ -89,6 +92,8 @@ class EmployeeAttachmentController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+    $item = \App\Models\EmployeeAttachment::findOrFail($id);
+    $item->delete();
+    return redirect()->route('employee_attachments.index')->with('success', 'Attachment deleted successfully');
     }
 }

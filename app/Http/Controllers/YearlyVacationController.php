@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\YearlyVacation;
 use Illuminate\Http\Request;
 
 class YearlyVacationController extends Controller
@@ -11,7 +12,8 @@ class YearlyVacationController extends Controller
      */
     public function index()
     {
-        //
+    $yearlyVacations = YearlyVacation::all();
+    return view('yearly_vacations.index', compact('yearlyVacations'));
     }
 
     /**
@@ -19,7 +21,7 @@ class YearlyVacationController extends Controller
      */
     public function create()
     {
-        //
+    return view('yearly_vacations.create');
     }
 
     /**
@@ -50,7 +52,8 @@ class YearlyVacationController extends Controller
      */
     public function show(string $id)
     {
-        //
+    $item = \App\Models\YearlyVacation::findOrFail($id);
+    return view('yearly_vacations.show', compact('item'));
     }
 
     /**
@@ -58,7 +61,8 @@ class YearlyVacationController extends Controller
      */
     public function edit(string $id)
     {
-        //
+    $item = \App\Models\YearlyVacation::findOrFail($id);
+    return view('yearly_vacations.edit', compact('item'));
     }
 
     /**
@@ -89,6 +93,8 @@ class YearlyVacationController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+    $item = \App\Models\YearlyVacation::findOrFail($id);
+    $item->delete();
+    return redirect()->route('yearly_vacations.index')->with('success', 'Yearly vacation deleted successfully');
     }
 }

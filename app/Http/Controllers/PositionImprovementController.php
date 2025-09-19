@@ -11,7 +11,8 @@ class PositionImprovementController extends Controller
      */
     public function index()
     {
-        //
+    $items = \App\Models\PositionImprovement::all();
+    return view('position_improvements.index', compact('items'));
     }
 
     /**
@@ -19,7 +20,7 @@ class PositionImprovementController extends Controller
      */
     public function create()
     {
-        //
+    return view('position_improvements.create');
     }
 
     /**
@@ -50,7 +51,8 @@ class PositionImprovementController extends Controller
      */
     public function show(string $id)
     {
-        //
+    $item = \App\Models\PositionImprovement::findOrFail($id);
+    return view('position_improvements.show', compact('item'));
     }
 
     /**
@@ -58,7 +60,8 @@ class PositionImprovementController extends Controller
      */
     public function edit(string $id)
     {
-        //
+    $item = \App\Models\PositionImprovement::findOrFail($id);
+    return view('position_improvements.edit', compact('item'));
     }
 
     /**
@@ -89,6 +92,8 @@ class PositionImprovementController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+    $item = \App\Models\PositionImprovement::findOrFail($id);
+    $item->delete();
+    return redirect()->route('position_improvements.index')->with('success', 'Position improvement deleted successfully');
     }
 }

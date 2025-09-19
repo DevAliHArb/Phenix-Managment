@@ -11,7 +11,8 @@ class PositionController extends Controller
      */
     public function index()
     {
-        //
+    $items = \App\Models\Lookup::all();
+    return view('positions.index', compact('items'));
     }
 
     /**
@@ -19,7 +20,7 @@ class PositionController extends Controller
      */
     public function create()
     {
-        //
+    return view('positions.create');
     }
 
     /**
@@ -50,7 +51,8 @@ class PositionController extends Controller
      */
     public function show(string $id)
     {
-        //
+    $item = \App\Models\Lookup::findOrFail($id);
+    return view('positions.show', compact('item'));
     }
 
     /**
@@ -58,7 +60,8 @@ class PositionController extends Controller
      */
     public function edit(string $id)
     {
-        //
+    $item = \App\Models\Lookup::findOrFail($id);
+    return view('positions.edit', compact('item'));
     }
 
     /**
@@ -89,6 +92,8 @@ class PositionController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+    $item = \App\Models\Lookup::findOrFail($id);
+    $item->delete();
+    return redirect()->route('positions.index')->with('success', 'Position deleted successfully');
     }
 }

@@ -11,7 +11,8 @@ class LateEarlyRecordController extends Controller
      */
     public function index()
     {
-        //
+    $items = \App\Models\LateEarlyRecord::all();
+    return view('late_early_records.index', compact('items'));
     }
 
     /**
@@ -19,7 +20,7 @@ class LateEarlyRecordController extends Controller
      */
     public function create()
     {
-        //
+    return view('late_early_records.create');
     }
 
     /**
@@ -50,7 +51,8 @@ class LateEarlyRecordController extends Controller
      */
     public function show(string $id)
     {
-        //
+    $item = \App\Models\LateEarlyRecord::findOrFail($id);
+    return view('late_early_records.show', compact('item'));
     }
 
     /**
@@ -58,7 +60,8 @@ class LateEarlyRecordController extends Controller
      */
     public function edit(string $id)
     {
-        //
+    $item = \App\Models\LateEarlyRecord::findOrFail($id);
+    return view('late_early_records.edit', compact('item'));
     }
 
     /**
@@ -89,6 +92,8 @@ class LateEarlyRecordController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+    $item = \App\Models\LateEarlyRecord::findOrFail($id);
+    $item->delete();
+    return redirect()->route('late_early_records.index')->with('success', 'Late/Early record deleted successfully');
     }
 }
