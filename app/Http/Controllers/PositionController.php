@@ -32,7 +32,7 @@ class PositionController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            \App\Models\Lookup::create($validated);
+            \App\Models\Lookup::create($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('positions.index')]);
             }
@@ -73,7 +73,7 @@ class PositionController extends Controller
                 // Add your validation rules here
             ]);
             $model = \App\Models\Lookup::findOrFail($id);
-            $model->update($validated);
+            $model->update($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('positions.index')]);
             }

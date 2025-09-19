@@ -32,7 +32,7 @@ class LateEarlyRecordController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            \App\Models\LateEarlyRecord::create($validated);
+            \App\Models\LateEarlyRecord::create($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('late_early_records.index')]);
             }
@@ -73,7 +73,7 @@ class LateEarlyRecordController extends Controller
                 // Add your validation rules here
             ]);
             $model = \App\Models\LateEarlyRecord::findOrFail($id);
-            $model->update($validated);
+            $model->update($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('late_early_records.index')]);
             }

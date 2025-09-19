@@ -35,7 +35,7 @@ class SickLeaveController extends Controller
                 'reason' => 'required|string|max:255',
                 'attachment' => 'nullable|string|max:255',
             ]);
-            \App\Models\SickLeave::create($validated);
+            \App\Models\SickLeave::create($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('sick-leaves.index')]);
             }
@@ -79,7 +79,7 @@ class SickLeaveController extends Controller
                 'attachment' => 'nullable|string|max:255',
             ]);
             $model = \App\Models\SickLeave::findOrFail($id);
-            $model->update($validated);
+            $model->update($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('sick-leaves.index')]);
             }

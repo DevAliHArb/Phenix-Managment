@@ -30,7 +30,7 @@ class SalaryController extends Controller
             $validated = $request->validate([
                 // Add your validation rules here
             ]);
-            \App\Models\Salary::create($validated);
+            \App\Models\Salary::create($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('salary.index')]);
             }
@@ -50,7 +50,7 @@ class SalaryController extends Controller
                 // Add your validation rules here
             ]);
             $model = \App\Models\Salary::findOrFail($id);
-            $model->update($validated);
+            $model->update($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('salary.index')]);
             }
