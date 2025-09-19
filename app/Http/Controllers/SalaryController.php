@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class SalaryController extends Controller
 {
+    public function edit($id)
+    {
+        $item = \App\Models\Salary::findOrFail($id);
+        return view('salary.edit', compact('item'));
+    }
     public function create()
     {
         return view('salary.create');

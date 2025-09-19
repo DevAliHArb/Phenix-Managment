@@ -1,47 +1,90 @@
+
 @extends('layouts.app')
+
+@section('styles')
+    <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+@endsection
+
 @section('content')
 <div class="container">
-    <h1>Add Employee Time Log</h1>
-    <a href="{{ route('employee_times.index') }}" class="btn btn-secondary mb-3">Back</a>
-    <form action="{{ route('employee_times.store') }}" method="POST">
-        @csrf
-        <div class="mb-3">
-            <label for="employee_id" class="form-label">Employee</label>
-            <select name="employee_id" class="form-control" required>
-                @foreach($employees as $employee)
-                    <option value="{{ $employee->id }}">{{ $employee->name }}</option>
+    <div class="headerContainer">
+        <h1>Add Employee Time Log</h1>
+    </div>
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul style="margin-bottom:0;">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
                 @endforeach
-            </select>
+            </ul>
         </div>
-        <div class="mb-3">
-            <label for="acc_number" class="form-label">Account Number</label>
-            <input type="text" name="acc_number" class="form-control" required>
+    @endif
+    <form action="{{ route('employee_times.store') }}" method="POST" novalidate>
+        @csrf
+        <div class="formContainer">
+            <div class="mb-3">
+                <label for="employee_id" class="form-label">Employee</label>
+                <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" required>
+                    <option value="">Select Employee</option>
+                    @foreach($employees as $employee)
+                        <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                    @endforeach
+                </select>
+                @error('employee_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label for="acc_number" class="form-label">Account Number</label>
+                <input type="text" name="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number') }}" required>
+                @error('acc_number')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" name="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date') }}" required>
+                @error('date')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label for="clock_in" class="form-label">Clock In</label>
+                <input type="time" name="clock_in" class="form-control @error('clock_in') is-invalid @enderror" value="{{ old('clock_in') }}" required>
+                @error('clock_in')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label for="clock_out" class="form-label">Clock Out</label>
+                <input type="time" name="clock_out" class="form-control @error('clock_out') is-invalid @enderror" value="{{ old('clock_out') }}">
+                @error('clock_out')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label for="total_time" class="form-label">Total Time (min)</label>
+                <input type="number" name="total_time" class="form-control @error('total_time') is-invalid @enderror" value="{{ old('total_time') }}">
+                @error('total_time')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label for="off_day" class="form-label">Off Day</label>
+                <input type="checkbox" name="off_day" value="1" {{ old('off_day') ? 'checked' : '' }}>
+            </div>
+            <div class="mb-3">
+                <label for="reason" class="form-label">Reason</label>
+                <input type="text" name="reason" class="form-control @error('reason') is-invalid @enderror" value="{{ old('reason') }}">
+                @error('reason')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="date" class="form-label">Date</label>
-            <input type="date" name="date" class="form-control" required>
+        <div class="formContainer" style="margin-top:30px;">
+            <button type="submit" class="btn btn-primary">Add</button>
+            <a href="{{ route('employee_times.index') }}" class="btn btn-secondary" style="margin-left:10px;">Back</a>
         </div>
-        <div class="mb-3">
-            <label for="clock_in" class="form-label">Clock In</label>
-            <input type="time" name="clock_in" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label for="clock_out" class="form-label">Clock Out</label>
-            <input type="time" name="clock_out" class="form-control">
-        </div>
-        <div class="mb-3">
-            <label for="total_time" class="form-label">Total Time (min)</label>
-            <input type="number" name="total_time" class="form-control">
-        </div>
-        <div class="mb-3">
-            <label for="off_day" class="form-label">Off Day</label>
-            <input type="checkbox" name="off_day" value="1">
-        </div>
-        <div class="mb-3">
-            <label for="reason" class="form-label">Reason</label>
-            <input type="text" name="reason" class="form-control">
-        </div>
-        <button type="submit" class="btn btn-primary">Add</button>
     </form>
 </div>
 @endsection

@@ -26,7 +26,9 @@
                 <select name="position_improvement_id" class="form-control @error('position_improvement_id') is-invalid @enderror" required>
                     <option value="">Select Position Improvement</option>
                     @foreach(App\Models\PositionImprovement::all() as $pi)
-                        <option value="{{ $pi->id }}" {{ old('position_improvement_id') == $pi->id ? 'selected' : '' }}>{{ $pi->name }}</option>
+                        <option value="{{ $pi->id }}" {{ old('position_improvement_id') == $pi->id ? 'selected' : '' }}>
+                            {{ optional($pi->employee)->first_name }} {{ optional($pi->employee)->last_name }} - {{ optional($pi->position)->name }}
+                        </option>
                     @endforeach
                 </select>
                 @error('position_improvement_id')
@@ -43,14 +45,18 @@
             <div class="mb-3">
                 <label for="status" class="form-label">Status</label>
                 <select name="status" class="form-control @error('status') is-invalid @enderror" required>
-                    <option value="Active" {{ old('status') == 'Active' ? 'selected' : '' }}>Active</option>
-                    <option value="Inactive" {{ old('status') == 'Inactive' ? 'selected' : '' }}>Inactive</option>
+                    <option value="1" {{ old('status') == '1' ? 'selected' : '' }}>Active</option>
+                    <option value="0" {{ old('status') == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>
                 @error('status')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
+        </div>
+        
+        <div class="formContainer" style="margin-top:30px;">
             <button type="submit" class="btn btn-primary">Submit</button>
+
         </div>
     </form>
 </div>

@@ -20,7 +20,8 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Position Improvement</th>
+                    <th>Employee</th>
+                    <th>Position</th>
                     <th>Salary</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -30,10 +31,16 @@
                 @forelse($items as $item)
                 <tr>
                     <td>{{ $item->id }}</td>
-                    <td>{{ optional($item->positionImprovement)->name }}</td>
+                    <td>
+                        {{ optional(optional($item->positionImprovement)->employee)->first_name }}
+                        {{ optional(optional($item->positionImprovement)->employee)->last_name }}
+                    </td>
+                    <td>
+                        {{ optional(optional($item->positionImprovement)->position)->name }}
+                    </td>
                     <td>{{ $item->salary }}</td>
                     <td>
-                        @if($item->status == 'Active')
+                        @if($item->status)
                             <span class="badge bg-success">Active</span>
                         @else
                             <span class="badge bg-secondary">Inactive</span>
