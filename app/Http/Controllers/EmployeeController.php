@@ -53,6 +53,7 @@ class EmployeeController extends Controller
                 'phone' => 'required|string|max:20',
                 // 'image' => 'required|url|max:255',
                 'position_id' => 'required|integer|exists:lookup,id',
+                'lookup_employee_type_id' => 'required|integer|exists:lookup,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'required|in:active,inactive',
@@ -121,6 +122,7 @@ class EmployeeController extends Controller
                 'start_date' => 'sometimes|date',
                 'end_date' => 'nullable|date',
                 'employment_type' => 'sometimes|string',
+                'lookup_employee_type_id' => 'sometimes|integer|exists:lookup,id',
             ]);
             $employee = Employee::findOrFail($id);
             $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);

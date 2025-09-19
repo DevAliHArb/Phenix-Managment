@@ -28,6 +28,7 @@ class Employee extends Model
         'yearly_vacations_left',
         'sick_leave_used',
         'last_salary',
+        'lookup_employee_type_id',
     ];
 
     protected $dates = ['birthdate', 'start_date', 'end_date', 'deleted_at'];
