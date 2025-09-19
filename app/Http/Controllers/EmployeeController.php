@@ -67,7 +67,14 @@ class EmployeeController extends Controller
                 'last_salary' => 'numeric|min:0',
                 'employment_type' => 'string|max:100',
             ]);
-            $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);
+            $validated['image'] = AttachmentHelper::handleAttachment($request['image']);
+
+            // Set working day fields
+            $days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            foreach ($days as $day) {
+                $validated[$day] = in_array($day, $request->working_days ?? []) ? true : false;
+            }
+
             $employee = Employee::create($validated);
 
             // Handle attachments
@@ -91,6 +98,11 @@ class EmployeeController extends Controller
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
             }
             throw $e;
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -113,7 +125,14 @@ class EmployeeController extends Controller
                 'employment_type' => 'sometimes|string',
             ]);
             $employee = Employee::findOrFail($id);
-            $validated['image'] = AttachmentHelper::handleAttachment($validated['image']); 
+            $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);
+
+            // Set working day fields
+            $days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            foreach ($days as $day) {
+                $validated[$day] = in_array($day, $request->working_days ?? []) ? true : false;
+            }
+
             $employee->update($validated);
 
             // Handle attachments
@@ -137,6 +156,11 @@ class EmployeeController extends Controller
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
             }
             throw $e;
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
