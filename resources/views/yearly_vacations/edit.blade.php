@@ -20,7 +20,7 @@
         </div>
     @endif
 
-    <form action="{{ route('yearly-vacations.update', $yearlyVacation->id) }}" method="POST" novalidate>
+    <form action="{{ route('yearly-vacations.update', $yearlyVacation->id) }}" method="POST" novalidate id="yearlyVacationForm">
         @csrf
         @method('PUT')
         <div class="formContainer">
@@ -55,8 +55,59 @@
         </div>
         <div class="formContainer" style="margin-top:30px;">
             <a href="{{ route('yearly-vacations.index') }}" class="btn btn-secondary mb-3">Back</a>
-            <button type="submit" class="btn btn-primary mb-3">Update</button>
+            <button type="submit" class="btn btn-primary mb-3" id="updateYearlyVacationBtn">Update</button>
         </div>
     </form>
+
+    <!-- Error Popup Modal -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="errorModalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('yearlyVacationForm');
+        const updateBtn = document.getElementById('updateYearlyVacationBtn');
+        updateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData
+            })
+            .then(async response => {
+                if (response.ok) {
+                    window.location.href = "{{ route('yearly-vacations.index') }}";
+                } else if (response.status === 422) {
+                    const data = await response.json();
+                    showErrorModal(data.errors || ['Validation error.']);
+                } else {
+                    showErrorModal(['An unexpected error occurred.']);
+                }
+            })
+            .catch(() => {
+                showErrorModal(['An unexpected error occurred.']);
+            });
+        });
+
+        function showErrorModal(errors) {
+            const modalBody = document.getElementById('errorModalBody');
+            modalBody.innerHTML = '<ul>' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            errorModal.show();
+        }
+    });
+    </script>
 </div>
 @endsection

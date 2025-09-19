@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\YearlyVacation;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 
 class YearlyVacationController extends Controller
@@ -21,7 +22,8 @@ class YearlyVacationController extends Controller
      */
     public function create()
     {
-    return view('yearly_vacations.create');
+        $employees = Employee::all();
+        return view('yearly_vacations.create', compact('employees'));
     }
 
     /**
@@ -33,7 +35,7 @@ class YearlyVacationController extends Controller
                 $validated = $request->validate([
                     // Add your validation rules here
                 ]);
-                $model = new \App\Models\YearlyVacation();
+                $model = new YearlyVacation();
                 $model->create($validated);
                 if ($request->ajax()) {
                     return response()->json(['success' => true, 'redirect' => route('yearly_vacations.index')]);
@@ -52,7 +54,7 @@ class YearlyVacationController extends Controller
      */
     public function show(string $id)
     {
-    $item = \App\Models\YearlyVacation::findOrFail($id);
+    $item = YearlyVacation::findOrFail($id);
     return view('yearly_vacations.show', compact('item'));
     }
 
@@ -61,8 +63,9 @@ class YearlyVacationController extends Controller
      */
     public function edit(string $id)
     {
-    $item = \App\Models\YearlyVacation::findOrFail($id);
-    return view('yearly_vacations.edit', compact('item'));
+        $item = YearlyVacation::findOrFail($id);
+        $employees = Employee::all();
+        return view('yearly_vacations.edit', compact('item', 'employees'));
     }
 
     /**
@@ -74,7 +77,7 @@ class YearlyVacationController extends Controller
                 $validated = $request->validate([
                     // Add your validation rules here
                 ]);
-                $model = \App\Models\YearlyVacation::findOrFail($id);
+                $model = YearlyVacation::findOrFail($id);
                 $model->update($validated);
                 if ($request->ajax()) {
                     return response()->json(['success' => true, 'redirect' => route('yearly_vacations.index')]);
@@ -93,7 +96,7 @@ class YearlyVacationController extends Controller
      */
     public function destroy(string $id)
     {
-    $item = \App\Models\YearlyVacation::findOrFail($id);
+    $item = YearlyVacation::findOrFail($id);
     $item->delete();
     return redirect()->route('yearly_vacations.index')->with('success', 'Yearly vacation deleted successfully');
     }
