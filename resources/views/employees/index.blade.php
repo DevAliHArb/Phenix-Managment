@@ -6,12 +6,15 @@
 
 @section('content')
 <div class="container">
+    <div class="headerContainer" >
     <h1>Employees</h1>
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
     <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
         <a href="{{ route('employees.create') }}" class="btn btn-primary">Add Employee</a>
+    </div>
+
     </div>
     <div style="overflow-x:auto;">
         <table class="table table-bordered">
@@ -31,14 +34,14 @@
             <tbody>
                 @forelse($employees as $employee)
                 <tr>
-                    <td>{{ $employee->id }}</td>
-                    <td>{{ $employee->name }}</td>
+                    <td onclick="log('{{ $employee }}')">{{ $employee->id }}</td>
+                    <td>{{ $employee->first_name }} {{ $employee->last_name }}</td>
                     <td><img src="{{ $employee->image }}" alt="Image"></td>
                     <td>{{ optional($employee->position)->name }}</td>
-                    <td>{{ $employee->birthdate }}</td>
+                    <td>{{ $employee->date_of_birth }}</td>
                     <td>{{ $employee->start_date }}</td>
                     <td>{{ $employee->end_date }}</td>
-                    <td>{{ $employee->employment_type }}</td>
+                    <td>{{ optional($employee->EmployeeType)->name }}</td>
                     <td style="white-space:nowrap;">
                         <a href="{{ route('employees.show', $employee->id) }}" class="btn btn-info btn-sm" title="View"><span>&#128065;</span></a>
                         <a href="{{ route('employees.edit', $employee->id) }}" class="btn btn-warning btn-sm" title="Edit"><span>&#9998;</span></a>

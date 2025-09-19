@@ -63,11 +63,39 @@
             <label for="position_id" class="form-label">Current Position</label>
             <select name="position_id" class="form-control @error('position_id') is-invalid @enderror" required>
                 <option value="">Select Position</option>
-                @foreach($positions as $position)
-                    <option value="{{ $position->id }}" {{ old('position_id') == $position->id ? 'selected' : '' }}>{{ $position->name }}</option>
-                @endforeach
+                @if(isset($positions) && count($positions) > 0)
+                    @foreach($positions as $position)
+                        <option value="{{ $position->id }}" {{ old('position_id') == $position->id ? 'selected' : '' }}>{{ $position->name ?? ($position->title ?? 'Position') }}</option>
+                    @endforeach
+                @endif
             </select>
             @error('position_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <div class="mb-3">
+            <label for="lookup_employee_type_id" class="form-label">Employment Type</label>
+            <select name="lookup_employee_type_id" class="form-control @error('lookup_employee_type_id') is-invalid @enderror" required>
+                <option value="">Select Employment Type</option>
+                @if(isset($employmentTypes) && count($employmentTypes) > 0)
+                    @foreach($employmentTypes as $type)
+                        <option value="{{ $type->id }}" {{ old('lookup_employee_type_id') == $type->id ? 'selected' : '' }}>{{ $type->name ?? ($type->title ?? 'Type') }}</option>
+                    @endforeach
+                @endif
+            </select>
+            @error('lookup_employee_type_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select name="status" class="form-control @error('status') is-invalid @enderror" required>
+                <option value="">Select Status</option>
+                <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
+                <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+            </select>
+            @error('status')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
@@ -107,17 +135,6 @@
             <label for="end_date" class="form-label">End Date</label>
             <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date') }}" required>
             @error('end_date')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="status" class="form-label">Status</label>
-            <select name="status" class="form-control @error('status') is-invalid @enderror" required>
-                <option value="">Select Status</option>
-                <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-            </select>
-            @error('status')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
@@ -171,6 +188,8 @@
             @enderror
         </div>
         
+        </div>
+        <div class="formContainer" style="margin-top:30px;">
              <a href="{{ route('employees.index') }}" class="btn btn-secondary mb-3">Back</a>
             <button type="submit" class="btn btn-primary mb-3" id="addEmployeeBtn">Add</button>
         </div>
@@ -223,7 +242,7 @@
                 const birthdate = form.birthdate.value;
                 const start_date = form.start_date.value;
                 const end_date = form.end_date.value;
-                const employment_type = form.employment_type.value.trim();
+                const lookup_employee_type_id = form.lookup_employee_type_id.value.trim();
 
                 // Name
                 if (!name) errors.push('Name is required.');
@@ -245,7 +264,7 @@
                 if (!end_date) errors.push('End Date is required.');
                 else if (start_date && new Date(end_date) < new Date(start_date)) errors.push('End Date must be after or equal to Start Date.');
                 // Employment Type
-                if (!employment_type) errors.push('Employment Type is required.');
+                if (!lookup_employee_type_id) errors.push('Employment Type is required.');
 
                 if (errors.length > 0) {
                     e.preventDefault();

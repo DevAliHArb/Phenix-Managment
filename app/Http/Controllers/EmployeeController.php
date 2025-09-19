@@ -13,6 +13,7 @@ class EmployeeController extends Controller
     {
         $employees = Employee::with([
             'position',
+            'EmployeeType',
             'positionImprovements',
             'attachments',
             'yearlyVacations',
@@ -26,6 +27,7 @@ class EmployeeController extends Controller
     {
         $employee = Employee::with([
             'position',
+            'EmployeeType',
             'positionImprovements',
             'attachments',
             'yearlyVacations',
@@ -64,7 +66,6 @@ class EmployeeController extends Controller
                 'yearly_vacations_left' => 'integer|min:0',
                 'sick_leave_used' => 'integer|min:0',
                 'last_salary' => 'numeric|min:0',
-                'employment_type' => 'string|max:100',
             ]);
             $validated['image'] = AttachmentHelper::handleAttachment($request['image']);
 
@@ -108,7 +109,9 @@ class EmployeeController extends Controller
     public function edit($id)
     {
         $employee = Employee::findOrFail($id);
-        return view('employees.edit', compact('employee'));
+        $positions = \App\Models\Lookup::where('parent_id', 1)->get();
+        $employmentTypes = \App\Models\Lookup::where('parent_id', 7)->get();
+        return view('employees.edit', compact('employee', 'positions', 'employmentTypes'));
     }
 
     public function update(Request $request, $id)
@@ -121,7 +124,6 @@ class EmployeeController extends Controller
                 'birthdate' => 'sometimes|date',
                 'start_date' => 'sometimes|date',
                 'end_date' => 'nullable|date',
-                'employment_type' => 'sometimes|string',
                 'lookup_employee_type_id' => 'sometimes|integer|exists:lookup,id',
             ]);
             $employee = Employee::findOrFail($id);

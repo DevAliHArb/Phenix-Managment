@@ -11,7 +11,7 @@
             <p><strong>Birthdate:</strong> {{ $employee->birthdate }}</p>
             <p><strong>Start Date:</strong> {{ $employee->start_date }}</p>
             <p><strong>End Date:</strong> {{ $employee->end_date }}</p>
-            <p><strong>Employment Type:</strong> {{ $employee->employment_type }}</p>
+            <p><strong>Employment Type:</strong> {{ optional($employee->EmployeeType)->name }}</p>
         </div>
     </div>
 </div>

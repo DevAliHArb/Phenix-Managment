@@ -35,7 +35,11 @@ class Employee extends Model
 
     public function position()
     {
-        return $this->belongsTo(Lookup::class);
+        return $this->belongsTo(Lookup::class, 'position_id');
+    }
+    public function EmployeeType()
+    {
+        return $this->belongsTo(Lookup::class, 'lookup_employee_type_id');
     }
 
     public function positionImprovements()
