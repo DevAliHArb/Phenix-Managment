@@ -152,10 +152,9 @@ $(function() {
             {
                 caption: "Actions",
                 cellTemplate: function(container, options) {
-                    const viewLink = `<a href="${options.data.showUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">View</a>`;
                     const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
                     const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="event.preventDefault(); if(confirm('Are you sure?')) { var f = document.createElement('form'); f.style.display='none'; f.method='POST'; f.action='${options.data.deleteUrl}'; f.innerHTML='<input type=\'hidden\' name=\'_token\' value=\'{{ csrf_token() }}\'><input type=\'hidden\' name=\'_method\' value=\'DELETE\'>'; document.body.appendChild(f); f.submit(); }">Delete</a>`;
-                    $(container).append(viewLink + editLink + deleteLink);
+                    $(container).append(editLink + deleteLink);
                 },
                 width: 200,
                 allowFiltering: false
