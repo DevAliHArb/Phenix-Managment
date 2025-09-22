@@ -66,4 +66,9 @@ class Employee extends Model
     {
         return $this->hasMany(LateEarlyRecord::class);
     }
+
+    public function employeeTimes()
+    {
+        return $this->hasMany(EmployeeTime::class);
+    }
 }

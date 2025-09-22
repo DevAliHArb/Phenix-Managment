@@ -18,7 +18,8 @@ class EmployeeController extends Controller
             'attachments',
             'yearlyVacations',
             'sickLeaves',
-            'lateEarlyRecords'
+            'lateEarlyRecords',
+            'employeeTimes'
         ])->get();
         return view('employees.index', compact('employees'));
     }
@@ -32,7 +33,8 @@ class EmployeeController extends Controller
             'attachments',
             'yearlyVacations',
             'sickLeaves',
-            'lateEarlyRecords'
+            'lateEarlyRecords',
+            'employeeTimes'
         ])->findOrFail($id);
         return view('employees.show', compact('employee'));
     }
