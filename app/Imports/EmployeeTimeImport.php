@@ -15,18 +15,32 @@ class EmployeeTimeImport implements ToModel
     */
     public function model(array $row)
 {
-    // AC-No
-    $acNo = isset($row[1]) ? $row[1] : null;
-
-    // Handle Date (Excel date vs string)
-    $date = null;
-    if (!empty($row[4])) {
-        $date = is_numeric($row[4]) 
-            ? Date::excelToDateTimeObject($row[4])->format('Y-m-d')
-            : date('Y-m-d', strtotime($row[4]));
+    // Skip header row
+    if ($row[0] === 'Emp No.' || $row[0] === null) {
+        return null;
     }
 
-    // Handle Clock In
+    // Emp No. and AC-No. are in columns 0 and 1
+    $empNo = isset($row[0]) ? $row[0] : null;
+    $acNo = isset($row[1]) ? $row[1] : null;
+
+    // Handle Date (Excel date vs string) from column 4
+    $date = null;
+    if (!empty($row[4])) {
+        if (is_numeric($row[4])) {
+            $date = Date::excelToDateTimeObject($row[4])->format('Y-m-d');
+        } else {
+            $parsed = \DateTime::createFromFormat('d/m/Y', $row[4]);
+            if ($parsed && $parsed->format('d/m/Y') === $row[4]) {
+                $date = $parsed->format('Y-m-d');
+            } else {
+                // fallback only if d/m/Y is not valid
+                $date = null;
+            }
+        }
+    }
+
+    // Handle Clock In from column 5
     $clockIn = null;
     if (!empty($row[5])) {
         $clockIn = is_numeric($row[5]) 
@@ -34,7 +48,7 @@ class EmployeeTimeImport implements ToModel
             : date('H:i:s', strtotime($row[5]));
     }
 
-    // Handle Clock Out
+    // Handle Clock Out from column 6
     $clockOut = null;
     if (!empty($row[6])) {
         $clockOut = is_numeric($row[6]) 
@@ -47,7 +61,28 @@ class EmployeeTimeImport implements ToModel
     if ($clockIn && $clockOut) {
         $clockInSeconds = strtotime($clockIn);
         $clockOutSeconds = strtotime($clockOut);
-        $totalTime = $clockOutSeconds - $clockInSeconds;
+        if ($clockOutSeconds !== false && $clockInSeconds !== false) {
+            $diffSeconds = $clockOutSeconds - $clockInSeconds;
+            $hours = floor($diffSeconds / 3600);
+            $minutes = floor(($diffSeconds % 3600) / 60);
+            $seconds = $diffSeconds % 60;
+            $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+        }
+    }
+
+    // Detect if the date is Saturday or Sunday
+    $offDay = false;
+    $excelDateValue = $row[4] ?? null;
+    if (!empty($excelDateValue)) {
+        if (is_numeric($excelDateValue)) {
+            $carbonDate = Date::excelToDateTimeObject($excelDateValue);
+        } else {
+            $carbonDate = new \DateTime($excelDateValue);
+        }
+        $dayOfWeek = $carbonDate->format('N'); // 6 = Saturday, 7 = Sunday
+        if ($dayOfWeek == 6 || $dayOfWeek == 7) {
+            $offDay = true;
+        }
     }
 
     return new EmployeeTime([
@@ -57,6 +92,7 @@ class EmployeeTimeImport implements ToModel
         'clock_in'    => $clockIn,
         'clock_out'   => $clockOut,
         'total_time'  => $totalTime,
+        'off_day'     => $offDay,
     ]);
 }
 
