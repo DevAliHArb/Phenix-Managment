@@ -82,8 +82,8 @@
             </div>
         </div>
         <div class="formContainer" style="margin-top:30px;">
-            <button type="submit" class="btn btn-primary">Add</button>
             <a href="{{ route('employee_times.index') }}" class="btn btn-secondary" style="margin-left:10px;">Back</a>
+            <button type="submit" class="btn btn-primary">Add</button>
         </div>
     </form>
 </div>

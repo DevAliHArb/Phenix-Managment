@@ -14,7 +14,7 @@
 @endsection
 
 @section('content')
-<div class="container">
+<div  style="width:100%">
     <div class="headerContainer" >
     <h1>Employees</h1>
     @if(session('success'))
@@ -76,7 +76,7 @@ const employeesData = [
         yearly_vacations_left: `{{ $employee->yearly_vacations_left ?? 0 }}`,
         sick_leave_used: `{{ $employee->sick_leave_used ?? 0 }}`,
         last_salary: `{{ $employee->last_salary ?? '' }}`,
-        employee_times: @json($employee->employee_times ?? []),
+        employee_times: @json($employee->employeeTimes ?? []),
         showUrl: `{{ route('employees.show', $employee->id) }}`,
         editUrl: `{{ route('employees.edit', $employee->id) }}`,
         deleteUrl: `{{ route('employees.destroy', $employee->id) }}`

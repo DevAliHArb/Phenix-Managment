@@ -6,7 +6,7 @@
 @endsection
 
 @section('content')
-<div class="container">
+<div  style="width:100%">
     <div class="headerContainer" >
     <h1>Salaries</h1>
     @if(session('success'))
