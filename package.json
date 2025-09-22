@@ -9,5 +9,9 @@
         "axios": "^1.6.1",
         "laravel-vite-plugin": "^1.0.0",
         "vite": "^5.0.0"
+    },
+    "dependencies": {
+        "devextreme": "^25.1.5",
+        "devextreme-dist": "^25.1.5"
     }
 }

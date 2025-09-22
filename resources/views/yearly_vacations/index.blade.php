@@ -15,41 +15,90 @@
         <a href="{{ route('yearly-vacations.create') }}" class="btn btn-primary">Add Yearly Vacation</a>
     </div>
     </div>
-    <div style="overflow-x:auto;">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Employee</th>
-                    <th>Date</th>
-                    <th>Reason</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($yearlyVacations as $vacation)
-                <tr>
-                    <td>{{ $vacation->id }}</td>
-                    <td>{{ optional($vacation->employee)->first_name }} {{ optional($vacation->employee)->last_name }}</td>
-                    <td>{{ $vacation->date }}</td>
-                    <td>{{ $vacation->reason }}</td>
-                    <td style="white-space:nowrap;">
-                        <a href="{{ route('yearly-vacations.show', $vacation->id) }}" class="btn btn-info btn-sm" title="View"><span>&#128065;</span></a>
-                        <a href="{{ route('yearly-vacations.edit', $vacation->id) }}" class="btn btn-warning btn-sm" title="Edit"><span>&#9998;</span></a>
-                        <form action="{{ route('yearly-vacations.destroy', $vacation->id) }}" method="POST" style="display:inline-block;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')" title="Delete"><span>&#128465;</span></button>
-                        </form>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="5" style="text-align:center; color:#888;">No yearly vacations found.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+    <div id="yearlyVacationsGrid"></div>
+    @push('scripts')
+    <script>
+        const yearlyVacationsData = [
+            @foreach($yearlyVacations as $vacation)
+            {
+                id: {{ $vacation->id }},
+                employee: `{{ optional($vacation->employee)->first_name }} {{ optional($vacation->employee)->last_name }}`,
+                date: `{{ $vacation->date }}`,
+                reason: `{{ $vacation->reason }}`,
+                showUrl: `{{ route('yearly-vacations.show', $vacation->id) }}`,
+                editUrl: `{{ route('yearly-vacations.edit', $vacation->id) }}`,
+                deleteUrl: `{{ route('yearly-vacations.destroy', $vacation->id) }}`
+            },
+            @endforeach
+        ];
+
+        $(function() {
+            $("#yearlyVacationsGrid").dxDataGrid({
+                dataSource: yearlyVacationsData,
+                columns: [
+                    { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+                    { dataField: "employee", caption: "Employee", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "reason", caption: "Reason", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    {
+                        caption: "Actions",
+                        cellTemplate: function(container, options) {
+                            const viewLink = `<a href="${options.data.showUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">View</a>`;
+                            const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
+                            const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="event.preventDefault(); if(confirm('Are you sure?')) { var f = document.createElement('form'); f.style.display='none'; f.method='POST'; f.action='${options.data.deleteUrl}'; f.innerHTML='<input type=\'hidden\' name=\'_token\' value=\'{{ csrf_token() }}\'><input type=\'hidden\' name=\'_method\' value=\'DELETE\'>'; document.body.appendChild(f); f.submit(); }">Delete</a>`;
+                            $(container).append(viewLink + editLink + deleteLink);
+                        },
+                        width: 180,
+                        allowFiltering: false
+                    }
+                ],
+                showBorders: true,
+                paging: { pageSize: 10 },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [5, 10, 20],
+                    showInfo: false,
+                    showNavigationButtons: true,
+                    visible: true
+                },
+                searchPanel: {
+                    visible: true,
+                    width: 240,
+                    placeholder: 'Search...'
+                },
+                filterRow: {
+                    visible: true,
+                    applyFilter: 'auto'
+                },
+                headerFilter: {
+                    visible: true
+                },
+                columnChooser: {
+                    enabled: true,
+                    mode: 'dragAndDrop',
+                    title: 'Column Chooser',
+                    emptyPanelText: 'Drag a column here to hide it'
+                },
+                allowColumnReordering: true,
+                summary: {
+                    totalItems: [
+                        {
+                            column: 'id',
+                            summaryType: 'count',
+                            displayFormat: 'Total: {0} rows',
+                            showInColumn: 'employee',
+                            alignByColumn: true
+                        },
+                        {
+                            summaryType: 'count',
+                            displayFormat: 'Total: {0} rows'
+                        }
+                    ]
+                },
+                noDataText: 'No yearly vacations found.'
+            });
+        });
+    </script>
+    @endpush
 </div>
 @endsection

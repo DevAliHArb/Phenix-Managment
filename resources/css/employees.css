@@ -1,6 +1,6 @@
 /* Highlight selected employee row */
 .employee-row.selected {
-    background-color: #d1e7fd !important;
+    background-color: #fcfcfc !important;
 }
 /* resources/css/employees.css */
 

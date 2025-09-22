@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config('app.name', 'Phenix HR Management') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Official DevExtreme CSS -->
+    <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/23.2.6/css/dx.light.css">
     @yield('styles')
 </head>
 <body>
@@ -21,6 +23,9 @@
     <main>
         @yield('content')
     </main>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Official DevExtreme JS -->
+    <script src="https://cdn3.devexpress.com/jslib/23.2.6/js/dx.all.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
 </body>
