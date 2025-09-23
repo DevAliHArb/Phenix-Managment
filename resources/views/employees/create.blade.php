@@ -108,21 +108,58 @@
             @enderror
             <div id="imagePreview" style="margin-top:10px;"></div>
         </div>
-        <div class="mb-3">
-            <label for="working_days" class="form-label">Working Days</label>
-            <select name="working_days[]" class="form-control @error('working_days') is-invalid @enderror" multiple required>
-                <option value="sunday" {{ (collect(old('working_days'))->contains('sunday')) ? 'selected' : '' }}>Sunday</option>
-                <option value="monday" {{ (collect(old('working_days'))->contains('monday')) ? 'selected' : '' }}>Monday</option>
-                <option value="tuesday" {{ (collect(old('working_days'))->contains('tuesday')) ? 'selected' : '' }}>Tuesday</option>
-                <option value="wednesday" {{ (collect(old('working_days'))->contains('wednesday')) ? 'selected' : '' }}>Wednesday</option>
-                <option value="thursday" {{ (collect(old('working_days'))->contains('thursday')) ? 'selected' : '' }}>Thursday</option>
-                <option value="friday" {{ (collect(old('working_days'))->contains('friday')) ? 'selected' : '' }}>Friday</option>
-                <option value="saturday" {{ (collect(old('working_days'))->contains('saturday')) ? 'selected' : '' }}>Saturday</option>
-            </select>
-            @error('working_days')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-            <small class="form-text text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple days.</small>
+        <div class="form-group mb-3">
+            <label for="working_days"><strong>Working Days</strong></label>
+            <div id="working_days">
+                <div class="row mb-2">
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-sunday" value="sunday">
+                            <label class="form-check-label" for="day-sunday">Sunday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-monday" value="monday">
+                            <label class="form-check-label" for="day-monday">Monday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-tuesday" value="tuesday">
+                            <label class="form-check-label" for="day-tuesday">Tuesday</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-wednesday" value="wednesday">
+                            <label class="form-check-label" for="day-wednesday">Wednesday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-thursday" value="thursday">
+                            <label class="form-check-label" for="day-thursday">Thursday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-friday" value="friday">
+                            <label class="form-check-label" for="day-friday">Friday</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-saturday" value="saturday">
+                            <label class="form-check-label" for="day-saturday">Saturday</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="mb-3">
             <label for="start_date" class="form-label">Start Date</label>

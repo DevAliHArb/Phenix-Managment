@@ -112,21 +112,58 @@
                 @endif
             </div>
         </div>
-        <div class="mb-3">
-            <label for="working_days" class="form-label">Working Days</label>
-            <select name="working_days[]" class="form-control @error('working_days') is-invalid @enderror" multiple required>
-                <option value="sunday" {{ (collect(old('working_days', $employee->working_days ?? []))->contains('sunday')) ? 'selected' : '' }}>Sunday</option>
-                <option value="monday" {{ (collect(old('working_days', $employee->working_days ?? []))->contains('monday')) ? 'selected' : '' }}>Monday</option>
-                <option value="tuesday" {{ (collect(old('working_days', $employee->working_days ?? []))->contains('tuesday')) ? 'selected' : '' }}>Tuesday</option>
-                <option value="wednesday" {{ (collect(old('working_days', $employee->working_days ?? []))->contains('wednesday')) ? 'selected' : '' }}>Wednesday</option>
-                <option value="thursday" {{ (collect(old('working_days', $employee->working_days ?? []))->contains('thursday')) ? 'selected' : '' }}>Thursday</option>
-                <option value="friday" {{ (collect(old('working_days', $employee->working_days ?? []))->contains('friday')) ? 'selected' : '' }}>Friday</option>
-                <option value="saturday" {{ (collect(old('working_days', $employee->working_days ?? []))->contains('saturday')) ? 'selected' : '' }}>Saturday</option>
-            </select>
-            @error('working_days')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-            <small class="form-text text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple days.</small>
+        <div class="form-group mb-3">
+            <label for="working_days"><strong>Working Days</strong></label>
+            <div id="working_days">
+                <div class="row mb-2">
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-sunday" value="sunday" {{ (is_array(old('working_days')) ? in_array('sunday', old('working_days', [])) : ($employee->sunday ?? false)) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="day-sunday">Sunday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-monday" value="monday" {{ (is_array(old('working_days')) ? in_array('monday', old('working_days', [])) : ($employee->monday ?? false)) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="day-monday">Monday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-tuesday" value="tuesday" {{ (is_array(old('working_days')) ? in_array('tuesday', old('working_days', [])) : ($employee->tuesday ?? false)) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="day-tuesday">Tuesday</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-wednesday" value="wednesday" {{ (is_array(old('working_days')) ? in_array('wednesday', old('working_days', [])) : ($employee->wednesday ?? false)) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="day-wednesday">Wednesday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-thursday" value="thursday" {{ (is_array(old('working_days')) ? in_array('thursday', old('working_days', [])) : ($employee->thursday ?? false)) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="day-thursday">Thursday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-friday" value="friday" {{ (is_array(old('working_days')) ? in_array('friday', old('working_days', [])) : ($employee->friday ?? false)) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="day-friday">Friday</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-saturday" value="saturday" {{ (is_array(old('working_days')) ? in_array('saturday', old('working_days', [])) : ($employee->saturday ?? false)) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="day-saturday">Saturday</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="mb-3">
             <label for="start_date" class="form-label">Start Date</label>
@@ -272,11 +309,11 @@
             // Phone
             if (!phone) errors.push('Phone is required.');
             // Image (base64)
-            if (!image) {
-                errors.push('Image is required.');
-            } else if (!image.startsWith('data:image/')) {
-                errors.push('Image must be a valid image file.');
-            }
+            // if (!image) {
+            //     errors.push('Image is required.');
+            // } else if (!image.startsWith('data:image/')) {
+            //     errors.push('Image must be a valid image file.');
+            // }
             // Position ID
             if (!position_id) errors.push('Position ID is required.');
             else if (isNaN(position_id) || parseInt(position_id) <= 0) errors.push('Position ID must be a positive number.');
@@ -322,21 +359,11 @@
                 body: formData
             })
             .then(async response => {
-                if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.redirect) {
                         window.location.href = data.redirect;
                     }
-                } else if (response.status === 422) {
-                    const data = await response.json();
-                    showErrorModal(data.errors || ['Validation failed.']);
-                } else {
-                    showErrorModal(['An unexpected error occurred.']);
-                }
             })
-            .catch(() => {
-                showErrorModal(['An unexpected error occurred.']);
-            });
         });
 
         function showErrorModal(errors) {
