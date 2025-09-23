@@ -1,0 +1,22 @@
+FROM httpd:alpine3.16
+
+# Copy apache vhost file to proxy php requests to php-fpm container
+# COPY ./docker/apache/lisa.apache.conf /usr/local/apache2/conf/lisa.apache.conf
+# RUN echo "Include /usr/local/apache2/conf/lisa.apache.conf"  >> /usr/local/apache2/conf/httpd.conf
+
+RUN sed -i '/LoadModule rewrite_module/s/^#//g' /usr/local/apache2/conf/httpd.conf
+
+RUN sed -i \
+		-e 's/^#\(Include .*httpd-ssl.conf\)/\1/' \
+		-e 's/^#\(LoadModule .*mod_ssl.so\)/\1/' \
+		-e 's/^#\(LoadModule .*mod_socache_shmcb.so\)/\1/' \
+		conf/httpd.conf
+
+# Copy the SSL certificates into the container
+COPY ssl/server.crt /usr/local/apache2/conf/server.crt
+COPY ssl/server.key /usr/local/apache2/conf/server.key
+
+RUN { \
+  echo 'IncludeOptional conf.d/*.conf'; \
+} >> /usr/local/apache2/conf/httpd.conf \
+  && mkdir /usr/local/apache2/conf.d

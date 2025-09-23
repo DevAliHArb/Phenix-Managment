@@ -47,6 +47,29 @@ services:
     networks:
       - backend-net
 
+  apache:
+    container_name: apache
+    build: ./docker/apache
+    working_dir: /var/www/html/
+    volumes:
+      - ./:/var/www/html
+      - ./docker/apache/lisa.apache.conf:/usr/local/apache2/conf.d/lisa.apache.conf
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - frontend
+      - backend-net
+    depends_on:
+      - phenix-hr-api
+      - postgres_temp
+
 networks:
+
   backend-net:
     driver: bridge
+  frontend:
+    driver: bridge
+
+volumes:
+  laravel_vendor:
