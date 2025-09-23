@@ -14,7 +14,9 @@ class EmployeeController extends Controller
         $employees = Employee::with([
             'position',
             'EmployeeType',
-            'positionImprovements',
+            'positionImprovements' => function ($query) {
+                $query->with('salaries');
+            },
             'attachments',
             'yearlyVacations',
             'sickLeaves',
@@ -29,7 +31,9 @@ class EmployeeController extends Controller
         $employee = Employee::with([
             'position',
             'EmployeeType',
-            'positionImprovements',
+            'positionImprovements' => function ($query) {
+                $query->with('salaries');
+            },
             'attachments',
             'yearlyVacations',
             'sickLeaves',

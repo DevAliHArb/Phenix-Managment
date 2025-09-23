@@ -57,6 +57,8 @@
             transition: width 0.3s;
             min-width: 0;
             padding: 0 3% !important; 
+            height: 100vh;
+            overflow: auto;
         }
     </style>
     <div class="layout-flex">
