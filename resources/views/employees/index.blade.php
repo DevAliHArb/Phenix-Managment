@@ -133,9 +133,52 @@ function renderEmployeeTimesGrid(times) {
     $("#employeeSalariesGrid").hide();
     // Add title if not present
     if ($('#employeeTimesGridTitle').length === 0) {
-        $("#employeeTimesGrid").before('<h6 id="employeeTimesGridTitle" class="mb-2">Employee Times</h6>');
+        $("#employeeTimesGrid").before(`
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <h6 id="employeeTimesGridTitle" class="mb-2" style="margin-bottom:0; margin-right: 16px;">Employee Times</h6>
+                <button id="exportEmployeeTimesBtn" class="btn btn-sm btn-success" style="margin-left:auto;">Export Timesheet</button>
+            </div>
+        `);
     }
     $("#employeeTimesGridTitle").show();
+    $("#exportEmployeeTimesBtn").off('click').on('click', function() {
+        const employee = employeesData[selectedEmployeeIndex];
+        if (!employee) {
+            alert('No employee selected.');
+            return;
+        }
+        const url = `/employee_times/${employee.id}/export`;
+        $(this).prop('disabled', true).text('Exporting...');
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Export failed');
+            return response.blob();
+        })
+        .then(blob => {
+            const employeeName = employee.name.replace(/\s+/g, '_');
+            const fileName = `timesheet_${employeeName}.pdf`;
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }, 100);
+        })
+        .catch(() => alert('Failed to export timesheet.'))
+        .finally(() => {
+            $(this).prop('disabled', false).text('Export Timesheet');
+        });
+    });
     $("#employeeTimesGrid").dxDataGrid({
         dataSource: times,
         columns: [

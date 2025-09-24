@@ -11,11 +11,12 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 18px; gap: 10px;">
-                        <!-- Import Button triggers modal -->
-                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
-                        <a href="{{ route('employee_times.create') }}" class="btn btn-primary">Add Time Log</a>
-                </div>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 18px; gap: 10px;">
+            <!-- Import Button triggers modal -->
+            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
+            <button id="exportSelectedBtn" type="button" class="btn btn-success">Export Selected Timesheets</button>
+            <a href="{{ route('employee_times.create') }}" class="btn btn-primary">Add Time Log</a>
+        </div>
         </div>
         <!-- Import Modal -->
         <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
@@ -106,8 +107,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 @endforeach
             ];
 
+            let gridInstance;
             $(function() {
-                $("#employeeTimesGrid").dxDataGrid({
+                gridInstance = $("#employeeTimesGrid").dxDataGrid({
                     dataSource: employeeTimesData,
                     columns: [
                         { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
@@ -121,7 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             cellTemplate: function(container, options) {
                                 const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
                                 const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="event.preventDefault(); if(confirm('Are you sure?')) { var f = document.createElement('form'); f.style.display='none'; f.method='POST'; f.action='${options.data.deleteUrl}'; f.innerHTML='<input type=\'hidden\' name=\'_token\' value=\'{{ csrf_token() }}\'><input type=\'hidden\' name=\'_method\' value=\'DELETE\'>'; document.body.appendChild(f); f.submit(); }">Delete</a>`;
-                                $(container).append(editLink + deleteLink);
+                                    const exportLink = `<a href="/employee_times/${options.data.id}/export" class="btn btn-sm btn-success" style="margin-right: 5px;">Export Timesheet</a>`;
+                                    $(container).append(exportLink + editLink + deleteLink);
                             },
                             width: 180,
                             allowFiltering: false
@@ -184,6 +187,43 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     noDataText: 'No employee times found.'
                 });
+            });
+
+            // Export Selected Button Handler
+            document.addEventListener('DOMContentLoaded', function() {
+                const exportBtn = document.getElementById('exportSelectedBtn');
+                if(exportBtn) {
+                    exportBtn.addEventListener('click', function() {
+                        if(!gridInstance) return;
+                        const selectedRows = gridInstance.dxDataGrid('instance').getSelectedRowsData();
+                        if(selectedRows.length === 0) {
+                            alert('Please select at least one employee time log.');
+                            return;
+                        }
+                        // Collect unique employee IDs
+                        const ids = [...new Set(selectedRows.map(row => row.id))];
+                        // POST to export route
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '/employee_times/export-multiple'; // Adjust route as needed
+                        form.target = '_blank';
+                        const csrf = document.createElement('input');
+                        csrf.type = 'hidden';
+                        csrf.name = '_token';
+                        csrf.value = '{{ csrf_token() }}';
+                        form.appendChild(csrf);
+                        ids.forEach(id => {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'ids[]';
+                            input.value = id;
+                            form.appendChild(input);
+                        });
+                        document.body.appendChild(form);
+                        form.submit();
+                        document.body.removeChild(form);
+                    });
+                }
             });
         </script>
         @endpush

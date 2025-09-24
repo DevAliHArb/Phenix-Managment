@@ -25,6 +25,7 @@ use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\PositionImprovementController;
 Route::resource('employees', EmployeeController::class);
 Route::resource('employee_times', EmployeeTimeController::class);
+Route::get('employee_times/{employee}/export', [EmployeeTimeController::class, 'exportTimesheet'])->name('employee_times.export');
 Route::post('employee_times/import', [EmployeeTimeController::class, 'importExcel'])->name('employee_times.import');
 Route::resource('yearly-vacations', YearlyVacationController::class);
 Route::resource('sick-leaves', SickLeaveController::class);

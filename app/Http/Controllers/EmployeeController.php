@@ -46,7 +46,7 @@ class EmployeeController extends Controller
      public function create()
     {
     $positions = \App\Models\Lookup::where('parent_id', 1)->get();
-    $employmentTypes = \App\Models\Lookup::where('parent_id', 7)->get();
+    $employmentTypes = \App\Models\Lookup::where('parent_id', 24)->get();
     return view('employees.create', compact('positions', 'employmentTypes'));
     }
 
@@ -116,7 +116,7 @@ class EmployeeController extends Controller
     {
         $employee = Employee::findOrFail($id);
         $positions = \App\Models\Lookup::where('parent_id', 1)->get();
-        $employmentTypes = \App\Models\Lookup::where('parent_id', 7)->get();
+        $employmentTypes = \App\Models\Lookup::where('parent_id', 24)->get();
         return view('employees.edit', compact('employee', 'positions', 'employmentTypes'));
     }
 
