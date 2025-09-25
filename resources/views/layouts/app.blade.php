@@ -89,7 +89,7 @@
                         <a class="nav-link" href="{{ route('position-improvements.index') }}"><i class="bi bi-bar-chart"></i> <span>Position Improvements</span></a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{{ route('salary.index') }}"><i class="bi bi-cash"></i> <span>Salary</span></a>
+                        <a class="nav-link" href="{{ route('salary.index') }}"><i class="bi bi-cash"></i> <span>Position Salary</span></a>
                     </li>
                 </ul>
             </div>
