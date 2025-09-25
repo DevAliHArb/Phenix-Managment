@@ -63,9 +63,9 @@ class YearlyVacationController extends Controller
      */
     public function edit(string $id)
     {
-        $item = YearlyVacation::findOrFail($id);
+        $yearlyVacation = YearlyVacation::findOrFail($id);
         $employees = Employee::all();
-        return view('yearly_vacations.edit', compact('item', 'employees'));
+        return view('yearly_vacations.edit', compact('yearlyVacation', 'employees'));
     }
 
     /**
@@ -75,14 +75,16 @@ class YearlyVacationController extends Controller
     {
         try {
             $validated = $request->validate([
-                // Add your validation rules here
+                'employee_id' => 'required|exists:employees,id',
+                'date' => 'required|date',
+                'reason' => 'required|string|max:255',
             ]);
-            $model = \App\Models\YearlyVacation::findOrFail($id);
-            $model->update($validated);
+            $yearlyVacation = YearlyVacation::findOrFail($id);
+            $yearlyVacation->update($validated);
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('yearly_vacations.index')]);
+                return response()->json(['success' => true, 'redirect' => route('yearly-vacations.index')]);
             }
-            return redirect()->route('yearly_vacations.index')->with('success', 'Yearly vacation updated successfully');
+            return redirect()->route('yearly-vacations.index')->with('success', 'Yearly vacation updated successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);

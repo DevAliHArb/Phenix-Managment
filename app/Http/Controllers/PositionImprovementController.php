@@ -21,7 +21,9 @@ class PositionImprovementController extends Controller
      */
     public function create()
     {
-    return view('position-improvements.create');
+        $positions = \App\Models\Lookup::where('parent_id', 1)->get();
+        $employees = \App\Models\Employee::all();
+        return view('position-improvements.create', compact('positions', 'employees'));
     }
 
     /**
@@ -31,9 +33,12 @@ class PositionImprovementController extends Controller
     {
         try {
             $validated = $request->validate([
-                // Add your validation rules here
+                'position_id' => 'required|exists:lookup,id',
+                'employee_id' => 'required|exists:employees,id',
+                'start_date' => 'required|date',
+                'end_date' => 'nullable|date|after_or_equal:start_date',
             ]);
-            PositionImprovement::create($request->all());
+            PositionImprovement::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }
@@ -60,8 +65,10 @@ class PositionImprovementController extends Controller
      */
     public function edit(string $id)
     {
-    $item = PositionImprovement::findOrFail($id);
-    return view('position-improvements.edit', compact('item'));
+        $positionImprovement = PositionImprovement::findOrFail($id);
+        $positions = \App\Models\Lookup::where('parent_id', 1)->get();
+        $employees = \App\Models\Employee::all();
+        return view('position-improvements.edit', compact('positionImprovement', 'positions', 'employees'));
     }
 
     /**
@@ -71,10 +78,13 @@ class PositionImprovementController extends Controller
     {
         try {
             $validated = $request->validate([
-                // Add your validation rules here
+                'position_id' => 'required|exists:lookup,id',
+                'employee_id' => 'required|exists:employees,id',
+                'start_date' => 'required|date',
+                'end_date' => 'nullable|date|after_or_equal:start_date',
             ]);
-            $model = \App\Models\PositionImprovement::findOrFail($id);
-            $model->update($request->all());
+            $positionImprovement = PositionImprovement::findOrFail($id);
+            $positionImprovement->update($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }

@@ -25,7 +25,7 @@
                 <label for="position_id" class="form-label">Position</label>
                 <select name="position_id" class="form-control @error('position_id') is-invalid @enderror" required>
                     <option value="">Select Position</option>
-                    @foreach(App\Models\Lookup::where('parent_id', 1)->get() as $position)
+                    @foreach($positions as $position)
                         <option value="{{ $position->id }}" {{ old('position_id') == $position->id ? 'selected' : '' }}>{{ $position->name }}</option>
                     @endforeach
                 </select>
@@ -37,7 +37,7 @@
                 <label for="employee_id" class="form-label">Employee</label>
                 <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" required>
                     <option value="">Select Employee</option>
-                    @foreach(App\Models\Employee::all() as $employee)
+                    @foreach($employees as $employee)
                         <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->last_name }}</option>
                     @endforeach
                 </select>
@@ -59,7 +59,10 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+        <div class="formContainer" style="margin-top:30px;">
+             <a href="{{ route('position-improvements.index') }}" class="btn btn-secondary mb-3">Back</a>
+            <button type="submit" class="btn btn-primary mb-3" >Add</button>
         </div>
     </form>
 </div>

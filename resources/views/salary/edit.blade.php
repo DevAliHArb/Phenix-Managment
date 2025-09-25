@@ -56,8 +56,8 @@
         </div>
         
         <div class="formContainer" style="margin-top:30px;">
-            <button type="submit" class="btn btn-primary">Update</button>
-
+             <a href="{{ route('salary.index') }}" class="btn btn-secondary mb-3">Back</a>
+            <button type="submit" class="btn btn-primary mb-3" id="updateSalaryBtn">Update</button>
         </div>
     </form>
 </div>

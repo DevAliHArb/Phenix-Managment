@@ -58,7 +58,10 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-            <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+        <div class="formContainer" style="margin-top:30px;">
+             <a href="{{ route('sick-leaves.index') }}" class="btn btn-secondary mb-3">Back</a>
+            <button type="submit" class="btn btn-primary mb-3" id="updateSickLeaveBtn">Update</button>
         </div>
     </form>
 </div>
