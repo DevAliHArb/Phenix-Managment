@@ -13,7 +13,7 @@
         .title { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: bold; text-align: center; justify-content: center; }
     /* .info { margin: 0px 0 10px 0; font-size: 12px; position: relative; display: flex; flex-direction: row;} */
         table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #333; padding: 5px 8px; text-align: center; font-size: 12px; }
+        th, td { border: 1px solid #333; padding: 5px 8px; text-align: center; font-size: 11px; }
         th { background: #f2f2f2; }
         .weekend { background: #fbe4d5; }
         .vacation { background: #daeef3; }
@@ -30,7 +30,13 @@
             <td style="width:30%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Employee Name:</strong> {{ $employee->name }}</td>
         </tr>
         <tr>
-            <td style="width:70%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Date:</strong> {{ Carbon::now()->format('m/d/Y') }}</td>
+            <td style="width:70%; text-align:left; border:none; padding:0 0 2px 0;">
+                <strong>Date:</strong>
+                {{ isset($month) && isset($year) 
+                    ? (\Carbon\Carbon::create($year, $month, 1)->addMonth()->format('d/m/Y')) 
+                    : (\Carbon\Carbon::now()->addMonth()->startOfMonth()->format('d/m/Y')) 
+                }}
+            </td>
             <td style="width:30%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Department:</strong> {{ $department }}</td>
         </tr>
     </table>
@@ -48,18 +54,17 @@
         </thead>
         <tbody>
         @php
-            // Build a map of date => row for fast lookup
+            // Build a map of date (Y-m-d) => row for fast lookup
             $rowMap = collect($timesheet)->keyBy(function($row) {
-                return isset($row['date']) ? $row['date'] : null;
+                return isset($row['date']) ? Carbon::parse($row['date'])->format('Y-m-d') : null;
             });
-            $now = Carbon::now();
-            $month = $now->month;
-            $year = $now->year;
-            $daysInMonth = $now->daysInMonth;
+            $selectedMonth = isset($month) ? $month : Carbon::now()->month;
+            $selectedYear = isset($year) ? $year : Carbon::now()->year;
+            $daysInMonth = Carbon::create($selectedYear, $selectedMonth, 1)->daysInMonth;
         @endphp
         @for($d = 1; $d <= $daysInMonth; $d++)
             @php
-                $dateObj = Carbon::create($year, $month, $d);
+                $dateObj = Carbon::create($selectedYear, $selectedMonth, $d);
                 $dateStr = $dateObj->format('Y-m-d');
                 $row = $rowMap->get($dateStr, []);
                 $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : (in_array($dateObj->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY]));
@@ -70,7 +75,7 @@
                 $notes = $isWeekend ? 'Weekend' : ($isVacation ? 'Vacation' : ($row['notes'] ?? ''));
             @endphp
             <tr class="{{ $isWeekend ? 'weekend' : ($isVacation ? 'vacation' : '') }}">
-                <td>{{ $dateObj->format('m/d/Y') }}</td>
+                <td>{{ $dateObj->format('d/m/Y') }}</td>
                 <td>{{ $row['timein'] ?? '' }}</td>
                 <td>{{ $row['timeout'] ?? '' }}</td>
                 <td>{{ $row['totalhours'] ?? '' }}</td>

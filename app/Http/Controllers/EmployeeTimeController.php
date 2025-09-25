@@ -91,9 +91,20 @@ class EmployeeTimeController extends Controller
      */
     public function exportTimesheet(Request $request, $employeeId)
     {
+        $month = $request->input('month');
+        $year = $request->input('year');
+        // Default to current month/year if not provided
+        if (!$month || !$year) {
+            $now = Carbon::now();
+            $month = $month ?: $now->month;
+            $year = $year ?: $now->year;
+        }
         $employee = \App\Models\Employee::with(['position'])->findOrFail($employeeId);
         $department = $employee->position ? $employee->position->name : '';
-        $times = \App\Models\EmployeeTime::where('employee_id', $employeeId)->orderBy('date')->get();
+        $query = \App\Models\EmployeeTime::where('employee_id', $employeeId)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month);
+        $times = $query->orderBy('date')->get();
 
         $timesheet = $times->map(function ($row) {
             $isWeekend = false; // You can enhance this logic if you have weekend info
@@ -132,10 +143,12 @@ class EmployeeTimeController extends Controller
             ],
             'timesheet' => $timesheet,
             'times' => $times,
+            'month' => $month,
+            'year' => $year,
         ];
 
+        $filename = 'timesheet_' . $employee->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
         $pdf = Pdf::loadView('export.timesheet', $data);
-        $filename = 'timesheet_' . $employee->id . '_' . Carbon::now()->format('Ymd') . '.pdf';
         return $pdf->download($filename);
     }
     public function index()

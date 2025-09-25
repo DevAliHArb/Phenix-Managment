@@ -132,53 +132,113 @@ function renderEmployeeTimesGrid(times) {
     $("#employeeTimesGrid").show();
     $("#employeeSalariesGrid").hide();
     // Add title if not present
-    if ($('#employeeTimesGridTitle').length === 0) {
-        $("#employeeTimesGrid").before(`
-            <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                <h6 id="employeeTimesGridTitle" class="mb-2" style="margin-bottom:0; margin-right: 16px;">Employee Times</h6>
-                <button id="exportEmployeeTimesBtn" class="btn btn-sm btn-success" style="margin-left:auto;">Export Timesheet</button>
-            </div>
-        `);
-    }
-    $("#employeeTimesGridTitle").show();
-    $("#exportEmployeeTimesBtn").off('click').on('click', function() {
-        const employee = employeesData[selectedEmployeeIndex];
-        if (!employee) {
-            alert('No employee selected.');
-            return;
+        if ($('#employeeTimesGridTitle').length === 0) {
+                $("#employeeTimesGrid").before(`
+                        <div id="employeeTimesGridHeader" style="display: flex; align-items: center; margin-bottom: 8px;">
+                                <h6 id="employeeTimesGridTitle" class="mb-2" style="margin-bottom:0; margin-right: 16px;">Employee Times</h6>
+                                <button id="exportEmployeeTimesBtn" class="btn btn-sm btn-success" style="margin-left:auto;">Export Timesheet</button>
+                        </div>
+                `);
+                // Add modal for month selection
+                $("body").append(`
+                        <div class="modal fade" id="exportTimesheetModal" tabindex="-1" aria-labelledby="exportTimesheetModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exportTimesheetModalLabel">Export Timesheet</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="exportTimesheetForm">
+                                            <div class="mb-3">
+                                                <label for="exportMonth" class="form-label">Month</label>
+                                                <select class="form-select" id="exportMonth" name="month" required>
+                                                    <option value="">Select Month</option>
+                                                    <option value="1">January</option>
+                                                    <option value="2">February</option>
+                                                    <option value="3">March</option>
+                                                    <option value="4">April</option>
+                                                    <option value="5">May</option>
+                                                    <option value="6">June</option>
+                                                    <option value="7">July</option>
+                                                    <option value="8">August</option>
+                                                    <option value="9">September</option>
+                                                    <option value="10">October</option>
+                                                    <option value="11">November</option>
+                                                    <option value="12">December</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="exportYear" class="form-label">Year</label>
+                                                <input type="number" class="form-control" id="exportYear" name="year" min="2000" max="2100" value="${new Date().getFullYear()}" required>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="button" id="confirmExportTimesheetBtn" class="btn btn-success">Export</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                `);
         }
-        const url = `/employee_times/${employee.id}/export`;
-        $(this).prop('disabled', true).text('Exporting...');
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Export failed');
-            return response.blob();
-        })
-        .then(blob => {
-            const employeeName = employee.name.replace(/\s+/g, '_');
-            const fileName = `timesheet_${employeeName}.pdf`;
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            }, 100);
-        })
-        .catch(() => alert('Failed to export timesheet.'))
-        .finally(() => {
-            $(this).prop('disabled', false).text('Export Timesheet');
+        $("#employeeTimesGridHeader").show();
+        $("#exportEmployeeTimesBtn").off('click').on('click', function() {
+                const employee = employeesData[selectedEmployeeIndex];
+                if (!employee) {
+                        alert('No employee selected.');
+                        return;
+                }
+                // Show modal for month selection
+            // Set default month and year to current
+            const now = new Date();
+            $('#exportMonth').val((now.getMonth() + 1).toString());
+            $('#exportYear').val(now.getFullYear());
+                const modal = new bootstrap.Modal(document.getElementById('exportTimesheetModal'));
+                modal.show();
+                // Confirm export handler
+                $('#confirmExportTimesheetBtn').off('click').on('click', function() {
+                        const month = $('#exportMonth').val();
+                        const year = $('#exportYear').val();
+                        if (!month || !year) {
+                                alert('Please select both month and year.');
+                                return;
+                        }
+                        const url = `/employee_times/${employee.id}/export?month=${month}&year=${year}`;
+                        $(this).prop('disabled', true).text('Exporting...');
+                        fetch(url, {
+                                method: 'GET',
+                                headers: {
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                }
+                        })
+                        .then(response => {
+                                if (!response.ok) throw new Error('Export failed');
+                                return response.blob();
+                        })
+                        .then(blob => {
+                                const employeeName = employee.name.replace(/\s+/g, '_');
+                                const fileName = `timesheet_${employeeName}_${year}_${month.padStart ? month.padStart(2, '0') : ('0'+month).slice(-2)}.pdf`;
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = fileName;
+                                document.body.appendChild(a);
+                                a.click();
+                                setTimeout(() => {
+                                        window.URL.revokeObjectURL(url);
+                                        document.body.removeChild(a);
+                                }, 100);
+                        })
+                        .catch(() => alert('Failed to export timesheet.'))
+                        .finally(() => {
+                                $(this).prop('disabled', false).text('Export');
+                                modal.hide();
+                        });
+                });
         });
-    });
     $("#employeeTimesGrid").dxDataGrid({
         dataSource: times,
         columns: [
@@ -233,8 +293,8 @@ function renderEmployeeTimesGrid(times) {
 function renderEmployeeSalariesGrid(positionImprovements) {
     $("#employeeTimesGrid").hide();
     $("#employeeSalariesGrid").show();
-    // Remove Employee Times title if present
-    $("#employeeTimesGridTitle").hide();
+    // Hide Export Timesheet button and title if present
+    $("#employeeTimesGridHeader").hide();
     // Add titles for both tables if not present
     $("#employeeSalariesGrid").html('<div class="row">'
         + '<div class="col-md-7">'
@@ -514,12 +574,14 @@ $(function() {
                     $("#tab-employee-salaries").removeClass("active btn-info").addClass("btn-outline-info");
                     const employee = e.component.getVisibleRows()[selectedEmployeeIndex]?.data;
                     renderEmployeeTimesGrid(employee?.employee_times || []);
+                    $("#employeeTimesGridHeader").show();
                 });
                 $("#tab-employee-salaries").off("click").on("click", function() {
                     $(this).addClass("active btn-info").removeClass("btn-outline-info");
                     $("#tab-employee-times").removeClass("active btn-info").addClass("btn-outline-info");
                     const employee = e.component.getVisibleRows()[selectedEmployeeIndex]?.data;
                     renderEmployeeSalariesGrid(employee?.positionImprovements || []);
+                    $("#employeeTimesGridHeader").hide();
                 });
                 detailsSection.style.display = '';
             }
