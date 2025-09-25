@@ -11,11 +11,73 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 18px; gap: 10px;">
-            <!-- Import Button triggers modal -->
-            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
-            <button id="exportSelectedBtn" type="button" class="btn btn-success">Export Selected Timesheets</button>
-            <a href="{{ route('employee_times.create') }}" class="btn btn-primary">Add Time Log</a>
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 18px; gap: 10px;">
+                        <!-- Import Button triggers modal -->
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
+                        <!-- Export All Button triggers modal -->
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportAllModal">Export All</button>
+                        <a href="{{ route('employee_times.create') }}" class="btn btn-primary">Add Time Log</a>
+                </div>
+
+        <!-- Export All Modal -->
+        <div class="modal fade" id="exportAllModal" tabindex="-1" aria-labelledby="exportAllModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exportAllModalLabel">Export Employees Timesheets</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="exportAllForm">
+                            <div class="mb-3">
+                                <label for="exportAllMonth" class="form-label">Month</label>
+                                <select class="form-select" id="exportAllMonth" name="month" required>
+                                    <option value="">Select Month</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="exportAllYear" class="form-label">Year</label>
+                                <input type="number" class="form-control" id="exportAllYear" name="year" min="2000" max="2100" value="{{ now()->year }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Employees</label>
+                                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 10px;">
+                                    <div class="mb-2">
+                                        <input type="checkbox" id="selectAllEmployees" checked>
+                                        <label for="selectAllEmployees" style="font-weight: bold;">Select All</label>
+                                    </div>
+                                    <hr style="margin: 8px 0;">
+                                    @foreach(\App\Models\Employee::all() as $emp)
+                                        <div class="form-check">
+                                            <input class="form-check-input employee-checkbox" type="checkbox" value="{{ $emp->id }}" id="emp_{{ $emp->id }}" checked>
+                                            <label class="form-check-label" for="emp_{{ $emp->id }}">
+                                                {{ $emp->first_name }} {{ $emp->last_name }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <small class="form-text text-muted">Select employees to export. All are selected by default.</small>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="confirmExportAllBtn" class="btn btn-success">Export</button>
+                    </div>
+                </div>
+            </div>
         </div>
         </div>
         <!-- Import Modal -->
@@ -44,54 +106,197 @@
                 </div>
             </div>
         </div>
-@section('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const importForm = document.getElementById('importForm');
-    if(importForm) {
-        importForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(importForm);
-            const errorsDiv = document.getElementById('import-errors');
-            const successDiv = document.getElementById('import-success');
-            errorsDiv.classList.add('d-none');
-            successDiv.classList.add('d-none');
-            fetch(importForm.action, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.status === 'success') {
-                    successDiv.textContent = data.message;
-                    successDiv.classList.remove('d-none');
-                    errorsDiv.classList.add('d-none');
-                    setTimeout(() => { window.location.reload(); }, 1200);
-                } else {
-                    let msg = data.message || '';
-                    if(data.errors) {
-                        msg += Object.values(data.errors).flat().join(' ');
-                    }
-                    errorsDiv.textContent = msg;
-                    errorsDiv.classList.remove('d-none');
-                }
-            })
-            .catch(err => {
-                errorsDiv.textContent = 'Import failed. Please try again.';
-                errorsDiv.classList.remove('d-none');
-            });
-        });
-    }
-});
-</script>
-@endsection
     
         <div id="employeeTimesGrid"></div>
         @push('scripts')
         <script>
+            // Import form logic
+            document.addEventListener('DOMContentLoaded', function() {
+                const importForm = document.getElementById('importForm');
+                if(importForm) {
+                    importForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const formData = new FormData(importForm);
+                        const errorsDiv = document.getElementById('import-errors');
+                        const successDiv = document.getElementById('import-success');
+                        errorsDiv.classList.add('d-none');
+                        successDiv.classList.add('d-none');
+                        fetch(importForm.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                            },
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.status === 'success') {
+                                successDiv.textContent = data.message;
+                                successDiv.classList.remove('d-none');
+                                errorsDiv.classList.add('d-none');
+                                setTimeout(() => { window.location.reload(); }, 1200);
+                            } else {
+                                let msg = data.message || '';
+                                if(data.errors) {
+                                    msg += Object.values(data.errors).flat().join(' ');
+                                }
+                                errorsDiv.textContent = msg;
+                                errorsDiv.classList.remove('d-none');
+                            }
+                        })
+                        .catch(err => {
+                            errorsDiv.textContent = 'Import failed. Please try again.';
+                            errorsDiv.classList.remove('d-none');
+                        });
+                    });
+                }
+
+                // Export All logic
+                // Use jQuery event delegation to ensure handler is attached
+                $(document).on('click', '#confirmExportAllBtn', function() {
+                    const exportAllBtn = this;
+                    const month = document.getElementById('exportAllMonth').value;
+                    const year = document.getElementById('exportAllYear').value;
+                    const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
+                    let employeeIds = Array.from(checkedEmployees).map(checkbox => checkbox.value);
+                    
+                    if (!month || !year) {
+                        alert('Please select both month and year.');
+                        return;
+                    }
+                    if (employeeIds.length === 0) {
+                        alert('Please select at least one employee.');
+                        return;
+                    }
+                    
+                    exportAllBtn.disabled = true;
+                    exportAllBtn.textContent = 'Exporting...';
+                    
+                    // Export each employee individually
+                    const exportPromises = employeeIds.map(employeeId => {
+                        const employeeName = document.querySelector(`label[for="emp_${employeeId}"]`).textContent.trim().replace(/\s+/g, '_');
+                        const url = `/employee_times/${employeeId}/export?month=${month}&year=${year}`;
+                        
+                        return fetch(url, {
+                            method: 'GET',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error(`Export failed for employee ${employeeName}: ${response.status} ${response.statusText}`);
+                            return response.blob();
+                        })
+                        .then(blob => {
+                            if (blob.size === 0) {
+                                console.warn(`Exported file is empty for employee ${employeeName}`);
+                                return null;
+                            }
+                            const fileName = `timesheet_${employeeName}_${year}_${month.padStart ? month.padStart(2, '0') : ('0'+month).slice(-2)}.pdf`;
+                            return { blob, fileName, employeeName };
+                        })
+                        .catch(error => {
+                            console.error(`Export error for employee ${employeeName}:`, error);
+                            return { error: error.message, employeeName };
+                        });
+                    });
+                    
+                    Promise.allSettled(exportPromises)
+                    .then(results => {
+                        let successCount = 0;
+                        let errorCount = 0;
+                        const errors = [];
+                        
+                        results.forEach(result => {
+                            if (result.status === 'fulfilled' && result.value) {
+                                if (result.value.error) {
+                                    errorCount++;
+                                    errors.push(`${result.value.employeeName}: ${result.value.error}`);
+                                } else if (result.value.blob) {
+                                    successCount++;
+                                    // Download the individual PDF
+                                    const url = window.URL.createObjectURL(result.value.blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = result.value.fileName;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    setTimeout(() => {
+                                        window.URL.revokeObjectURL(url);
+                                        document.body.removeChild(a);
+                                    }, 100);
+                                }
+                            } else {
+                                errorCount++;
+                                errors.push('Unknown error occurred');
+                            }
+                        });
+                        
+                        // Show summary message
+                        let message = '';
+                        if (successCount > 0) {
+                            message += `Successfully exported ${successCount} timesheet(s).`;
+                        }
+                        if (errorCount > 0) {
+                            message += ` Failed to export ${errorCount} timesheet(s).`;
+                            if (errors.length > 0) {
+                                message += `\nErrors:\n${errors.join('\n')}`;
+                            }
+                        }
+                        
+                        if (errorCount > 0) {
+                            alert(message);
+                        } else {
+                            console.log(message);
+                        }
+                    })
+                    .catch((err) => {
+                        console.error('Export error:', err);
+                        alert('Failed to export timesheets. ' + (err && err.message ? err.message : ''));
+                    })
+                    .finally(() => {
+                        exportAllBtn.disabled = false;
+                        exportAllBtn.textContent = 'Export';
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('exportAllModal'));
+                        if(modal) modal.hide();
+                    });
+                });
+                
+                // Set default month/year when modal is shown
+                $(document).on('show.bs.modal', '#exportAllModal', function() {
+                    const now = new Date();
+                    document.getElementById('exportAllMonth').value = (now.getMonth() + 1).toString();
+                    document.getElementById('exportAllYear').value = now.getFullYear();
+                });
+                
+                // Handle Select All checkbox
+                $(document).on('change', '#selectAllEmployees', function() {
+                    const isChecked = this.checked;
+                    document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                });
+                
+                // Handle individual checkboxes
+                $(document).on('change', '.employee-checkbox', function() {
+                    const allCheckboxes = document.querySelectorAll('.employee-checkbox');
+                    const checkedCheckboxes = document.querySelectorAll('.employee-checkbox:checked');
+                    const selectAllCheckbox = document.getElementById('selectAllEmployees');
+                    
+                    if (checkedCheckboxes.length === allCheckboxes.length) {
+                        selectAllCheckbox.checked = true;
+                        selectAllCheckbox.indeterminate = false;
+                    } else if (checkedCheckboxes.length === 0) {
+                        selectAllCheckbox.checked = false;
+                        selectAllCheckbox.indeterminate = false;
+                    } else {
+                        selectAllCheckbox.checked = false;
+                        selectAllCheckbox.indeterminate = true;
+                    }
+                });
+            });
+
             const employeeTimesData = [
                 @foreach($employeeTimes as $item)
                 {
@@ -107,9 +312,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 @endforeach
             ];
 
-            let gridInstance;
             $(function() {
-                gridInstance = $("#employeeTimesGrid").dxDataGrid({
+                $("#employeeTimesGrid").dxDataGrid({
                     dataSource: employeeTimesData,
                     columns: [
                         { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
@@ -123,26 +327,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             cellTemplate: function(container, options) {
                                 const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
                                 const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="event.preventDefault(); if(confirm('Are you sure?')) { var f = document.createElement('form'); f.style.display='none'; f.method='POST'; f.action='${options.data.deleteUrl}'; f.innerHTML='<input type=\'hidden\' name=\'_token\' value=\'{{ csrf_token() }}\'><input type=\'hidden\' name=\'_method\' value=\'DELETE\'>'; document.body.appendChild(f); f.submit(); }">Delete</a>`;
-                                    const exportLink = `<a href="/employee_times/${options.data.id}/export" class="btn btn-sm btn-success" style="margin-right: 5px;">Export Timesheet</a>`;
-                                    $(container).append(exportLink + editLink + deleteLink);
+                                $(container).append(editLink + deleteLink);
                             },
                             width: 180,
                             allowFiltering: false
                         }
                     ],
                     showBorders: true,
-                    selection: {
-                        mode: 'multiple',
-                        showCheckBoxesMode: 'always'
-                    },
-                    export: {
-                        enabled: true,
-                        allowExportSelectedData: true,
-                        texts: {
-                            exportAll: 'Export All',
-                            exportSelectedRows: 'Export Selected'
-                        }
-                    },
                     paging: { pageSize: 10 },
                     pager: {
                         showPageSizeSelector: true,
@@ -187,43 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     noDataText: 'No employee times found.'
                 });
-            });
-
-            // Export Selected Button Handler
-            document.addEventListener('DOMContentLoaded', function() {
-                const exportBtn = document.getElementById('exportSelectedBtn');
-                if(exportBtn) {
-                    exportBtn.addEventListener('click', function() {
-                        if(!gridInstance) return;
-                        const selectedRows = gridInstance.dxDataGrid('instance').getSelectedRowsData();
-                        if(selectedRows.length === 0) {
-                            alert('Please select at least one employee time log.');
-                            return;
-                        }
-                        // Collect unique employee IDs
-                        const ids = [...new Set(selectedRows.map(row => row.id))];
-                        // POST to export route
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = '/employee_times/export-multiple'; // Adjust route as needed
-                        form.target = '_blank';
-                        const csrf = document.createElement('input');
-                        csrf.type = 'hidden';
-                        csrf.name = '_token';
-                        csrf.value = '{{ csrf_token() }}';
-                        form.appendChild(csrf);
-                        ids.forEach(id => {
-                            const input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'ids[]';
-                            input.value = id;
-                            form.appendChild(input);
-                        });
-                        document.body.appendChild(form);
-                        form.submit();
-                        document.body.removeChild(form);
-                    });
-                }
             });
         </script>
         @endpush
