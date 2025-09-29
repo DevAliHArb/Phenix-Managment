@@ -69,13 +69,13 @@
                         }
                     </style>
                     <div class="btn-group w-100" role="group" aria-label="Employee Tabs">
-                        <button id="tab-employee-times" type="button" class="btn employee-tab-btn btn-info active">Employee Times</button>
-                        <button id="tab-employee-salaries" type="button" class="btn employee-tab-btn btn-outline-info">Employee Salaries</button>
+                        <button id="tab-employee-salaries" type="button" class="btn employee-tab-btn btn-info active">Progression</button>
+                        <button id="tab-employee-times" type="button" class="btn employee-tab-btn btn-outline-info">Time Logging </button>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="employeeTimesGrid"></div>
-                    <div id="employeeSalariesGrid" style="display:none;"></div>
+                    <div id="employeeTimesGrid" style="display:none;"></div>
+                    <div id="employeeSalariesGrid"></div>
                 </div>
             </div>
         </div>
@@ -84,6 +84,57 @@
 
 @push('scripts')
 <script>
+// Function to format time from 24-hour to 12-hour AM/PM format
+function formatTime(timeString) {
+    if (!timeString || timeString === '') return '';
+    
+    // Parse the time string (assuming format like "11:30" or "14:30")
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const minute = minutes || '00';
+    
+    // Convert to 12-hour format
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    
+    return `${displayHour}:${minute} ${ampm}`;
+}
+
+// Function to format status with color coding
+function formatStatus(status) {
+    if (!status || status === '') return '';
+    
+    const statusLower = status.toLowerCase();
+    let bgColor, textColor;
+    
+    if (statusLower === 'active') {
+        bgColor = '#28a745'; // Green background
+        textColor = '#fff';   // White text
+    } else if (statusLower === 'inactive') {
+        bgColor = '#dc3545'; // Red background
+        textColor = '#fff';   // White text
+    } else {
+        bgColor = '#6c757d'; // Gray background for other statuses
+        textColor = '#fff';   // White text
+    }
+    
+    return `<span style="background-color: ${bgColor}; color: ${textColor}; padding: 2px 6px; border-radius: 4px; font-size: 14px; font-weight: 500;">${status}</span>`;
+}
+
+// Function to format working days from boolean values
+function formatWorkingDays(sunday, monday, tuesday, wednesday, thursday, friday, saturday) {
+    const days = [];
+    if (monday) days.push('Monday');
+    if (tuesday) days.push('Tuesday');
+    if (wednesday) days.push('Wednesday');
+    if (thursday) days.push('Thursday');
+    if (friday) days.push('Friday');
+    if (saturday) days.push('Saturday');
+    if (sunday) days.push('Sunday');
+    
+    return days.length > 0 ? days.join(', ') : 'No working days set';
+}
+
 // Prepare employees data for DevExtreme
 const employeesData = [
     @foreach($employees as $employee)
@@ -101,6 +152,13 @@ const employeesData = [
         status: `{{ $employee->status ?? '' }}`,
         working_hours_from: `{{ $employee->working_hours_from ?? '' }}`,
         working_hours_to: `{{ $employee->working_hours_to ?? '' }}`,
+        sunday: {{ $employee->sunday ? 'true' : 'false' }},
+        monday: {{ $employee->monday ? 'true' : 'false' }},
+        tuesday: {{ $employee->tuesday ? 'true' : 'false' }},
+        wednesday: {{ $employee->wednesday ? 'true' : 'false' }},
+        thursday: {{ $employee->thursday ? 'true' : 'false' }},
+        friday: {{ $employee->friday ? 'true' : 'false' }},
+        saturday: {{ $employee->saturday ? 'true' : 'false' }},
         yearly_vacations_total: `{{ $employee->yearly_vacations_total ?? 0 }}`,
         yearly_vacations_used: `{{ $employee->yearly_vacations_used ?? 0 }}`,
         yearly_vacations_left: `{{ $employee->yearly_vacations_left ?? 0 }}`,
@@ -312,7 +370,7 @@ function renderEmployeeSalariesGrid(positionImprovements) {
         dataSource: positionImprovements,
         columns: [
             // { dataField: "id", caption: "ID", visible: false },
-            { dataField: "position_name", caption: "Position" },
+            { dataField: "position_name", caption: "Current Position" },
             { dataField: "employee_name", caption: "Employee", visible: false },
             { dataField: "start_date", caption: "Start Date" },
             { dataField: "end_date", caption: "End Date" }
@@ -444,7 +502,6 @@ $(function() {
     columns: [ 
             { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
             { dataField: "name", caption: "Name", allowFiltering: true, headerFilter: { allowSearch: true } },
-            { dataField: "image", caption: "Image", allowFiltering: false, encodeHtml: false, cellTemplate: function(container, options) { $(container).html(options.data.image); } },
             { dataField: "position", caption: "Position", allowFiltering: true, headerFilter: { allowSearch: true } },
             // { dataField: "date_of_birth", caption: "Birthdate", allowFiltering: true, headerFilter: { allowSearch: true } },
             // { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true } },
@@ -514,26 +571,29 @@ $(function() {
             const detailsCard = document.getElementById('employee-details-card');
             let html = `<div class="row">
                 <div >
-                    <h5>${employee.name}</h5>
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        ${employee.image}
+                        <h5 style="margin: 0; margin-left: 15px;">${employee.name}</h5>
+                    </div>
                     <p><strong>Address:</strong> ${employee.address ?? ''}</p>
                     <p><strong>Birthdate:</strong> ${employee.date_of_birth ?? ''}</p>
                     <p><strong>Phone:</strong> ${employee.phone ?? ''}</p>
-                    <p><strong>Status:</strong> ${employee.status ?? ''}</p>
-                    <p><strong>Position:</strong> ${employee.position ?? ''}</p>
                     <p><strong>Start Date:</strong> ${employee.start_date ?? ''}</p>
                     <p><strong>End Date:</strong> ${employee.end_date ?? ''}</p>
-                    <p><strong>Working Hours:</strong> ${employee.working_hours_from ?? ''} - ${employee.working_hours_to ?? ''}</p>
+                    <p><strong>Working Hours:</strong> ${formatTime(employee.working_hours_from)} - ${formatTime(employee.working_hours_to)}</p>
+                    <p><strong>Working Days:</strong> ${formatWorkingDays(employee.sunday, employee.monday, employee.tuesday, employee.wednesday, employee.thursday, employee.friday, employee.saturday)}</p>
                     <p><strong>Yearly Vacations:</strong> Total: ${employee.yearly_vacations_total ?? 0}, Used: ${employee.yearly_vacations_used ?? 0}, Left: ${employee.yearly_vacations_left ?? 0}</p>
                     <p><strong>Sick Leave Used:</strong> ${employee.sick_leave_used ?? 0}</p>
                     <p><strong>Last Salary:</strong> ${employee.last_salary ?? ''}</p>
+                    <p><strong>Status:</strong> ${formatStatus(employee.status ?? '')}</p>
                 </div>
             </div>`;
             detailsCard.innerHTML = html;
             // Show correct tab and grid
-            if ($("#tab-employee-times").hasClass("active")) {
-                renderEmployeeTimesGrid(employee.employee_times || []);
-            } else {
+            if ($("#tab-employee-salaries").hasClass("active")) {
                 renderEmployeeSalariesGrid(employee.positionImprovements || []);
+            } else {
+                renderEmployeeTimesGrid(employee.employee_times || []);
             }
             detailsSection.style.display = '';
             detailsSection.scrollIntoView({behavior: 'smooth'});
@@ -547,25 +607,28 @@ $(function() {
                 const detailsCard = document.getElementById('employee-details-card');
                 let html = `<div class="row">
                     <div >
-                        <h5>${firstEmployee.name}</h5>
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            ${firstEmployee.image}
+                            <h5 style="margin: 0; margin-left: 15px;">${firstEmployee.name}</h5>
+                        </div>
                         <p><strong>Address:</strong> ${firstEmployee.address ?? ''}</p>
                         <p><strong>Birthdate:</strong> ${firstEmployee.date_of_birth ?? ''}</p>
                         <p><strong>Phone:</strong> ${firstEmployee.phone ?? ''}</p>
-                        <p><strong>Status:</strong> ${firstEmployee.status ?? ''}</p>
-                        <p><strong>Position:</strong> ${firstEmployee.position ?? ''}</p>
                         <p><strong>Start Date:</strong> ${firstEmployee.start_date ?? ''}</p>
                         <p><strong>End Date:</strong> ${firstEmployee.end_date ?? ''}</p>
-                        <p><strong>Working Hours:</strong> ${firstEmployee.working_hours_from ?? ''} - ${firstEmployee.working_hours_to ?? ''}</p>
+                        <p><strong>Working Hours:</strong> ${formatTime(firstEmployee.working_hours_from)} - ${formatTime(firstEmployee.working_hours_to)}</p>
+                        <p><strong>Working Days:</strong> ${formatWorkingDays(firstEmployee.sunday, firstEmployee.monday, firstEmployee.tuesday, firstEmployee.wednesday, firstEmployee.thursday, firstEmployee.friday, firstEmployee.saturday)}</p>
                         <p><strong>Yearly Vacations:</strong> Total: ${firstEmployee.yearly_vacations_total ?? 0}, Used: ${firstEmployee.yearly_vacations_used ?? 0}, Left: ${firstEmployee.yearly_vacations_left ?? 0}</p>
                         <p><strong>Sick Leave Used:</strong> ${firstEmployee.sick_leave_used ?? 0}</p>
                         <p><strong>Last Salary:</strong> ${firstEmployee.last_salary ?? ''}</p>
+                        <p><strong>Status:</strong> ${formatStatus(firstEmployee.status ?? '')}</p>
                     </div>
                 </div>`;
                 detailsCard.innerHTML = html;
-                if ($("#tab-employee-times").hasClass("active")) {
-                    renderEmployeeTimesGrid(firstEmployee.employee_times || []);
-                } else {
+                if ($("#tab-employee-salaries").hasClass("active")) {
                     renderEmployeeSalariesGrid(firstEmployee.positionImprovements || []);
+                } else {
+                    renderEmployeeTimesGrid(firstEmployee.employee_times || []);
                 }
 
                 // Tab click handlers
