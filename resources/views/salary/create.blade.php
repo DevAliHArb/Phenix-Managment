@@ -26,7 +26,8 @@
                 <select name="position_improvement_id" class="form-control @error('position_improvement_id') is-invalid @enderror" required>
                     <option value="">Select Position Improvement</option>
                     @foreach(App\Models\PositionImprovement::all() as $pi)
-                        <option value="{{ $pi->id }}" {{ old('position_improvement_id') == $pi->id ? 'selected' : '' }}>
+                        <option value="{{ $pi->id }}" 
+                            {{ (old('position_improvement_id') == $pi->id) || ($selectedPositionImprovementId == $pi->id) ? 'selected' : '' }}>
                             {{ optional($pi->employee)->first_name }} {{ optional($pi->employee)->last_name }} - {{ optional($pi->position)->name }}
                         </option>
                     @endforeach

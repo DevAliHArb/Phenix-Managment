@@ -12,9 +12,10 @@ class SalaryController extends Controller
         $item = \App\Models\Salary::findOrFail($id);
         return view('salary.edit', compact('item'));
     }
-    public function create()
+    public function create(Request $request)
     {
-        return view('salary.create');
+        $selectedPositionImprovementId = $request->get('position_improvement_id');
+        return view('salary.create', compact('selectedPositionImprovementId'));
     }
 
     public function index()

@@ -19,11 +19,12 @@ class PositionImprovementController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $positions = \App\Models\Lookup::where('parent_id', 1)->get();
         $employees = \App\Models\Employee::all();
-        return view('position-improvements.create', compact('positions', 'employees'));
+        $selectedEmployeeId = $request->get('employee_id');
+        return view('position-improvements.create', compact('positions', 'employees', 'selectedEmployeeId'));
     }
 
     /**

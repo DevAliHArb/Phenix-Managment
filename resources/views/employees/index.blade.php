@@ -168,6 +168,7 @@ const employeesData = [
         positionImprovements: [
             @foreach(($employee->positionImprovements ?? []) as $item)
             {
+                id: {{ $item->id }},
                 position_name: `{{ optional($item->position)->name }}`,
                 employee_name: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
                 start_date: `{{ $item->start_date }}`,
@@ -369,13 +370,31 @@ function renderEmployeeSalariesGrid(positionImprovements) {
     $("#positionImprovementsGrid").dxDataGrid({
         dataSource: positionImprovements,
         columns: [
-            // { dataField: "id", caption: "ID", visible: false },
+            { dataField: "id", caption: "ID", visible: false },
             { dataField: "position_name", caption: "Current Position" },
             { dataField: "employee_name", caption: "Employee", visible: false },
             { dataField: "start_date", caption: "Start Date" },
             { dataField: "end_date", caption: "End Date" }
         ],
         showBorders: true,
+        editing: {
+            allowAdding: true
+        },
+        onToolbarPreparing: function(e) {
+            // Find and modify the Add button
+            const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
+            if (addButton) {
+                addButton.options.onClick = function() {
+                    const employee = employeesData[selectedEmployeeIndex];
+                    if (!employee) {
+                        alert('No employee selected.');
+                        return;
+                    }
+                    // Redirect to position improvements create page with employee ID as parameter
+                    window.location.href = `/position-improvements/create?employee_id=${employee.id}`;
+                };
+            }
+        },
         paging: { pageSize: 10 },
         pager: {
             showPageSizeSelector: true,
@@ -416,20 +435,20 @@ function renderEmployeeSalariesGrid(positionImprovements) {
             console.log('PositionImprovement row clicked:', e.data);
             const grid = $("#positionImprovementsGrid").dxDataGrid("instance");
             grid.selectRowsByIndexes([e.rowIndex]);
-            renderSalariesGrid(e.data.salaries || []);
+            renderSalariesGrid(e.data.salaries || [], e.data.id);
         },
         onContentReady: function(e) {
             // Show salaries for the first row by default
             if (e.component.getVisibleRows().length > 0 && !e.component.getSelectedRowKeys().length) {
                 e.component.selectRowsByIndexes([0]);
                 const first = e.component.getVisibleRows()[0].data;
-                renderSalariesGrid(first.salaries || []);
+                renderSalariesGrid(first.salaries || [], first.id);
             } else if (e.component.getSelectedRowKeys().length) {
                 const selectedIndex = e.component.getRowIndexByKey(e.component.getSelectedRowKeys()[0]);
                 const selected = e.component.getVisibleRows()[selectedIndex]?.data;
-                if (selected) renderSalariesGrid(selected.salaries || []);
+                if (selected) renderSalariesGrid(selected.salaries || [], selected.id);
             } else {
-                renderSalariesGrid([]);
+                renderSalariesGrid([], null);
             }
         },
         onOptionChanged: function(e) {
@@ -439,15 +458,15 @@ function renderEmployeeSalariesGrid(positionImprovements) {
                 const rows = grid.getVisibleRows();
                 if (rows.length > 0) {
                     grid.selectRowsByIndexes([0]);
-                    renderSalariesGrid(rows[0].data.salaries || []);
+                    renderSalariesGrid(rows[0].data.salaries || [], rows[0].data.id);
                 } else {
-                    renderSalariesGrid([]);
+                    renderSalariesGrid([], null);
                 }
             }
         }
     });
     // Render empty salaries grid initially (will be filled by onContentReady)
-    function renderSalariesGrid(salaries) {
+    function renderSalariesGrid(salaries, positionImprovementId) {
         $("#salariesGrid").dxDataGrid({
             dataSource: salaries,
             columns: [
@@ -456,6 +475,23 @@ function renderEmployeeSalariesGrid(positionImprovements) {
                 { dataField: "status", caption: "Status" }
             ],
             showBorders: true,
+            editing: {
+                allowAdding: true
+            },
+            onToolbarPreparing: function(e) {
+                // Find and modify the Add button
+                const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
+                if (addButton) {
+                    addButton.options.onClick = function() {
+                        if (!positionImprovementId) {
+                            alert('No position improvement selected.');
+                            return;
+                        }
+                        // Redirect to salary create page with position improvement ID as parameter
+                        window.location.href = `/salary/create?position_improvement_id=${positionImprovementId}`;
+                    };
+                }
+            },
             paging: { pageSize: 10 },
             pager: {
                 showPageSizeSelector: true,
