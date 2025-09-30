@@ -305,7 +305,9 @@
                     date: `{{ $item->date }}`,
                     time_in: `{{ $item->clock_in }}`,
                     time_out: `{{ $item->clock_out }}`,
+                    total_time: `{{ $item->total_time ?? '' }}`,
                     status: `{{ $item->off_day ? 'Yes' : 'No' }}`,
+                    reason: `{{ $item->reason ?? '' }}`,
                     editUrl: `{{ route('employee_times.edit', $item->id) }}`,
                     deleteUrl: `{{ route('employee_times.destroy', $item->id) }}`
                 },
@@ -318,10 +320,12 @@
                     columns: [
                         { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
                         { dataField: "employee", caption: "Employee", allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { dataField: "time_in", caption: "Time In", allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true }, sortOrder: "desc" },
+                        { dataField: "time_in", caption: "Time In", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_in)); } },
+                        { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_out)); } },
+                        { dataField: "total_time", caption: "Total Time", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "status", caption: "Off Day", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "reason", caption: "Reason", allowFiltering: true, headerFilter: { allowSearch: true } },
                         {
                             caption: "Actions",
                             cellTemplate: function(container, options) {
@@ -334,6 +338,16 @@
                         }
                     ],
                     showBorders: true,
+                    sorting: {
+                        mode: "multiple"
+                    },
+                    onRowPrepared: function(e) {
+                        if (e.rowType === 'data' && e.data.status === 'Yes') {
+                            // Highlight off-day rows with a light orange/amber background
+                            e.rowElement.css('background-color', '#fff3cd');
+                            e.rowElement.css('color', '#856404');
+                        }
+                    },
                     paging: { pageSize: 10 },
                     pager: {
                         showPageSizeSelector: true,
@@ -383,4 +397,23 @@
         @endpush
     </div>
 </div>
+
+<script>
+// Function to format time from 24-hour to 12-hour AM/PM format
+function formatTime(timeString) {
+    if (!timeString || timeString === '') return '';
+    
+    // Parse the time string (assuming format like "11:30" or "14:30")
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const minute = minutes || '00';
+    
+    // Convert to 12-hour format
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    
+    return `${displayHour}:${minute} ${ampm}`;
+}
+</script>
+
 @endsection

@@ -20,10 +20,11 @@ class YearlyVacationController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $employees = Employee::all();
-        return view('yearly_vacations.create', compact('employees'));
+        $selectedEmployeeId = $request->get('employee_id');
+        return view('yearly_vacations.create', compact('employees', 'selectedEmployeeId'));
     }
 
     /**

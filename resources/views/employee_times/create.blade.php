@@ -35,13 +35,6 @@
                 @enderror
             </div>
             <div class="mb-3">
-                <label for="acc_number" class="form-label">Account Number</label>
-                <input type="text" name="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number') }}" required>
-                @error('acc_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-            <div class="mb-3">
                 <label for="date" class="form-label">Date</label>
                 <input type="date" name="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date') }}" required>
                 @error('date')
@@ -62,17 +55,17 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-            <div class="mb-3">
+            {{-- <div class="mb-3">
                 <label for="total_time" class="form-label">Total Time (min)</label>
                 <input type="number" name="total_time" class="form-control @error('total_time') is-invalid @enderror" value="{{ old('total_time') }}">
                 @error('total_time')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
-            </div>
-            <div class="mb-3">
+            </div> --}}
+            {{-- <div class="mb-3">
                 <label for="off_day" class="form-label">Off Day</label>
                 <input type="checkbox" name="off_day" value="1" {{ old('off_day') ? 'checked' : '' }}>
-            </div>
+            </div> --}}
             <div class="mb-3">
                 <label for="reason" class="form-label">Reason</label>
                 <input type="text" name="reason" class="form-control @error('reason') is-invalid @enderror" value="{{ old('reason') }}">

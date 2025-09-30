@@ -174,9 +174,8 @@ class EmployeeTimeController extends Controller
         try {
             $validated = $request->validate([
                 'employee_id' => 'required|exists:employees,id',
-                'acc_number' => 'required|string',
                 'date' => 'required|date',
-                'clock_in' => 'required',
+                'clock_in' => 'nullable',
                 'clock_out' => 'nullable',
                 'total_time' => 'nullable|integer',
                 'off_day' => 'nullable|boolean',
@@ -208,7 +207,6 @@ class EmployeeTimeController extends Controller
         try {
             $validated = $request->validate([
                 'employee_id' => 'required|exists:employees,id',
-                'acc_number' => 'sometimes|string',
                 'date' => 'sometimes|date',
                 'clock_in' => 'sometimes',
                 'clock_out' => 'nullable',

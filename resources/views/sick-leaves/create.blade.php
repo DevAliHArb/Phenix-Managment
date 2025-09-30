@@ -25,9 +25,18 @@
                 <label for="employee_id" class="form-label">Employee</label>
                 <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" required>
                     <option value="">Select Employee</option>
-                    @foreach(App\Models\Employee::all() as $employee)
-                        <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->last_name }}</option>
-                    @endforeach
+                    @if(isset($employees) && count($employees) > 0)
+                        @foreach($employees as $employee)
+                            <option value="{{ $employee->id }}" 
+                                {{ (old('employee_id') == $employee->id || (isset($selectedEmployeeId) && $selectedEmployeeId == $employee->id)) ? 'selected' : '' }}>
+                                {{ $employee->first_name }} {{ $employee->last_name }}
+                            </option>
+                        @endforeach
+                    @else
+                        @foreach(App\Models\Employee::all() as $employee)
+                            <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                        @endforeach
+                    @endif
                 </select>
                 @error('employee_id')
                     <div class="invalid-feedback">{{ $message }}</div>

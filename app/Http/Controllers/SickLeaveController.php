@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Employee;
 
 class SickLeaveController extends Controller
 {
@@ -18,9 +19,11 @@ class SickLeaveController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-    return view('sick-leaves.create');
+    $employees = Employee::all();
+    $selectedEmployeeId = $request->get('employee_id');
+    return view('sick-leaves.create', compact('employees', 'selectedEmployeeId'));
     }
 
     /**
