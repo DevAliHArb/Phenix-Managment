@@ -12,7 +12,8 @@ class EmployeeVacation extends Model
     protected $fillable = [
         'employee_id',
         'reason',
-        'type',
+        'date',
+        'lookup_type_id',
         'attachment',
     ];
 
@@ -21,7 +22,7 @@ class EmployeeVacation extends Model
         return $this->belongsTo(Employee::class);
     }
 
-    public function lookupType()
+    public function type()
     {
         return $this->belongsTo(Lookup::class, 'lookup_type_id');
     }

@@ -25,6 +25,7 @@ use App\Http\Controllers\YearlyVacationController;
 use App\Http\Controllers\SickLeaveController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\PositionImprovementController;
+use App\Http\Controllers\EmployeeVacationController;
 Route::resource('employees', EmployeeController::class);
 Route::resource('employee_times', EmployeeTimeController::class);
 Route::get('employee_times/{employee}/export', [EmployeeTimeController::class, 'exportTimesheet'])->name('employee_times.export');
@@ -34,6 +35,7 @@ Route::resource('sick-leaves', SickLeaveController::class);
 Route::resource('salary', SalaryController::class);
 Route::resource('position-improvements', PositionImprovementController::class);
 Route::resource('vacation-dates', VacationDateController::class);
+Route::resource('employee-vacations', EmployeeVacationController::class);
 
 // Work Schedule routes
 Route::get('work-schedule', function () {

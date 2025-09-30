@@ -17,6 +17,7 @@ class EmployeeTime extends Model
         'total_time',
         'off_day',
         'reason',
+        'vacation_type',
     ];
 
     public function employee()

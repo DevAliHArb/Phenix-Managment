@@ -205,6 +205,7 @@ class EmployeeTimeController extends Controller
                 'total_time' => 'nullable|integer',
                 'off_day' => 'nullable|boolean',
                 'reason' => 'nullable|string',
+                'vacation_type' => 'nullable|string',
             ]);
             $validated['off_day'] = $request->has('off_day');
             EmployeeTime::create($validated);
@@ -238,6 +239,7 @@ class EmployeeTimeController extends Controller
                 'total_time' => 'nullable|integer',
                 'off_day' => 'nullable|boolean',
                 'reason' => 'nullable|string',
+                'vacation_type' => 'nullable|string',
             ]);
             $validated['off_day'] = $request->has('off_day');
             $model = EmployeeTime::findOrFail($id);

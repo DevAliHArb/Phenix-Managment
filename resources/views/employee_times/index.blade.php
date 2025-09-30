@@ -307,6 +307,7 @@
                     time_out: `{{ $item->clock_out }}`,
                     total_time: `{{ $item->total_time ?? '' }}`,
                     status: `{{ $item->off_day ? 'Yes' : 'No' }}`,
+                    vacation_type: `{{ $item->vacation_type ?? '' }}`,
                     reason: `{{ $item->reason ?? '' }}`,
                     editUrl: `{{ route('employee_times.edit', $item->id) }}`,
                     deleteUrl: `{{ route('employee_times.destroy', $item->id) }}`
@@ -325,6 +326,7 @@
                         { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_out)); } },
                         { dataField: "total_time", caption: "Total Time", allowFiltering: true, headerFilter: { allowSearch: true } },
                         { dataField: "status", caption: "Off Day", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "vacation_type", caption: "Vacation Type", allowFiltering: true, headerFilter: { allowSearch: true } },
                         { dataField: "reason", caption: "Notes", allowFiltering: true, headerFilter: { allowSearch: true } },
                         {
                             caption: "Actions",

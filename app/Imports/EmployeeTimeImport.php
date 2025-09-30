@@ -88,6 +88,7 @@ class EmployeeTimeImport implements ToModel
     // Detect if the date is Saturday or Sunday, or in SickLeave/YearlyVacation
     $offDay = false;
     $reason = null;
+    $vacationType = null;
     $excelDateValue = $row[4] ?? null;
     $checkDate = null;
     if (!empty($excelDateValue)) {
@@ -140,22 +141,31 @@ class EmployeeTimeImport implements ToModel
             $offDay = true;
             $reason = $vacationDate->name ?? 'vacationdate';
         } else if ($employeeId) {
-            // Check SickLeave and YearlyVacation for this employee and date
-            $sickLeave = \App\Models\SickLeave::where('employee_id', $employeeId)
+
+            $employeeVacation = \App\Models\EmployeeVacation::where('employee_id', $employeeId)
                 ->where('date', $checkDate)
                 ->first();
-            if ($sickLeave) {
+            if ($employeeVacation) {
                 $offDay = true;
-                $reason = 'Sick Leave';
-            } else {
-                $vacation = \App\Models\YearlyVacation::where('employee_id', $employeeId)
-                    ->where('date', $checkDate)
-                    ->first();
-                if ($vacation) {
-                    $offDay = true;
-                    $reason = 'Vacation';
-                }
+                $reason = $employeeVacation->reason ?? 'Employee Vacation';
+                $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : null);
             }
+            // Check SickLeave and YearlyVacation for this employee and date
+            // $sickLeave = \App\Models\SickLeave::where('employee_id', $employeeId)
+            //     ->where('date', $checkDate)
+            //     ->first();
+            // if ($sickLeave) {
+            //     $offDay = true;
+            //     $reason = 'Sick Leave';
+            // } else {
+            //     $vacation = \App\Models\YearlyVacation::where('employee_id', $employeeId)
+            //         ->where('date', $checkDate)
+            //         ->first();
+            //     if ($vacation) {
+            //         $offDay = true;
+            //         $reason = 'Vacation';
+            //     }
+            // }
         }
     }
     return new EmployeeTime([
@@ -167,6 +177,7 @@ class EmployeeTimeImport implements ToModel
         'total_time'  => $totalTime,
         'off_day'     => $offDay,
         'reason'      => $reason,
+        'vacation_type' => $vacationType,
     ]);
 }
 

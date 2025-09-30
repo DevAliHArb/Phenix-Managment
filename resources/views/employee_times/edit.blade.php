@@ -80,6 +80,13 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
+            <div class="mb-3">
+                <label for="vacation_type" class="form-label">Vacation Type</label>
+                <input type="text" name="vacation_type" class="form-control @error('vacation_type') is-invalid @enderror" value="{{ $employeeTime->vacation_type }}">
+                @error('vacation_type')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
         <div class="formContainer" style="margin-top:30px;">
             <a href="{{ route('employee_times.index') }}" class="btn btn-secondary" style="margin-left:10px;">Back</a>
