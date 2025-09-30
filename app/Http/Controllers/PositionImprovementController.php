@@ -39,6 +39,7 @@ class PositionImprovementController extends Controller
                 'start_date' => 'required|date',
             ]);
 
+            $newSalary = null;
             // Deactivate current active row for this employee and set its end_date
             $activeRow = \App\Models\PositionImprovement::where('employee_id', $validated['employee_id'])
                 ->where('is_active', true)
@@ -47,9 +48,30 @@ class PositionImprovementController extends Controller
                 $activeRow->is_active = false;
                 $activeRow->end_date = $validated['start_date'];
                 $activeRow->save();
+
+                $activeSalary = \App\Models\Salary::where('position_improvement_id', $activeRow->id)
+                    ->where('status', true)
+                    ->first();
+                if ($activeSalary) {
+                    $activeSalary->status = false;
+                    $activeSalary->end_date = $validated['start_date'];
+                    $activeSalary->save();
+
+                    // Create new salary row for the new position improvement
+                    $newSalary = $activeSalary->replicate();
+                    $newSalary->status = true;
+                    $newSalary->start_date = $validated['start_date'];
+                    $newSalary->end_date = null;
+                }
             }
 
-            \App\Models\PositionImprovement::create($validated);
+            $newPositionImprovement = \App\Models\PositionImprovement::create($validated);
+
+            // If a new salary was prepared, assign the new position_improvement_id and save
+            if ($newSalary) {
+                $newSalary->position_improvement_id = $newPositionImprovement->id;
+                $newSalary->save();
+            }
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }

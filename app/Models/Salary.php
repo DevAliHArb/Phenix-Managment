@@ -14,6 +14,8 @@ class Salary extends Model
         'position_improvement_id',
         'salary',
         'status',
+        'start_date',
+        'end_date',
     ];
 
     public function positionImprovement()

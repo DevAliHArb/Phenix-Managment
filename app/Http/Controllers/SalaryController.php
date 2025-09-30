@@ -34,8 +34,20 @@ class SalaryController extends Controller
     {
         try {
             $validated = $request->validate([
-                // Add your validation rules here
+                'position_improvement_id' => 'required|exists:position_improvements,id',
+                'salary' => 'required|numeric',
+                'status' => 'required|boolean',
+                'start_date' => 'required|date',
             ]);
+            // Deactivate current active row for this employee and set its end_date
+            $activeRow = \App\Models\Salary::where('position_improvement_id', $request['position_improvement_id'])
+                ->where('status', true)
+                ->first();
+            if ($activeRow) {
+                $activeRow->status = false;
+                $activeRow->end_date = $request['start_date'];
+                $activeRow->save();
+            }
             \App\Models\Salary::create($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('salary.index')]);
@@ -53,7 +65,10 @@ class SalaryController extends Controller
     {
         try {
             $validated = $request->validate([
-                // Add your validation rules here
+                'position_improvement_id' => 'required|exists:position_improvements,id',
+                'salary' => 'required|numeric',
+                'status' => 'required|boolean',
+                'start_date' => 'required|date',
             ]);
             $model = \App\Models\Salary::findOrFail($id);
             $model->update($request->all());

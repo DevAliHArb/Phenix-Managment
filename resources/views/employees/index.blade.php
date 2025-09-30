@@ -168,6 +168,7 @@ const employeesData = [
         last_salary: `{{ $employee->last_salary ?? '' }}`,
         employee_times: @json($employee->employeeTimes ?? []),
         yearly_vacations: @json($employee->yearlyVacations ?? []),
+        employee_vacations: @json($employee->employeeVacations ?? []),
         sick_leaves: @json($employee->sickLeaves ?? []),
         positionImprovements: [
             @foreach(($employee->positionImprovements ?? []) as $item)
@@ -357,7 +358,7 @@ function renderEmployeeTimesGrid(times) {
 }
 
 
-function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves) {
+function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacations) {
     $("#employeeTimesGrid").hide();
     $("#employeeSalariesGrid").hide();
     $("#employeeVacationsGrid").show();
@@ -365,158 +366,226 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves) {
     $("#employeeTimesGridHeader").hide();
     
     // Add titles for both tables if not present
-    $("#employeeVacationsGrid").html('<div class="row">'
-        + '<div class="col-md-6">'
-        + '<h6 id="yearlyVacationsGridTitle" class="mb-2">Yearly Vacations</h6>'
-        + '<div id="yearlyVacationsGrid"></div>'
-        + '</div>'
-        + '<div class="col-md-6">'
-        + '<h6 id="sickLeavesGridTitle" class="mb-2">Sick Leaves</h6>'
-        + '<div id="sickLeavesGrid"></div>'
-        + '</div>'
-        + '</div>');
+    // $("#employeeVacationsGrid").html('<div class="row">'
+    //     + '<div class="col-md-6">'
+    //     + '<h6 id="yearlyVacationsGridTitle" class="mb-2">Yearly Vacations</h6>'
+    //     + '<div id="yearlyVacationsGrid"></div>'
+    //     + '</div>'
+    //     + '<div class="col-md-6">'
+    //     + '<h6 id="sickLeavesGridTitle" class="mb-2">Sick Leaves</h6>'
+    //     + '<div id="sickLeavesGrid"></div>'
+    //     + '</div>'
+    //     + '</div>');
 
     // Render Yearly Vacations grid
-    $("#yearlyVacationsGrid").dxDataGrid({
-        dataSource: yearlyVacations,
-        columns: [
-            { dataField: "id", caption: "ID", width: 60, visible: false },
-            { dataField: "date", caption: "Date" },
-            { dataField: "reason", caption: "Reason" }
-        ],
-        showBorders: true,
-        editing: {
-            allowAdding: true
-        },
-        onToolbarPreparing: function(e) {
-            // Find and modify the Add button
-            const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
-            if (addButton) {
-                addButton.options.onClick = function() {
-                    const employee = employeesData[selectedEmployeeIndex];
-                    if (!employee) {
-                        alert('No employee selected.');
-                        return;
-                    }
-                    // Redirect to yearly vacations create page with employee ID as parameter
-                    window.location.href = `/yearly-vacations/create?employee_id=${employee.id}`;
-                };
-            }
-        },
-        paging: { pageSize: 10 },
-        pager: {
-            showPageSizeSelector: true,
-            allowedPageSizes: [5, 10, 20],
-            showInfo: false,
-            showNavigationButtons: true,
-            visible: true
-        },
-        searchPanel: {
-            visible: true,
-            width: 240,
-            placeholder: 'Search...'
-        },
-        filterRow: {
-            visible: true,
-            applyFilter: 'auto'
-        },
-        headerFilter: {
-            visible: true
-        },
-        columnChooser: {
-            enabled: true,
-            mode: 'dragAndDrop',
-            title: 'Column Chooser',
-            emptyPanelText: 'Drag a column here to hide it'
-        },
-        allowColumnReordering: true,
-        summary: {
-            totalItems: [
-                {
-                    summaryType: 'count',
-                    displayFormat: 'Total: {0} rows'
-                }
-            ]
-        },
-        noDataText: 'No yearly vacations found.'
-    });
+    // $("#yearlyVacationsGrid").dxDataGrid({
+    //     dataSource: yearlyVacations,
+    //     columns: [
+    //         { dataField: "id", caption: "ID", width: 60, visible: false },
+    //         { dataField: "date", caption: "Date" },
+    //         { dataField: "reason", caption: "Reason" }
+    //     ],
+    //     showBorders: true,
+    //     editing: {
+    //         allowAdding: true
+    //     },
+    //     onToolbarPreparing: function(e) {
+    //         // Find and modify the Add button
+    //         const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
+    //         if (addButton) {
+    //             addButton.options.onClick = function() {
+    //                 const employee = employeesData[selectedEmployeeIndex];
+    //                 if (!employee) {
+    //                     alert('No employee selected.');
+    //                     return;
+    //                 }
+    //                 // Redirect to yearly vacations create page with employee ID as parameter
+    //                 window.location.href = `/yearly-vacations/create?employee_id=${employee.id}`;
+    //             };
+    //         }
+    //     },
+    //     paging: { pageSize: 10 },
+    //     pager: {
+    //         showPageSizeSelector: true,
+    //         allowedPageSizes: [5, 10, 20],
+    //         showInfo: false,
+    //         showNavigationButtons: true,
+    //         visible: true
+    //     },
+    //     searchPanel: {
+    //         visible: true,
+    //         width: 240,
+    //         placeholder: 'Search...'
+    //     },
+    //     filterRow: {
+    //         visible: true,
+    //         applyFilter: 'auto'
+    //     },
+    //     headerFilter: {
+    //         visible: true
+    //     },
+    //     columnChooser: {
+    //         enabled: true,
+    //         mode: 'dragAndDrop',
+    //         title: 'Column Chooser',
+    //         emptyPanelText: 'Drag a column here to hide it'
+    //     },
+    //     allowColumnReordering: true,
+    //     summary: {
+    //         totalItems: [
+    //             {
+    //                 summaryType: 'count',
+    //                 displayFormat: 'Total: {0} rows'
+    //             }
+    //         ]
+    //     },
+    //     noDataText: 'No yearly vacations found.'
+    // });
 
-    // Render Sick Leaves grid
-    $("#sickLeavesGrid").dxDataGrid({
-        dataSource: sickLeaves,
-        columns: [
-            { dataField: "id", caption: "ID", width: 60, visible: false },
-            { dataField: "date", caption: "Date" },
-            { dataField: "reason", caption: "Reason" },
-            { 
-                dataField: "attachment", 
-                caption: "Attachment",
-                cellTemplate: function(container, options) {
-                    if (options.data.attachment) {
-                        $(container).html(`<a href="${options.data.attachment}" target="_blank" style="color: #0d6efd;">View</a>`);
-                    } else {
-                        $(container).text('No attachment');
+    // // Render Sick Leaves grid
+    // $("#sickLeavesGrid").dxDataGrid({
+    //     dataSource: sickLeaves,
+    //     columns: [
+    //         { dataField: "id", caption: "ID", width: 60, visible: false },
+    //         { dataField: "date", caption: "Date" },
+    //         { dataField: "reason", caption: "Reason" },
+    //         { 
+    //             dataField: "attachment", 
+    //             caption: "Attachment",
+    //             cellTemplate: function(container, options) {
+    //                 if (options.data.attachment) {
+    //                     $(container).html(`<a href="${options.data.attachment}" target="_blank" style="color: #0d6efd;">View</a>`);
+    //                 } else {
+    //                     $(container).text('No attachment');
+    //                 }
+    //             }
+    //         }
+    //     ],
+    //     showBorders: true,
+    //     editing: {
+    //         allowAdding: true
+    //     },
+    //     onToolbarPreparing: function(e) {
+    //         // Find and modify the Add button
+    //         const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
+    //         if (addButton) {
+    //             addButton.options.onClick = function() {
+    //                 const employee = employeesData[selectedEmployeeIndex];
+    //                 if (!employee) {
+    //                     alert('No employee selected.');
+    //                     return;
+    //                 }
+    //                 // Redirect to sick leaves create page with employee ID as parameter
+    //                 window.location.href = `/sick-leaves/create?employee_id=${employee.id}`;
+    //             };
+    //         }
+    //     },
+    //     paging: { pageSize: 10 },
+    //     pager: {
+    //         showPageSizeSelector: true,
+    //         allowedPageSizes: [5, 10, 20],
+    //         showInfo: false,
+    //         showNavigationButtons: true,
+    //         visible: true
+    //     },
+    //     searchPanel: {
+    //         visible: true,
+    //         width: 240,
+    //         placeholder: 'Search...'
+    //     },
+    //     filterRow: {
+    //         visible: true,
+    //         applyFilter: 'auto'
+    //     },
+    //     headerFilter: {
+    //         visible: true
+    //     },
+    //     columnChooser: {
+    //         enabled: true,
+    //         mode: 'dragAndDrop',
+    //         title: 'Column Chooser',
+    //         emptyPanelText: 'Drag a column here to hide it'
+    //     },
+    //     allowColumnReordering: true,
+    //     summary: {
+    //         totalItems: [
+    //             {
+    //                 summaryType: 'count',
+    //                 displayFormat: 'Total: {0} rows'
+    //             }
+    //         ]
+    //     },
+    //     noDataText: 'No sick leaves found.'
+    // });
+
+
+    $("#employeeVacationsGrid").dxDataGrid({
+                dataSource: employeeVacations,
+                columns: [
+                    { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+                    { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "reason", caption: "Reason", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { 
+                        dataField: "type", 
+                        caption: "Type", 
+                        allowFiltering: true, 
+                        headerFilter: { allowSearch: true },
+                        cellTemplate: function(container, options) {
+                            $(container).text(options.data.type && options.data.type.name ? options.data.type.name : '');
+                        }
+                    },
+                    { 
+                        dataField: "attachment", 
+                        caption: "Attachment", 
+                        allowFiltering: false, 
+                        encodeHtml: false, 
+                        cellTemplate: function(container, options) {
+                            if (options.data.attachment) {
+                                const link = $('<a>', {
+                                    text: 'View',
+                                    href: options.data.attachment,
+                                    target: '_blank',
+                                    style: 'color: #0d6efd; text-decoration: underline; cursor: pointer;',
+                                    click: function(e) {
+                                        e.preventDefault();
+                                        window.open('attachments/' + options.data.attachment, '_blank');
+                                    }
+                                });
+                                $(container).append(link);
+                            } else {
+                                $(container).text('');
+                            }
+                        }
+                    },
+                    {
+                        caption: "Actions",
+                        cellTemplate: function(container, options) {
+                            const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
+                            const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="event.preventDefault(); if(confirm('Are you sure?')) { var f = document.createElement('form'); f.style.display='none'; f.method='POST'; f.action='${options.data.deleteUrl}'; f.innerHTML='<input type=\'hidden\' name=\'_token\' value=\'{{ csrf_token() }}\'><input type=\'hidden\' name=\'_method\' value=\'DELETE\'>'; document.body.appendChild(f); f.submit(); }">Delete</a>`;
+                            $(container).append(editLink + deleteLink);
+                        },
+                        width: 180,
+                        allowFiltering: false
                     }
-                }
-            }
-        ],
-        showBorders: true,
-        editing: {
-            allowAdding: true
-        },
-        onToolbarPreparing: function(e) {
-            // Find and modify the Add button
-            const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
-            if (addButton) {
-                addButton.options.onClick = function() {
-                    const employee = employeesData[selectedEmployeeIndex];
-                    if (!employee) {
-                        alert('No employee selected.');
-                        return;
-                    }
-                    // Redirect to sick leaves create page with employee ID as parameter
-                    window.location.href = `/sick-leaves/create?employee_id=${employee.id}`;
-                };
-            }
-        },
-        paging: { pageSize: 10 },
-        pager: {
-            showPageSizeSelector: true,
-            allowedPageSizes: [5, 10, 20],
-            showInfo: false,
-            showNavigationButtons: true,
-            visible: true
-        },
-        searchPanel: {
-            visible: true,
-            width: 240,
-            placeholder: 'Search...'
-        },
-        filterRow: {
-            visible: true,
-            applyFilter: 'auto'
-        },
-        headerFilter: {
-            visible: true
-        },
-        columnChooser: {
-            enabled: true,
-            mode: 'dragAndDrop',
-            title: 'Column Chooser',
-            emptyPanelText: 'Drag a column here to hide it'
-        },
-        allowColumnReordering: true,
-        summary: {
-            totalItems: [
-                {
-                    summaryType: 'count',
-                    displayFormat: 'Total: {0} rows'
-                }
-            ]
-        },
-        noDataText: 'No sick leaves found.'
-    });
-}
+                ],
+                showBorders: true,
+                paging: { pageSize: 10 },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [5, 10, 20],
+                    showInfo: false,
+                },
+                filterRow: { visible: true },
+                headerFilter: { visible: true },
+                searchPanel: { visible: true, width: 240, placeholder: 'Search...' },
+                hoverStateEnabled: true,
+                rowAlternationEnabled: true,
+                columnAutoWidth: true,
+                wordWrapEnabled: true,
+            });
+        }
+
+            
 
 function renderEmployeeSalariesGrid(positionImprovements) {
     $("#employeeTimesGrid").hide();
@@ -799,7 +868,7 @@ $(function() {
             if ($("#tab-employee-salaries").hasClass("active")) {
                 renderEmployeeSalariesGrid(employee.positionImprovements || []);
             } else if ($("#tab-employee-vacations").hasClass("active")) {
-                renderEmployeeVacationsGrid(employee.yearly_vacations || [], employee.sick_leaves || []);
+                renderEmployeeVacationsGrid(employee.yearly_vacations || [], employee.sick_leaves || [], employee.employee_vacations || []);
             } else {
                 renderEmployeeTimesGrid(employee.employee_times || []);
             }
@@ -836,7 +905,7 @@ $(function() {
                 if ($("#tab-employee-salaries").hasClass("active")) {
                     renderEmployeeSalariesGrid(firstEmployee.positionImprovements || []);
                 } else if ($("#tab-employee-vacations").hasClass("active")) {
-                    renderEmployeeVacationsGrid(firstEmployee.yearly_vacations || [], firstEmployee.sick_leaves || []);
+                    renderEmployeeVacationsGrid(firstEmployee.yearly_vacations || [], firstEmployee.sick_leaves || [], firstEmployee.employee_vacations || []);
                 } else {
                     renderEmployeeTimesGrid(firstEmployee.employee_times || []);
                 }
@@ -863,7 +932,7 @@ $(function() {
                     $("#tab-employee-times").removeClass("active btn-info").addClass("btn-outline-info");
                     $("#tab-employee-salaries").removeClass("active btn-info").addClass("btn-outline-info");
                     const employee = e.component.getVisibleRows()[selectedEmployeeIndex]?.data;
-                    renderEmployeeVacationsGrid(employee?.yearly_vacations || [], employee?.sick_leaves || []);
+                    renderEmployeeVacationsGrid(employee?.yearly_vacations || [], employee?.sick_leaves || [], employee?.employee_vacations || []);
                     $("#employeeTimesGridHeader").hide();
                 });
                 detailsSection.style.display = '';
