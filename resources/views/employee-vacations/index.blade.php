@@ -1,49 +1,76 @@
 @extends('layouts.app')
+
+@section('styles')
+    <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+@endsection
+
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Employee Vacations</h2>
-        <a href="{{ route('employee-vacations.create') }}" class="btn btn-primary">Add Vacation</a>
+<div style="width:100%">
+    <div class="headerContainer" >
+        <h1>Employee Vacations</h1>
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+            <a href="{{ route('employee-vacations.create') }}" class="btn btn-primary">Add Vacation</a>
+        </div>
     </div>
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Employee</th>
-                <th>Date</th>
-                <th>Reason</th>
-                <th>Type</th>
-                <th>Attachment</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
+    <div id="employeeVacationsGrid"></div>
+    @push('scripts')
+    <script>
+        const employeeVacationsData = [
             @foreach($items as $item)
-                <tr>
-                    <td>{{ $item->id }}</td>
-                    <td>{{ $item->employee->first_name ?? '' }} {{ $item->employee->last_name ?? '' }}</td>
-                    <td>{{ $item->date }}</td>
-                    <td>{{ $item->reason }}</td>
-                    <td>{{ $item->type->name ?? '' }}</td>
-                    <td>
-                        @if($item->attachment)
-                            <a href="{{ asset('attachments/'.$item->attachment) }}" target="_blank">View</a>
-                        @endif
-                    </td>
-                    <td>
-                        <a href="{{ route('employee-vacations.edit', $item->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                        <form action="{{ route('employee-vacations.destroy', $item->id) }}" method="POST" style="display:inline-block;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
-                        </form>
-                    </td>
-                </tr>
+            {
+                id: {{ $item->id }},
+                employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
+                date: `{{ $item->date }}`,
+                reason: `{{ $item->reason }}`,
+                type: `{{ $item->type->name ?? '' }}`,
+                attachment: `{!! $item->attachment ? '<a href="' . asset('attachments/' . $item->attachment) . '" target="_blank">View</a>' : '' !!}`,
+                editUrl: `{{ route('employee-vacations.edit', $item->id) }}`,
+                deleteUrl: `{{ route('employee-vacations.destroy', $item->id) }}`
+            },
             @endforeach
-        </tbody>
-    </table>
+        ];
+
+        $(function() {
+            $("#employeeVacationsGrid").dxDataGrid({
+                dataSource: employeeVacationsData,
+                columns: [
+                    { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+                    { dataField: "employee", caption: "Employee", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "reason", caption: "Reason", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "type", caption: "Type", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "attachment", caption: "Attachment", allowFiltering: false, encodeHtml: false, cellTemplate: function(container, options) { $(container).html(options.data.attachment); } },
+                    {
+                        caption: "Actions",
+                        cellTemplate: function(container, options) {
+                            const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
+                            const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="event.preventDefault(); if(confirm('Are you sure?')) { var f = document.createElement('form'); f.style.display='none'; f.method='POST'; f.action='${options.data.deleteUrl}'; f.innerHTML='<input type=\'hidden\' name=\'_token\' value=\'{{ csrf_token() }}\'><input type=\'hidden\' name=\'_method\' value=\'DELETE\'>'; document.body.appendChild(f); f.submit(); }">Delete</a>`;
+                            $(container).append(editLink + deleteLink);
+                        },
+                        width: 180,
+                        allowFiltering: false
+                    }
+                ],
+                showBorders: true,
+                paging: { pageSize: 10 },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [5, 10, 20],
+                    showInfo: false,
+                },
+                filterRow: { visible: true },
+                headerFilter: { visible: true },
+                searchPanel: { visible: true, width: 240, placeholder: 'Search...' },
+                hoverStateEnabled: true,
+                rowAlternationEnabled: true,
+                columnAutoWidth: true,
+                wordWrapEnabled: true,
+            });
+        });
+    </script>
+    @endpush
 </div>
 @endsection
