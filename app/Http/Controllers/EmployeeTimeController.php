@@ -102,7 +102,7 @@ class EmployeeTimeController extends Controller
             $month = $month ?: $now->month;
             $year = $year ?: $now->year;
         }
-        $employee = Employee::with(['position', 'yearlyVacations'])->findOrFail($employeeId);
+        $employee = Employee::with(['position', 'yearlyVacations', 'employeeVacations'])->findOrFail($employeeId);
         $department = $employee->position ? $employee->position->name : '';
         $query = EmployeeTime::where('employee_id', $employeeId)
             ->whereYear('date', $year)
@@ -160,6 +160,34 @@ class EmployeeTimeController extends Controller
             }
         }
 
+        // Get dailyhoursrequired from work schedule (format as hr:min string)
+        $dailyHoursRequired = null;
+        if ($workSchedule && $workSchedule->total_hours_per_day) {
+            $parts = explode(':', $workSchedule->total_hours_per_day);
+            $h = isset($parts[0]) ? (int)$parts[0] : 0;
+            $m = isset($parts[1]) ? (int)$parts[1] : 0;
+            $dailyHoursRequired = sprintf('%d:%02d', $h, $m);
+        }
+
+        // Get employee vacations (lookup_type_id = 31) for the month
+        $vacations = $employee->employeeVacations()
+            ->where('lookup_type_id', 31)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->pluck('date')
+            ->toArray();
+
+        // Get employee sickleave (lookup_type_id = 32) for the month
+        $sickleave = $employee->employeeVacations()
+            ->where('lookup_type_id', 32)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->pluck('date')
+            ->toArray();
+
+        // Off days (vacation dates for the month)
+        $offDays = $vacationDates;
+
         $data = [
             'department' => $department,
             'employee' => (object)[
@@ -170,6 +198,10 @@ class EmployeeTimeController extends Controller
             'month' => $month,
             'year' => $year,
             'attendanceRequired' => $attendanceRequiredCount,
+            'dailyhoursrequired' => $dailyHoursRequired,
+            'vacations' => $vacations,
+            'sickleave' => $sickleave,
+            'offdays' => $offDays,
         ];
 
         $filename = 'timesheet_' . $employee->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';

@@ -15,8 +15,10 @@
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #333; padding: 5px 8px; text-align: center; font-size: 11px; }
         th { background: #f2f2f2; }
-        .weekend { background: #fbe4d5; }
-        .vacation { background: #daeef3; }
+    .weekend { background: #fbe4d5; }
+    .vacation { background: #daeef3; }
+    .sickleave { background: #ffe6e6; }
+    .holiday { background: #e6ffe6; }
     </style>
 </head>
 <body>
@@ -37,7 +39,7 @@
                     : (\Carbon\Carbon::now()->addMonth()->startOfMonth()->format('d/m/Y')) 
                 }}
             </td>
-            <td style="width:30%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Department:</strong> {{ $department }}</td>
+            <td style="width:30%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Position:</strong> {{ $department }}</td>
         </tr>
     </table>
     <table>
@@ -68,20 +70,50 @@
                 $dateStr = $dateObj->format('Y-m-d');
                 $row = $rowMap->get($dateStr, []);
                 $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : (in_array($dateObj->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY]));
-                $isVacation = isset($row['vacation']) && $row['vacation'];
-                $status = ($row['dayoff'] ?? false) ? 'Off' : 'Attended';
+                $vacationsArr = isset($vacations) ? $vacations : [];
+                $sickleaveArr = isset($sickleave) ? $sickleave : [];
+                $offdaysArr = isset($offdays) ? $offdays : [];
+                $vacationType = null;
+                $reason = '';
+                $rowClass = '';
+                // Find if this date is a vacation or sickleave and get the type
+                if (in_array($dateStr, $vacationsArr)) {
+                    $status = 'Vacation';
+                    $vacationType = 'Vacation';
+                    $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
+                    $rowClass = 'vacation';
+                } elseif (in_array($dateStr, $sickleaveArr)) {
+                    $status = 'Sick Leave';
+                    $vacationType = 'Sick Leave';
+                    $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
+                    $rowClass = 'sickleave';
+                } elseif (in_array($dateStr, $offdaysArr)) {
+                    $status = 'Holiday';
+                    $vacationType = 'Holiday';
+                    $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['name']) ? $row['name'] : '');
+                    $rowClass = 'holiday';
+                } elseif ($isWeekend) {
+                    $status = 'Off';
+                    $vacationType = 'Off';
+                    $reason = 'Weekend';
+                    $rowClass = 'weekend';
+                } else {
+                    $status = 'Attended';
+                    $vacationType = null;
+                    $reason = '';
+                    $rowClass = '';
+                }
                 $extra = isset($row['totalhours']) ? (float)$row['totalhours'] - 9 : 0;
                 $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
-                $notes = $isWeekend ? 'Weekend' : ($isVacation ? 'Vacation' : ($row['notes'] ?? ''));
             @endphp
-            <tr class="{{ $isWeekend ? 'weekend' : ($isVacation ? 'vacation' : '') }}">
+            <tr class="{{ $rowClass }}">
                 <td>{{ $dateObj->format('d/m/Y') }}</td>
                 <td>{{ $row['timein'] ?? '' }}</td>
                 <td>{{ $row['timeout'] ?? '' }}</td>
                 <td>{{ $row['totalhours'] ?? '' }}</td>
                 <td>{{ $status }}</td>
                 <td>{{ $extraFormatted }}</td>
-                <td>{{ $notes }}</td>
+                <td>{{ $reason }}</td>
             </tr>
         @endfor
         </tbody>

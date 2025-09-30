@@ -51,6 +51,17 @@ class EmployeeVacationController extends Controller
             }
             \App\Models\EmployeeVacation::create($validated);
             
+
+            // Set off_day and reason in employee_times if not already off_day
+            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $validated['employee_id'])
+                ->where('date', $validated['date'])
+                ->first();
+            if ($employeeTime && !$employeeTime->off_day) {
+                $employeeTime->off_day = true;
+                $employeeTime->reason = $validated['reason'];
+                $employeeTime->vacation_type = 'Sick Leave';
+                $employeeTime->save();
+            }
             $returnUrl = $request->get('return_url', route('employee-vacations.index'));
             
             if ($request->ajax()) {
