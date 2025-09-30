@@ -10,20 +10,27 @@ class WorkScheduleController extends Controller
     // Update the single work schedule row (assuming id=1)
     public function update(Request $request)
     {
-        $validated = $request->validate([
-            'monday' => 'required|boolean',
-            'tuesday' => 'required|boolean',
-            'wednesday' => 'required|boolean',
-            'thursday' => 'required|boolean',
-            'friday' => 'required|boolean',
-            'saturday' => 'required|boolean',
-            'sunday' => 'required|boolean',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i',
-            'total_hours_per_day' => 'required|date_format:H:i',
-            'late_arrival' => 'required|integer',
-            'early_leave' => 'required|integer',
-        ]);
+        try {
+            $validated = $request->validate([
+                'monday' => 'boolean',
+                'tuesday' => 'boolean',
+                'wednesday' => 'boolean',
+                'thursday' => 'boolean',
+                'friday' => 'boolean',
+                'saturday' => 'boolean',
+                'sunday' => 'boolean',
+                'start_time' => 'required',
+                'end_time' => 'required',
+                'total_hours_per_day' => 'date_format:H:i',
+                'late_arrival' => 'required|integer',
+                'early_leave' => 'required|integer',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'errors' => $e->errors(),
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         $schedule = WorkSchedule::first();
         if (!$schedule) {

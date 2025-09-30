@@ -11,6 +11,7 @@ class Employee extends Model
 
     protected $fillable = [
         'first_name',
+        'mid_name',
         'last_name',
         'address',
         'date_of_birth',
@@ -35,6 +36,7 @@ class Employee extends Model
         'sick_leave_used',
         'last_salary',
         'lookup_employee_type_id',
+        'acc_number',
     ];
 
     protected $dates = ['birthdate', 'start_date', 'end_date', 'deleted_at'];

@@ -21,7 +21,6 @@ class EmployeeTimeImport implements ToModel
     }
 
     // Emp No. and AC-No. are in columns 0 and 1
-    $empNo = isset($row[0]) ? $row[0] : null;
     $acNo = isset($row[1]) ? $row[1] : null;
 
     // Handle Date (Excel date vs string) from column 4
@@ -70,29 +69,70 @@ class EmployeeTimeImport implements ToModel
         }
     }
 
-    // Detect if the date is Saturday or Sunday
+    // Detect if the date is Saturday or Sunday, or in SickLeave/YearlyVacation
     $offDay = false;
+    $reason = null;
     $excelDateValue = $row[4] ?? null;
+    $checkDate = null;
     if (!empty($excelDateValue)) {
         if (is_numeric($excelDateValue)) {
             $carbonDate = Date::excelToDateTimeObject($excelDateValue);
+            $checkDate = $carbonDate->format('Y-m-d');
         } else {
             $carbonDate = new \DateTime($excelDateValue);
+            $checkDate = $carbonDate->format('Y-m-d');
         }
         $dayOfWeek = $carbonDate->format('N'); // 6 = Saturday, 7 = Sunday
         if ($dayOfWeek == 6 || $dayOfWeek == 7) {
             $offDay = true;
+            $reason = 'Weekend';
         }
     }
 
+    // Check SickLeave and YearlyVacation for this employee and date (after $employeeId is set)
+
+
+    $employeeId = null;
+    if ($acNo) {
+        $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
+        if ($employee) {
+            $employeeId = $employee->id;
+        }
+    }
+    // Check VacationDate table for this date (takes precedence)
+    if ($checkDate) {
+        $vacationDate = \App\Models\VacationDate::where('date', $checkDate)->first();
+        if ($vacationDate) {
+            $offDay = true;
+            $reason = $vacationDate->name ?? 'vacationdate';
+        } else if ($employeeId) {
+            // Check SickLeave and YearlyVacation for this employee and date
+            $sickLeave = \App\Models\SickLeave::where('employee_id', $employeeId)
+                ->where('date', $checkDate)
+                ->first();
+            if ($sickLeave) {
+                $offDay = true;
+                $reason = 'Sick Leave';
+            } else {
+                $vacation = \App\Models\YearlyVacation::where('employee_id', $employeeId)
+                    ->where('date', $checkDate)
+                    ->first();
+                if ($vacation) {
+                    $offDay = true;
+                    $reason = 'Vacation';
+                }
+            }
+        }
+    }
     return new EmployeeTime([
-        'employee_id' => $acNo,
+        'employee_id' => $employeeId,
         'acc_number'  => $acNo,
         'date'        => $date,
         'clock_in'    => $clockIn,
         'clock_out'   => $clockOut,
         'total_time'  => $totalTime,
         'off_day'     => $offDay,
+        'reason'      => $reason,
     ]);
 }
 

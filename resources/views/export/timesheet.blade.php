@@ -105,7 +105,7 @@
             return sprintf('%d:%02d:%02d', $h, $m, $s);
         }
 
-        $attendanceRequired = count($timesheet);
+    // $attendanceRequired is now passed from the controller
         $dailyHoursRequired = 9;
         $attendanceTotal = $timesheet->where('dayoff', false)->count();
         $vacationOffTotal = $timesheet->where('dayoff', true)->filter(function($row){

@@ -32,9 +32,23 @@
             @enderror
         </div>
         <div class="mb-3">
+            <label for="mid_name" class="form-label">Middle Name</label>
+            <input type="text" name="mid_name" class="form-control @error('mid_name') is-invalid @enderror" value="{{ old('mid_name') }}">
+            @error('mid_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
             <label for="last_name" class="form-label">Last Name</label>
             <input type="text" name="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name') }}" required>
             @error('last_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="acc_number" class="form-label">Account Number</label>
+            <input type="number" name="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number') }}">
+            @error('acc_number')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>

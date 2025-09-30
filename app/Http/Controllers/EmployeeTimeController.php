@@ -1,7 +1,10 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
 use App\Models\EmployeeTime;
+use App\Models\VacationDate;
+use App\Models\WorkSchedule;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -32,10 +35,10 @@ class EmployeeTimeController extends Controller
         $zip->open($zipFile, \ZipArchive::CREATE);
 
         foreach ($ids as $employeeId) {
-            $employee = \App\Models\Employee::with(['position'])->find($employeeId);
+            $employee = Employee::with(['position'])->find($employeeId);
             if (!$employee) continue;
             $department = $employee->position ? $employee->position->name : '';
-            $times = \App\Models\EmployeeTime::where('employee_id', $employeeId)
+            $times = EmployeeTime::where('employee_id', $employeeId)
                 ->whereYear('date', $year)
                 ->whereMonth('date', $month)
                 ->orderBy('date')->get();
@@ -99,9 +102,9 @@ class EmployeeTimeController extends Controller
             $month = $month ?: $now->month;
             $year = $year ?: $now->year;
         }
-        $employee = \App\Models\Employee::with(['position'])->findOrFail($employeeId);
+        $employee = Employee::with(['position', 'yearlyVacations'])->findOrFail($employeeId);
         $department = $employee->position ? $employee->position->name : '';
-        $query = \App\Models\EmployeeTime::where('employee_id', $employeeId)
+        $query = EmployeeTime::where('employee_id', $employeeId)
             ->whereYear('date', $year)
             ->whereMonth('date', $month);
         $times = $query->orderBy('date')->get();
@@ -136,6 +139,27 @@ class EmployeeTimeController extends Controller
             ];
         });
 
+        // Calculate attendanceRequired for this employee/month/year
+        $workSchedule = \App\Models\WorkSchedule::first();
+        $vacationDates = \App\Models\VacationDate::whereYear('date', $year)->whereMonth('date', $month)->pluck('date')->toArray();
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $attendanceRequiredCount = 0;
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = sprintf('%04d-%02d-%02d', $year, $month, $day);
+            $carbon = \Carbon\Carbon::parse($date);
+            $weekday = strtolower($carbon->format('l'));
+            if ($workSchedule && $workSchedule->$weekday) {
+                if (in_array($date, $vacationDates)) {
+                    continue;
+                }
+                $hasYearlyVacation = $employee->yearlyVacations()->whereDate('date', $date)->exists();
+                if ($hasYearlyVacation) {
+                    continue;
+                }
+                $attendanceRequiredCount++;
+            }
+        }
+
         $data = [
             'department' => $department,
             'employee' => (object)[
@@ -145,6 +169,7 @@ class EmployeeTimeController extends Controller
             'times' => $times,
             'month' => $month,
             'year' => $year,
+            'attendanceRequired' => $attendanceRequiredCount,
         ];
 
         $filename = 'timesheet_' . $employee->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
@@ -165,7 +190,7 @@ class EmployeeTimeController extends Controller
 
     public function create()
     {
-        $employees = \App\Models\Employee::all();
+        $employees = Employee::all();
         return view('employee_times.create', compact('employees'));
     }
 
@@ -182,7 +207,7 @@ class EmployeeTimeController extends Controller
                 'reason' => 'nullable|string',
             ]);
             $validated['off_day'] = $request->has('off_day');
-            \App\Models\EmployeeTime::create($validated);
+            EmployeeTime::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
             }
@@ -198,7 +223,7 @@ class EmployeeTimeController extends Controller
     public function edit($id)
     {
         $employeeTime = EmployeeTime::findOrFail($id);
-        $employees = \App\Models\Employee::all();
+        $employees = Employee::all();
         return view('employee_times.edit', compact('employeeTime', 'employees'));
     }
 
@@ -215,7 +240,7 @@ class EmployeeTimeController extends Controller
                 'reason' => 'nullable|string',
             ]);
             $validated['off_day'] = $request->has('off_day');
-            $model = \App\Models\EmployeeTime::findOrFail($id);
+            $model = EmployeeTime::findOrFail($id);
             $model->update($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
@@ -258,5 +283,52 @@ class EmployeeTimeController extends Controller
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()], 500);
         }
+    }
+
+        /**
+     * Calculate attendanceRequired for each employee for a given month and year
+     */
+    public function attendanceRequired(Request $request)
+    {
+        $month = $request->input('month');
+        $year = $request->input('year');
+        if (!$month || !$year) {
+            $now = Carbon::now();
+            $month = $month ?: $now->month;
+            $year = $year ?: $now->year;
+        }
+
+        $workSchedule = WorkSchedule::first();
+        $vacationDates = VacationDate::whereYear('date', $year)->whereMonth('date', $month)->pluck('date')->toArray();
+        $employees = Employee::all();
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $results = [];
+        foreach ($employees as $employee) {
+            $attendanceRequired = [];
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $date = sprintf('%04d-%02d-%02d', $year, $month, $day);
+                $carbon = Carbon::parse($date);
+                $weekday = strtolower($carbon->format('l'));
+                // Check if this day is a work day (not weekend)
+                if ($workSchedule && $workSchedule->$weekday) {
+                    // Check if this date is a global vacation
+                    if (in_array($date, $vacationDates)) {
+                        $attendanceRequired[$date] = false;
+                        continue;
+                    }
+                    // Check if this employee has a yearly vacation on this date
+                    $hasYearlyVacation = $employee->yearlyVacations()->whereDate('date', $date)->exists();
+                    if ($hasYearlyVacation) {
+                        $attendanceRequired[$date] = false;
+                        continue;
+                    }
+                    $attendanceRequired[$date] = true;
+                } else {
+                    $attendanceRequired[$date] = false;
+                }
+            }
+            $results[$employee->id] = $attendanceRequired;
+        }
+        return response()->json($results);
     }
 }
