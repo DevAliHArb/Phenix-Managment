@@ -25,6 +25,26 @@
         @csrf
         <div class="formContainer">
         <div class="mb-3">
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name') }}" required>
+            @error('first_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="mid_name" class="form-label">Middle Name</label>
+            <input type="text" name="mid_name" class="form-control @error('mid_name') is-invalid @enderror" value="{{ old('mid_name') }}">
+            @error('mid_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name') }}" required>
+            @error('last_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>
             <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}">
@@ -61,6 +81,13 @@
             @enderror
         </div>
         <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address') }}" required>
+            @error('address')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
             <label for="housing_type" class="form-label">Housing Type</label>
             <select name="housing_type" class="form-control @error('housing_type') is-invalid @enderror">
                 <option value="">Select Housing Type</option>
@@ -71,37 +98,10 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-            <label for="first_name" class="form-label">First Name</label>
-            <input type="text" name="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name') }}" required>
-            @error('first_name')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="mid_name" class="form-label">Middle Name</label>
-            <input type="text" name="mid_name" class="form-control @error('mid_name') is-invalid @enderror" value="{{ old('mid_name') }}">
-            @error('mid_name')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="last_name" class="form-label">Last Name</label>
-            <input type="text" name="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name') }}" required>
-            @error('last_name')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
         <div class="mb-3">
             <label for="acc_number" class="form-label">Account Number</label>
             <input type="number" name="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number') }}">
             @error('acc_number')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="address" class="form-label">Address</label>
-            <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address') }}" required>
-            @error('address')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
@@ -249,7 +249,7 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="mb-3">
+        {{-- <div class="mb-3">
             <label for="yearly_vacations_total" class="form-label">Yearly Vacations Total</label>
             <input type="number" name="yearly_vacations_total" class="form-control @error('yearly_vacations_total') is-invalid @enderror" value="{{ old('yearly_vacations_total') }}" required>
             @error('yearly_vacations_total')
@@ -283,7 +283,7 @@
             @error('last_salary')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
+        </div> --}}
         
         </div>
         <div class="formContainer" style="margin-top:30px;">

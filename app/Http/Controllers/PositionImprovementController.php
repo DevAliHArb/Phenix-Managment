@@ -37,7 +37,6 @@ class PositionImprovementController extends Controller
                 'position_id' => 'required|exists:lookup,id',
                 'employee_id' => 'required|exists:employees,id',
                 'start_date' => 'required|date',
-                'end_date' => 'nullable|date|after_or_equal:start_date',
             ]);
 
             // Deactivate current active row for this employee and set its end_date
@@ -93,7 +92,6 @@ class PositionImprovementController extends Controller
                 'position_id' => 'required|exists:lookup,id',
                 'employee_id' => 'required|exists:employees,id',
                 'start_date' => 'required|date',
-                'end_date' => 'nullable|date|after_or_equal:start_date',
             ]);
             $positionImprovement = PositionImprovement::findOrFail($id);
             $positionImprovement->update($validated);

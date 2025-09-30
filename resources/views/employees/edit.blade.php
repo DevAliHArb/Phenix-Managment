@@ -25,6 +25,26 @@
         @method('PUT')
         <div class="formContainer">
         <div class="mb-3">
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name', $employee->first_name) }}" required>
+            @error('first_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="mid_name" class="form-label">Middle Name</label>
+            <input type="text" name="mid_name" class="form-control @error('mid_name') is-invalid @enderror" value="{{ old('mid_name', $employee->mid_name) }}">
+            @error('mid_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name', $employee->last_name) }}" required>
+            @error('last_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>
             <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $employee->email) }}">
@@ -61,6 +81,13 @@
             @enderror
         </div>
         <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address', $employee->address) }}" required>
+            @error('address')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
             <label for="housing_type" class="form-label">Housing Type</label>
             <select name="housing_type" class="form-control @error('housing_type') is-invalid @enderror">
                 <option value="">Select Housing Type</option>
@@ -71,37 +98,10 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-            <label for="first_name" class="form-label">First Name</label>
-            <input type="text" name="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name', $employee->first_name) }}" required>
-            @error('first_name')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="mid_name" class="form-label">Middle Name</label>
-            <input type="text" name="mid_name" class="form-control @error('mid_name') is-invalid @enderror" value="{{ old('mid_name', $employee->mid_name) }}">
-            @error('mid_name')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="last_name" class="form-label">Last Name</label>
-            <input type="text" name="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name', $employee->last_name) }}" required>
-            @error('last_name')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
         <div class="mb-3">
             <label for="acc_number" class="form-label">Account Number</label>
             <input type="number" name="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number', $employee->acc_number) }}">
             @error('acc_number')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="address" class="form-label">Address</label>
-            <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address', $employee->address) }}" required>
-            @error('address')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
@@ -253,41 +253,7 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="mb-3">
-            <label for="yearly_vacations_total" class="form-label">Yearly Vacations Total</label>
-            <input type="number" name="yearly_vacations_total" class="form-control @error('yearly_vacations_total') is-invalid @enderror" value="{{ old('yearly_vacations_total', $employee->yearly_vacations_total) }}" required>
-            @error('yearly_vacations_total')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="yearly_vacations_used" class="form-label">Yearly Vacations Used</label>
-            <input type="number" name="yearly_vacations_used" class="form-control @error('yearly_vacations_used') is-invalid @enderror" value="{{ old('yearly_vacations_used', $employee->yearly_vacations_used) }}" required>
-            @error('yearly_vacations_used')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="yearly_vacations_left" class="form-label">Yearly Vacations Left</label>
-            <input type="number" name="yearly_vacations_left" class="form-control @error('yearly_vacations_left') is-invalid @enderror" value="{{ old('yearly_vacations_left', $employee->yearly_vacations_left) }}" required>
-            @error('yearly_vacations_left')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="sick_leave_used" class="form-label">Sick Leave Used</label>
-            <input type="number" name="sick_leave_used" class="form-control @error('sick_leave_used') is-invalid @enderror" value="{{ old('sick_leave_used', $employee->sick_leave_used) }}" required>
-            @error('sick_leave_used')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label for="last_salary" class="form-label">Last Salary</label>
-            <input type="number" step="0.01" name="last_salary" class="form-control @error('last_salary') is-invalid @enderror" value="{{ old('last_salary', $employee->last_salary) }}" required>
-            @error('last_salary')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
+        
         </div>
         <div class="formContainer" style="margin-top:30px;">
             <a href="{{ route('employees.index') }}" class="btn btn-secondary mb-3">Back</a>
@@ -318,22 +284,20 @@
         const imageInput = document.getElementById('imageInput');
         const imageBase64 = document.getElementById('imageBase64');
         const imagePreview = document.getElementById('imagePreview');
-        if(imageInput) {
-            imageInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(evt) {
-                        imageBase64.value = evt.target.result;
-                        imagePreview.innerHTML = '<img src="' + evt.target.result + '" alt="Preview" style="max-width:120px;max-height:120px;border-radius:8px;">';
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    imageBase64.value = '';
-                    imagePreview.innerHTML = '';
-                }
-            });
-        }
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    imageBase64.value = evt.target.result;
+                    imagePreview.innerHTML = '<img src="' + evt.target.result + '" alt="Preview" style="max-width:120px;max-height:120px;border-radius:8px;">';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imageBase64.value = '';
+                imagePreview.innerHTML = '';
+            }
+        });
         const form = document.getElementById('employeeForm');
         const addBtn = document.getElementById('addEmployeeBtn');
         addBtn.addEventListener('click', function(e) {
@@ -351,11 +315,7 @@
             const status = form.status.value;
             const working_hours_from = form.working_hours_from.value;
             const working_hours_to = form.working_hours_to.value;
-            const yearly_vacations_total = form.yearly_vacations_total.value;
-            const yearly_vacations_used = form.yearly_vacations_used.value;
-            const yearly_vacations_left = form.yearly_vacations_left.value;
-            const sick_leave_used = form.sick_leave_used.value;
-            const last_salary = form.last_salary.value;
+            const lookup_employee_type_id = form.lookup_employee_type_id.value.trim();
 
             // First Name
             if (!first_name) errors.push('First Name is required.');
@@ -368,7 +328,7 @@
             else if (new Date(date_of_birth) >= new Date()) errors.push('Date of Birth must be before today.');
             // Phone
             if (!phone) errors.push('Phone is required.');
-            // Image (base64)
+            // Image (base64) - not required for edit
             // if (!image) {
             //     errors.push('Image is required.');
             // } else if (!image.startsWith('data:image/')) {
@@ -390,16 +350,8 @@
             if (!working_hours_from) errors.push('Working Hours From is required.');
             // Working Hours To
             if (!working_hours_to) errors.push('Working Hours To is required.');
-            // Yearly Vacations Total
-            if (!yearly_vacations_total) errors.push('Yearly Vacations Total is required.');
-            // Yearly Vacations Used
-            if (!yearly_vacations_used) errors.push('Yearly Vacations Used is required.');
-            // Yearly Vacations Left
-            if (!yearly_vacations_left) errors.push('Yearly Vacations Left is required.');
-            // Sick Leave Used
-            if (!sick_leave_used) errors.push('Sick Leave Used is required.');
-            // Last Salary
-            if (!last_salary) errors.push('Last Salary is required.');
+            // Employment Type
+            if (!lookup_employee_type_id) errors.push('Employment Type is required.');
 
             if (errors.length > 0) {
                 e.preventDefault();
@@ -419,11 +371,21 @@
                 body: formData
             })
             .then(async response => {
+                if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.redirect) {
                         window.location.href = data.redirect;
                     }
+                } else if (response.status === 422) {
+                    const data = await response.json();
+                    showErrorModal(data.errors || ['Validation failed.']);
+                } else {
+                    showErrorModal(['An unexpected error occurred.']);
+                }
             })
+            .catch(() => {
+                showErrorModal(['An unexpected error occurred.']);
+            });
         });
 
         function showErrorModal(errors) {

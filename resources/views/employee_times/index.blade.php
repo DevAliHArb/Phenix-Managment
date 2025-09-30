@@ -325,7 +325,7 @@
                         { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_out)); } },
                         { dataField: "total_time", caption: "Total Time", allowFiltering: true, headerFilter: { allowSearch: true } },
                         { dataField: "status", caption: "Off Day", allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { dataField: "reason", caption: "Reason", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "reason", caption: "Notes", allowFiltering: true, headerFilter: { allowSearch: true } },
                         {
                             caption: "Actions",
                             cellTemplate: function(container, options) {

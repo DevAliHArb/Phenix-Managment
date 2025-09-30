@@ -311,7 +311,7 @@ function renderEmployeeTimesGrid(times) {
             { dataField: "clock_out", caption: "Clock Out", cellTemplate: function(container, options) { $(container).text(formatTime(options.data.clock_out)); } },
             { dataField: "total_time", caption: "Total Time" },
             { dataField: "off_day", caption: "Off Day", cellTemplate: function(container, options) { $(container).text(options.data.off_day ? 'Yes' : 'No'); } },
-            { dataField: "reason", caption: "Reason" }
+            { dataField: "reason", caption: "Notes" }
         ],
         showBorders: true,
         sorting: {

@@ -7,12 +7,12 @@
 @section('content')
 <div style="width:100%">
     <div class="headerContainer" >
-    <h1>Yearly Vacations</h1>
+    <h1>Yearly Days Truncations</h1>
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
     <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
-        <a href="{{ route('yearly-vacations.create') }}" class="btn btn-primary">Add Yearly Vacation</a>
+        <a href="{{ route('yearly-vacations.create') }}" class="btn btn-primary">Add Yearly Days Truncations</a>
     </div>
     </div>
     <div id="yearlyVacationsGrid"></div>
@@ -94,7 +94,7 @@
                         }
                     ]
                 },
-                noDataText: 'No yearly vacations found.'
+                noDataText: 'No yearly days truncations found.'
             });
         });
     </script>

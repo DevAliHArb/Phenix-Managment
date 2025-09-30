@@ -7,7 +7,7 @@
 @section('content')
 <div class="container">
     <div class="headerContainer" >
-    <h1>Edit Yearly Vacation</h1>
+    <h1>Edit Yearly Day Truncations</h1>
     </div>
 
     @if ($errors->any())
