@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\AttachmentHelper;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 
@@ -36,9 +37,36 @@ class SickLeaveController extends Controller
                 'employee_id' => 'required|exists:employees,id',
                 'date' => 'required|date',
                 'reason' => 'required|string|max:255',
-                'attachment' => 'nullable|string|max:255',
+                'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png',
             ]);
-            \App\Models\SickLeave::create($request->all());
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $filename = uniqid().'.'.$file->getClientOriginalExtension();
+                $file->move(public_path('attachments'), $filename);
+                $validated['attachment'] = $filename;
+            } else {
+                $validated['attachment'] = null;
+            }
+
+            // Create sick leave
+            \App\Models\SickLeave::create($validated);
+
+            // Set off_day and reason in employee_times if not already off_day
+            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $validated['employee_id'])
+                ->where('date', $validated['date'])
+                ->first();
+            if ($employeeTime && !$employeeTime->off_day) {
+                $employeeTime->off_day = true;
+                $employeeTime->reason = 'Sick Leave';
+                $employeeTime->save();
+            }
+
+            // Increment sick_leave_used for the employee
+            $employee = \App\Models\Employee::find($request->employee_id);
+            if ($employee) {
+                $employee->increment('sick_leave_used');
+            }
+
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('sick-leaves.index')]);
             }
@@ -79,10 +107,18 @@ class SickLeaveController extends Controller
                 'employee_id' => 'required|exists:employees,id',
                 'date' => 'required|date',
                 'reason' => 'required|string|max:255',
-                'attachment' => 'nullable|string|max:255',
+                'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png',
             ]);
             $model = \App\Models\SickLeave::findOrFail($id);
-            $model->update($request->all());
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $filename = uniqid().'.'.$file->getClientOriginalExtension();
+                $file->move(public_path('attachments'), $filename);
+                $validated['attachment'] = $filename;
+            } else {
+                unset($validated['attachment']); // Don't overwrite if not uploading new file
+            }
+            $model->update($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('sick-leaves.index')]);
             }

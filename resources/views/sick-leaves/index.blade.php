@@ -25,7 +25,7 @@
                 employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
                 date: `{{ $item->date }}`,
                 reason: `{{ $item->reason }}`,
-                attachment: `{!! $item->attachment ? '<a href="' . asset('public/attachments/' . $item->attachment) . '" target="_blank">View</a>' : '' !!}`,
+                attachment: `{!! $item->attachment ? '<a href="' . asset('attachments/' . $item->attachment) . '" target="_blank">View</a>' : '' !!}`,
                 editUrl: `{{ route('sick-leaves.edit', $item->id) }}`,
                 deleteUrl: `{{ route('sick-leaves.destroy', $item->id) }}`
             },

@@ -94,6 +94,10 @@ class EmployeeTimeImport implements ToModel
 
     $employeeId = null;
     if ($acNo) {
+        // Skip if date already exists for this acc_number
+        if ($date && EmployeeTime::where('acc_number', $acNo)->where('date', $date)->exists()) {
+            return null;
+        }
         $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
         if ($employee) {
             $employeeId = $employee->id;

@@ -37,6 +37,12 @@ class Employee extends Model
         'last_salary',
         'lookup_employee_type_id',
         'acc_number',
+        'email',
+        'city',
+        'province',
+        'building_name',
+        'floor',
+        'housing_type',
     ];
 
     protected $dates = ['birthdate', 'start_date', 'end_date', 'deleted_at'];

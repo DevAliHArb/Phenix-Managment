@@ -72,6 +72,13 @@ class EmployeeController extends Controller
                 'yearly_vacations_left' => 'integer|min:0',
                 'sick_leave_used' => 'integer|min:0',
                 'last_salary' => 'numeric|min:0',
+                // New fields (not required)
+                'email' => 'nullable|email',
+                'city' => 'nullable|string|max:255',
+                'province' => 'nullable|string|max:255',
+                'building_name' => 'nullable|string|max:255',
+                'floor' => 'nullable|string|max:255',
+                'housing_type' => 'nullable|in:rent,own',
             ]);
             $validated['image'] = AttachmentHelper::handleAttachment($request['image']);
 
@@ -80,6 +87,16 @@ class EmployeeController extends Controller
             foreach ($days as $day) {
                 $validated[$day] = in_array($day, $request->working_days ?? []) ? true : false;
             }
+
+
+            // Calculate completed months from start_date to now
+            $startDate = isset($validated['start_date']) ? \Carbon\Carbon::parse($validated['start_date']) : null;
+            $now = \Carbon\Carbon::now();
+            $monthsCompleted = 0;
+            if ($startDate && $startDate->lessThanOrEqualTo($now)) {
+                $monthsCompleted = $startDate->diffInMonths($now);
+            }
+            $validated['yearly_vacations_total'] = floor($monthsCompleted * 1.25);
 
             $employee = Employee::create($validated);
 
@@ -131,6 +148,13 @@ class EmployeeController extends Controller
                 'start_date' => 'sometimes|date',
                 'end_date' => 'nullable|date',
                 'lookup_employee_type_id' => 'sometimes|integer|exists:lookup,id',
+                // New fields (not required)
+                'email' => 'nullable|email',
+                'city' => 'nullable|string|max:255',
+                'province' => 'nullable|string|max:255',
+                'building_name' => 'nullable|string|max:255',
+                'floor' => 'nullable|string|max:255',
+                'housing_type' => 'nullable|in:rent,own',
             ]);
             $employee = Employee::findOrFail($id);
             $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);

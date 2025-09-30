@@ -25,6 +25,52 @@
         @method('PUT')
         <div class="formContainer">
         <div class="mb-3">
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $employee->email) }}">
+            @error('email')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="city" class="form-label">City</label>
+            <input type="text" name="city" class="form-control @error('city') is-invalid @enderror" value="{{ old('city', $employee->city) }}">
+            @error('city')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="province" class="form-label">Province</label>
+            <input type="text" name="province" class="form-control @error('province') is-invalid @enderror" value="{{ old('province', $employee->province) }}">
+            @error('province')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="building_name" class="form-label">Building Name</label>
+            <input type="text" name="building_name" class="form-control @error('building_name') is-invalid @enderror" value="{{ old('building_name', $employee->building_name) }}">
+            @error('building_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="floor" class="form-label">Floor</label>
+            <input type="text" name="floor" class="form-control @error('floor') is-invalid @enderror" value="{{ old('floor', $employee->floor) }}">
+            @error('floor')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="housing_type" class="form-label">Housing Type</label>
+            <select name="housing_type" class="form-control @error('housing_type') is-invalid @enderror">
+                <option value="">Select Housing Type</option>
+                <option value="rent" {{ old('housing_type', $employee->housing_type) == 'rent' ? 'selected' : '' }}>Rent</option>
+                <option value="own" {{ old('housing_type', $employee->housing_type) == 'own' ? 'selected' : '' }}>Own</option>
+            </select>
+            @error('housing_type')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
             <label for="first_name" class="form-label">First Name</label>
             <input type="text" name="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name', $employee->first_name) }}" required>
             @error('first_name')

@@ -38,7 +38,26 @@ class YearlyVacationController extends Controller
                 'date' => 'required|date',
                 'reason' => 'required|string|max:255',
             ]);
+
             YearlyVacation::create($validated);
+
+            // Set off_day and reason in employee_times if not already off_day
+            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $validated['employee_id'])
+                ->where('date', $validated['date'])
+                ->first();
+            if ($employeeTime && !$employeeTime->off_day) {
+                $employeeTime->off_day = true;
+                $employeeTime->reason = 'Vacation';
+                $employeeTime->save();
+            }
+
+            // Increment yearly_vacations_used and decrement yearly_vacations_left for the employee
+            $employee = \App\Models\Employee::find($validated['employee_id']);
+            if ($employee) {
+                $employee->increment('yearly_vacations_used');
+                $employee->decrement('yearly_vacations_left');
+            }
+
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('yearly-vacations.index')]);
             }

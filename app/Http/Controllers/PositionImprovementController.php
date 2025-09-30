@@ -39,7 +39,18 @@ class PositionImprovementController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'nullable|date|after_or_equal:start_date',
             ]);
-            PositionImprovement::create($validated);
+
+            // Deactivate current active row for this employee and set its end_date
+            $activeRow = \App\Models\PositionImprovement::where('employee_id', $validated['employee_id'])
+                ->where('is_active', true)
+                ->first();
+            if ($activeRow) {
+                $activeRow->is_active = false;
+                $activeRow->end_date = $validated['start_date'];
+                $activeRow->save();
+            }
+
+            \App\Models\PositionImprovement::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }
