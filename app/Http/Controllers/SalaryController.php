@@ -14,8 +14,10 @@ class SalaryController extends Controller
     }
     public function create(Request $request)
     {
-        $selectedPositionImprovementId = $request->get('position_improvement_id');
-        return view('salary.create', compact('selectedPositionImprovementId'));
+        $selectedPositionImprovementId = $request->get('position_improvement_id', null);
+        $lockPositionImprovement = $request->get('lock_position_improvement', false);
+        $returnUrl = $request->get('return_url', route('salary.index'));
+        return view('salary.create', compact('selectedPositionImprovementId', 'lockPositionImprovement', 'returnUrl'));
     }
 
     public function index()
@@ -49,10 +51,13 @@ class SalaryController extends Controller
                 $activeRow->save();
             }
             \App\Models\Salary::create($request->all());
+            
+            $returnUrl = $request->get('return_url', route('salary.index'));
+            
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('salary.index')]);
+                return response()->json(['success' => true, 'redirect' => $returnUrl]);
             }
-            return redirect()->route('salary.index')->with('success', 'Salary created successfully');
+            return redirect($returnUrl)->with('success', 'Salary created successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);

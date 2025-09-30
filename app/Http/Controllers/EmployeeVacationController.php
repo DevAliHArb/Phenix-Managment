@@ -23,7 +23,9 @@ class EmployeeVacationController extends Controller
         $employees = \App\Models\Employee::all();
         $types = \App\Models\Lookup::where('parent_id', 30)->get();
         $selectedEmployeeId = $request->get('employee_id');
-        return view('employee-vacations.create', compact('employees', 'types', 'selectedEmployeeId'));
+        $lockEmployee = $request->get('lock_employee', false);
+        $returnUrl = $request->get('return_url', route('employee-vacations.index'));
+        return view('employee-vacations.create', compact('employees', 'types', 'selectedEmployeeId', 'lockEmployee', 'returnUrl'));
     }
 
     /**
@@ -48,10 +50,13 @@ class EmployeeVacationController extends Controller
                 $validated['attachment'] = null;
             }
             \App\Models\EmployeeVacation::create($validated);
+            
+            $returnUrl = $request->get('return_url', route('employee-vacations.index'));
+            
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('employee-vacations.index')]);
+                return response()->json(['success' => true, 'redirect' => $returnUrl]);
             }
-            return redirect()->route('employee-vacations.index')->with('success', 'Employee vacation created successfully');
+            return redirect($returnUrl)->with('success', 'Employee vacation created successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);

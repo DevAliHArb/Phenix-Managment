@@ -569,6 +569,25 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacati
                     }
                 ],
                 showBorders: true,
+                editing: {
+                    allowAdding: true
+                },
+                onToolbarPreparing: function(e) {
+                    // Find and modify the Add button
+                    const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
+                    if (addButton) {
+                        addButton.options.onClick = function() {
+                            const employee = employeesData[selectedEmployeeIndex];
+                            if (!employee) {
+                                alert('No employee selected.');
+                                return;
+                            }
+                            // Redirect to employee vacations create page with employee ID as parameter and lock it
+                            const returnUrl = encodeURIComponent(window.location.href);
+                            window.location.href = `/employee-vacations/create?employee_id=${employee.id}&lock_employee=1&return_url=${returnUrl}`;
+                        };
+                    }
+                },
                 paging: { pageSize: 10 },
                 pager: {
                     showPageSizeSelector: true,
@@ -582,6 +601,9 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacati
                 rowAlternationEnabled: true,
                 columnAutoWidth: true,
                 wordWrapEnabled: true,
+                onRowClick: function(e) {
+                    console.log('Employee vacation row clicked:', e.data);
+                }
             });
         }
 
@@ -629,8 +651,9 @@ function renderEmployeeSalariesGrid(positionImprovements) {
                         alert('No employee selected.');
                         return;
                     }
-                    // Redirect to position improvements create page with employee ID as parameter
-                    window.location.href = `/position-improvements/create?employee_id=${employee.id}`;
+                    // Redirect to position improvements create page with employee ID as parameter and lock it
+                    const returnUrl = encodeURIComponent(window.location.href);
+                    window.location.href = `/position-improvements/create?employee_id=${employee.id}&lock_employee=1&return_url=${returnUrl}`;
                 };
             }
         },
@@ -726,8 +749,9 @@ function renderEmployeeSalariesGrid(positionImprovements) {
                             alert('No position improvement selected.');
                             return;
                         }
-                        // Redirect to salary create page with position improvement ID as parameter
-                        window.location.href = `/salary/create?position_improvement_id=${positionImprovementId}`;
+                        // Redirect to salary create page with position improvement ID as parameter and lock it
+                        const returnUrl = encodeURIComponent(window.location.href);
+                        window.location.href = `/salary/create?position_improvement_id=${positionImprovementId}&lock_position_improvement=1&return_url=${returnUrl}`;
                     };
                 }
             },

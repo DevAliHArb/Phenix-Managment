@@ -13,7 +13,8 @@ class PositionImprovementController extends Controller
     public function index()
     {
     $items = PositionImprovement::all();
-    return view('position-improvements.index', compact('items'));
+    $salaryItems = \App\Models\Salary::all();
+    return view('position-improvements.index', compact('items', 'salaryItems'));
     }
 
     /**
@@ -24,7 +25,9 @@ class PositionImprovementController extends Controller
         $positions = \App\Models\Lookup::where('parent_id', 1)->get();
         $employees = \App\Models\Employee::all();
         $selectedEmployeeId = $request->get('employee_id');
-        return view('position-improvements.create', compact('positions', 'employees', 'selectedEmployeeId'));
+        $lockEmployee = $request->get('lock_employee', false);
+        $returnUrl = $request->get('return_url', route('position-improvements.index'));
+        return view('position-improvements.create', compact('positions', 'employees', 'selectedEmployeeId', 'lockEmployee', 'returnUrl'));
     }
 
     /**
@@ -72,10 +75,12 @@ class PositionImprovementController extends Controller
                 $newSalary->position_improvement_id = $newPositionImprovement->id;
                 $newSalary->save();
             }
+            $returnUrl = $request->get('return_url', route('position-improvements.index'));
+            
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
+                return response()->json(['success' => true, 'redirect' => $returnUrl]);
             }
-            return redirect()->route('position-improvements.index')->with('success', 'Position improvement created successfully');
+            return redirect($returnUrl)->with('success', 'Position improvement created successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);

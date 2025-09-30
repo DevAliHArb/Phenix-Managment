@@ -2,6 +2,19 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+    <style>
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+        .locked-field-notice {
+            color: #6c757d;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -20,6 +33,7 @@
     @endif
     <form action="{{ route('position-improvements.store') }}" method="POST" novalidate>
         @csrf
+        <input type="hidden" name="return_url" value="{{ $returnUrl ?? route('position-improvements.index') }}">
         <div class="formContainer">
             <div class="mb-3">
                 <label for="position_id" class="form-label">Position</label>
@@ -35,7 +49,8 @@
             </div>
             <div class="mb-3">
                 <label for="employee_id" class="form-label">Employee</label>
-                <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" required>
+                <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" 
+                        {{ isset($lockEmployee) && $lockEmployee ? 'disabled' : '' }} required>
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
                         <option value="{{ $employee->id }}" 
@@ -44,6 +59,12 @@
                         </option>
                     @endforeach
                 </select>
+                @if(isset($lockEmployee) && $lockEmployee && isset($selectedEmployeeId))
+                    <input type="hidden" name="employee_id" value="{{ $selectedEmployeeId }}">
+                    <div class="locked-field-notice">
+                        <i class="fas fa-lock"></i> This field is locked because it was pre-selected from the employee page.
+                    </div>
+                @endif
                 @error('employee_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -57,7 +78,7 @@
             </div>
         </div>
         <div class="formContainer" style="margin-top:30px;">
-             <a href="{{ route('position-improvements.index') }}" class="btn btn-secondary mb-3">Back</a>
+             <a href="{{ $returnUrl ?? route('position-improvements.index') }}" class="btn btn-secondary mb-3">Back</a>
             <button type="submit" class="btn btn-primary mb-3" >Add</button>
         </div>
     </form>

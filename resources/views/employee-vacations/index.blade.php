@@ -12,7 +12,7 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
         <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
-            <a href="{{ route('employee-vacations.create') }}" class="btn btn-primary">Add Vacation</a>
+            <a href="{{ route('employee-vacations.create') }}?return_url={{ urlencode(request()->fullUrl()) }}" class="btn btn-primary">Add Vacation</a>
         </div>
     </div>
     <div id="employeeVacationsGrid"></div>

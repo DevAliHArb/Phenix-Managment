@@ -13,7 +13,7 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
     <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
-        <a href="{{ route('salary.create') }}" class="btn btn-primary">Add Salary</a>
+        <a href="{{ route('salary.create') }}?return_url={{ urlencode(request()->fullUrl()) }}" class="btn btn-primary">Add Salary</a>
     </div>
     </div>
     <div id="salaryGrid"></div>
