@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config('app.name', 'Phenix HR Management') }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('img/FavIcon.svg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('FavIcon.svg') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Official DevExtreme CSS -->
     <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/23.2.6/css/dx.light.css">
@@ -65,7 +65,7 @@
     <div class="layout-flex">
         <nav id="sidebarMenu" class="bg-light sidebar py-4 position-relative">
             <a href="/" style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-                <img id="sidebarLogo" src="{{ asset('img/ColoredLogo1.png') }}" alt="Phenix HR" style="height: 48px; width: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
+                <img id="sidebarLogo" src="{{ asset('ColoredLogo1.png') }}" alt="Phenix HR" style="height: 48px; width: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
 
         </a>
             <div class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
@@ -129,10 +129,10 @@
                 const logo = $('#sidebarLogo');
                 if ($('#sidebarMenu').hasClass('collapsed')) {
                     // Sidebar is collapsed, use small logo
-                    logo.attr('src', '{{ asset("img/FavIcon.svg") }}');
+                    logo.attr('src', '{{ asset("FavIcon.svg") }}');
                 } else {
                     // Sidebar is open, use colored logo
-                    logo.attr('src', '{{ asset("img/ColoredLogo1.png") }}');
+                    logo.attr('src', '{{ asset("ColoredLogo1.png") }}');
                 }
             });
         });
