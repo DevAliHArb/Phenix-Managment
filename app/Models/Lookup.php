@@ -24,4 +24,10 @@ class Lookup extends Model
     {
         return $this->hasMany(PositionImprovement::class);
     }
+
+    
+    public function employeeVacations()
+    {
+        return $this->hasMany(EmployeeVacation::class);
+    }
 }

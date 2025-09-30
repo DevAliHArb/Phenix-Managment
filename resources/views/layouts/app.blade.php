@@ -91,12 +91,12 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('salary.index') }}"><i class="bi bi-cash"></i> <span>Position Salary</span></a>
                     </li>
-                    {{-- <li class="nav-item mb-2">
+                    <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('work-schedule.edit') }}"><i class="bi bi-calendar-week"></i> <span>Work Schedule</span></a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('vacation-dates.index') }}"><i class="bi bi-calendar-event"></i> <span>Vacation Dates</span></a>
-                    </li> --}}
+                    </li>
                 </ul>
             </div>
         </nav>

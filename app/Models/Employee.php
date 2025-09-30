@@ -85,4 +85,9 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeTime::class);
     }
+
+    public function employeeVacations()
+    {
+        return $this->hasMany(EmployeeVacation::class);
+    }
 }
