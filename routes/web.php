@@ -1,5 +1,8 @@
+use App\Http\Controllers\VacationDateController;
+Route::resource('vacation-dates', VacationDateController::class);
 <?php
 
+use App\Http\Controllers\VacationDateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +21,7 @@ Route::get('/', function () {
 });
 
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\WorkScheduleController;
 use App\Http\Controllers\EmployeeTimeController;
 use App\Http\Controllers\YearlyVacationController;
 use App\Http\Controllers\SickLeaveController;
@@ -31,3 +35,11 @@ Route::resource('yearly-vacations', YearlyVacationController::class);
 Route::resource('sick-leaves', SickLeaveController::class);
 Route::resource('salary', SalaryController::class);
 Route::resource('position-improvements', PositionImprovementController::class);
+Route::resource('vacation-dates', VacationDateController::class);
+
+// Work Schedule routes
+Route::get('work-schedule', function () {
+    $schedule = \App\Models\WorkSchedule::first();
+    return view('work_schedule', compact('schedule'));
+})->name('work-schedule.edit');
+Route::put('work-schedule', [WorkScheduleController::class, 'update'])->name('work-schedule.update');
