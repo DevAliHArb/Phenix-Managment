@@ -1,5 +1,3 @@
-use App\Http\Controllers\VacationDateController;
-Route::resource('vacation-dates', VacationDateController::class);
 <?php
 
 use App\Http\Controllers\VacationDateController;
