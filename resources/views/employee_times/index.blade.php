@@ -7,7 +7,7 @@
 @section('content')
 <div style="width:100%">
     <div class="headerContainer">
-        <h1>Employee Time Logs</h1>
+        <h1> Punch Time Logs</h1>
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -85,7 +85,7 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="importModalLabel">Import Employee Times (Excel)</h5>
+                        <h5 class="modal-title" id="importModalLabel">Import Punch Time (Excel)</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form id="importForm" action="{{ route('employee_times.import') }}" method="POST" enctype="multipart/form-data">
@@ -419,7 +419,7 @@
                             }
                         ]
                     },
-                    noDataText: 'No employee times found.'
+                    noDataText: 'No Punch Time found.'
                 });
             });
         </script>

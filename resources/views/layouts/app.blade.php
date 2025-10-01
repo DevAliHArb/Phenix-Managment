@@ -77,7 +77,7 @@
                         <a class="nav-link" href="{{ route('employees.index') }}"><i class="bi bi-people"></i> <span>Employees</span></a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{{ route('employee_times.index') }}"><i class="bi bi-clock-history"></i> <span>Employee Times</span></a>
+                        <a class="nav-link" href="{{ route('employee_times.index') }}"><i class="bi bi-clock-history"></i> <span> Punch Time</span></a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('employee-vacations.index') }}"><i class="bi bi-person-check"></i> <span>Employee Vacations</span></a>

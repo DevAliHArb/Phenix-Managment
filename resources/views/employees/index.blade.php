@@ -269,8 +269,8 @@ function renderEmployeeTimesGrid(times) {
         if ($('#employeeTimesGridTitle').length === 0) {
                 $("#employeeTimesGrid").before(`
                         <div id="employeeTimesGridHeader" style="display: flex; align-items: center; margin-bottom: 8px;">
-                                <h6 id="employeeTimesGridTitle" class="mb-2" style="margin-bottom:0; margin-right: 16px;">Employee Times</h6>
-                                <button id="exportEmployeeTimesBtn" class="btn btn-sm btn-success" style="margin-left:auto;">Export Timesheet</button>
+                                <h6 id="employeeTimesGridTitle" class="mb-2" style="margin-bottom:0; margin-right: 16px;">Punch Time</h6>
+                                <button id="exportEmployeeTimesBtn" class="btn btn-sm btn-success" style="margin-left:auto;">Export Punch Time</button>
                         </div>
                 `);
                 // Add modal for month selection
@@ -422,7 +422,7 @@ function renderEmployeeTimesGrid(times) {
                 }
             ]
         },
-        noDataText: 'No employee times found.'
+        noDataText: 'No Punch Time found.'
     });
 }
 

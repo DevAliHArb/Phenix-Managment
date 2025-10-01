@@ -317,7 +317,7 @@ class EmployeeTimeController extends Controller
             // You can extend EmployeeTimeImport to collect results if needed
             return response()->json([
                 'status' => 'success',
-                'message' => 'Employee times import completed',
+                'message' => 'Punch Time import completed',
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()], 500);
