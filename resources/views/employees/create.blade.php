@@ -351,15 +351,13 @@
                 }
                 // Position ID
                 if (!position_id) errors.push('Position ID is required.');
-                else if (isNaN(position_id) || parseInt(position_id) <= 0) errors.push('Position ID must be a positive number.');
                 // Birthdate
                 if (!birthdate) errors.push('Birthdate is required.');
                 else if (new Date(birthdate) >= new Date()) errors.push('Birthdate must be before today.');
                 // Start Date
                 if (!start_date) errors.push('Start Date is required.');
                 // End Date
-                if (!end_date) errors.push('End Date is required.');
-                else if (start_date && new Date(end_date) < new Date(start_date)) errors.push('End Date must be after or equal to Start Date.');
+                if (start_date && new Date(end_date) < new Date(start_date)) errors.push('End Date must be after or equal to Start Date.');
                 // Employment Type
                 if (!lookup_employee_type_id) errors.push('Employment Type is required.');
 
