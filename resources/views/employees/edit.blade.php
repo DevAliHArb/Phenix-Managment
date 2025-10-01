@@ -2,6 +2,13 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+    <style>
+        .form-control[readonly] {
+            border: 2px dotted #dddddd !important;
+            background-color: #fff !important;
+            color: #acacac !important;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -53,39 +60,43 @@
             @enderror
         </div>
         <div class="mb-3">
-            <label for="city" class="form-label">City</label>
-            <input type="text" name="city" class="form-control @error('city') is-invalid @enderror" value="{{ old('city', $employee->city) }}">
-            @error('city')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
             <label for="province" class="form-label">Province</label>
-            <input type="text" name="province" class="form-control @error('province') is-invalid @enderror" value="{{ old('province', $employee->province) }}">
+            <input type="text" name="province" id="province" class="form-control @error('province') is-invalid @enderror" value="{{ old('province', $employee->province) }}">
             @error('province')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
+            <label for="city" class="form-label">City</label>
+            <input type="text" name="city" id="city" class="form-control @error('city') is-invalid @enderror" value="{{ old('city', $employee->city) }}">
+            @error('city')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="address" class="form-label">Street</label>
+            <input type="text" name="address" id="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address', $employee->address) }}" required>
+            @error('address')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
             <label for="building_name" class="form-label">Building Name</label>
-            <input type="text" name="building_name" class="form-control @error('building_name') is-invalid @enderror" value="{{ old('building_name', $employee->building_name) }}">
+            <input type="text" name="building_name" id="building_name" class="form-control @error('building_name') is-invalid @enderror" value="{{ old('building_name', $employee->building_name) }}">
             @error('building_name')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
             <label for="floor" class="form-label">Floor</label>
-            <input type="text" name="floor" class="form-control @error('floor') is-invalid @enderror" value="{{ old('floor', $employee->floor) }}">
+            <input type="text" name="floor" id="floor" class="form-control @error('floor') is-invalid @enderror" value="{{ old('floor', $employee->floor) }}">
             @error('floor')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
-            <label for="address" class="form-label">Address</label>
-            <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address', $employee->address) }}" required>
-            @error('address')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
+            <label for="full_address" class="form-label">Address</label>
+            <input type="text" id="full_address" class="form-control" readonly>
         </div>
         <div class="mb-3">
             <label for="housing_type" class="form-label">Housing Type</label>
@@ -133,9 +144,17 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
+        
+        <div class="mb-3">
+            <label for="last_salary" class="form-label">Last Salary</label>
+            <input type="number" step="0.01" name="last_salary" class="form-control @error('last_salary') is-invalid @enderror" value="{{ old('last_salary', $employee->last_salary) }}" required readonly>
+            @error('last_salary')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
         <div class="mb-3">
             <label for="position_id" class="form-label">Current Position</label>
-            <select name="position_id" class="form-control @error('position_id') is-invalid @enderror" required>
+            <select name="position_id" class="form-control @error('position_id') is-invalid @enderror" required disabled readonly>
                 <option value="">Select Position</option>
                 @if(isset($positions) && count($positions) > 0)
                     @foreach($positions as $position)
@@ -242,14 +261,14 @@
         </div>
         <div class="mb-3">
             <label for="start_date" class="form-label">Start Date</label>
-            <input type="date" name="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date', $employee->start_date) }}" required>
+            <input type="date" name="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date', $employee->start_date) }}" required readonly>
             @error('start_date')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
             <label for="end_date" class="form-label">End Date</label>
-            <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date', $employee->end_date) }}" required>
+            <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date', $employee->end_date) }}" required readonly>
             @error('end_date')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -265,6 +284,34 @@
             <label for="working_hours_to" class="form-label">Working Hours To</label>
             <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to', $employee->working_hours_to ? \Carbon\Carbon::parse($employee->working_hours_to)->format('H:i') : '') }}" required>
             @error('working_hours_to')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+         <div class="mb-3">
+            <label for="yearly_vacations_total" class="form-label">Yearly Vacations Total</label>
+            <input type="number" name="yearly_vacations_total" class="form-control @error('yearly_vacations_total') is-invalid @enderror" value="{{ old('yearly_vacations_total', $employee->yearly_vacations_total) }}" required readonly>
+            @error('yearly_vacations_total')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="yearly_vacations_used" class="form-label">Yearly Vacations Used</label>
+            <input type="number" name="yearly_vacations_used" class="form-control @error('yearly_vacations_used') is-invalid @enderror" value="{{ old('yearly_vacations_used', $employee->yearly_vacations_used) }}" required readonly>
+            @error('yearly_vacations_used')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="yearly_vacations_left" class="form-label">Yearly Vacations Left</label>
+            <input type="number" name="yearly_vacations_left" class="form-control @error('yearly_vacations_left') is-invalid @enderror" value="{{ old('yearly_vacations_left', $employee->yearly_vacations_left) }}" required readonly>
+            @error('yearly_vacations_left')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="sick_leave_used" class="form-label">Sick Leave Used</label>
+            <input type="number" name="sick_leave_used" class="form-control @error('sick_leave_used') is-invalid @enderror" value="{{ old('sick_leave_used', $employee->sick_leave_used) }}" required readonly>
+            @error('sick_leave_used')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
@@ -554,6 +601,36 @@
 
         // Handle change event
         housingTypeSelect.addEventListener('change', toggleRentFields);
+
+        // Handle address combination
+        const provinceInput = document.getElementById('province');
+        const cityInput = document.getElementById('city');
+        const addressInput = document.getElementById('address');
+        const buildingNameInput = document.getElementById('building_name');
+        const floorInput = document.getElementById('floor');
+        const fullAddressInput = document.getElementById('full_address');
+
+        function updateFullAddress() {
+            const addressParts = [];
+            
+            if (addressInput && addressInput.value.trim()) addressParts.push(addressInput.value.trim());
+            if (buildingNameInput && buildingNameInput.value.trim()) addressParts.push(buildingNameInput.value.trim());
+            if (floorInput && floorInput.value.trim()) addressParts.push(`Floor ${floorInput.value.trim()}`);
+            if (cityInput && cityInput.value.trim()) addressParts.push(cityInput.value.trim());
+            if (provinceInput && provinceInput.value.trim()) addressParts.push(provinceInput.value.trim());
+            
+            fullAddressInput.value = addressParts.join(', ');
+        }
+
+        // Add event listeners to all address fields
+        if (provinceInput) provinceInput.addEventListener('input', updateFullAddress);
+        if (cityInput) cityInput.addEventListener('input', updateFullAddress);
+        if (addressInput) addressInput.addEventListener('input', updateFullAddress);
+        if (buildingNameInput) buildingNameInput.addEventListener('input', updateFullAddress);
+        if (floorInput) floorInput.addEventListener('input', updateFullAddress);
+
+        // Initialize full address on page load
+        updateFullAddress();
     });
     </script>
 </div>

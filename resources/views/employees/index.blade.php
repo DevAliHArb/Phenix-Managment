@@ -32,9 +32,43 @@
         <div class="col-md-4 mb-3">
             <div id="employee-details-section" style="display:none;">
                 <div class="card">
-                    <div class="card-header bg-primary text-white">Employee Details</div>
-                    <div class="card-body" id="employee-details-card">
-                        <!-- Populated by JS -->
+                    <div class="card-header bg-info text-white" style="padding:0;">
+                        <style>
+                            .employee-detail-tab-btn {
+                                border-radius: 0;
+                                font-weight: 600;
+                                font-size: 1.05rem;
+                                transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+                                box-shadow: none;
+                            }
+                            .employee-detail-tab-btn.active, .employee-detail-tab-btn:focus {
+                                background: linear-gradient(90deg, #0d6efd 60%, #0dcaf0 100%);
+                                color: #fff !important;
+                                border: none;
+                                box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+                            }
+                            .employee-detail-tab-btn:not(.active) {
+                                background: #f8f9fa;
+                                color: #0d6efd;
+                                border: 1px solid #0dcaf0;
+                            }
+                            .employee-detail-tab-btn:not(.active):hover {
+                                background: #e9ecef;
+                                color: #0a58ca;
+                            }
+                        </style>
+                        <div class="btn-group w-100" role="group" aria-label="Employee Detail Tabs">
+                            <button id="tab-employee-details" type="button" class="btn employee-detail-tab-btn btn-info active">Employee Details</button>
+                            <button id="tab-employee-address" type="button" class="btn employee-detail-tab-btn btn-outline-info">Employee Address</button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="min-height: 400px;">
+                        <div id="employee-details-card">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div id="employee-address-card" style="display:none;">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -74,7 +108,7 @@
                         <button id="tab-employee-vacations" type="button" class="btn employee-tab-btn btn-outline-info">Vacations</button>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="min-height: 400px;">
                     <div id="employeeTimesGrid" style="display:none;"></div>
                     <div id="employeeSalariesGrid"></div>
                     <div id="employeeVacationsGrid" style="display:none;"></div>
@@ -143,7 +177,7 @@ const employeesData = [
     {
         id: {{ $employee->id }},
         name: `{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}`,
-        image: `<img src='{{ $employee->image }}' alt='Image' style='max-width:50px;max-height:50px;'>`,
+        image: `<img src='{{ $employee->image }}' alt='Image' style='width:50px;height:50px;object-fit:cover;border-radius:0;border:none;'>`,
         position: `{{ optional($employee->position)->name }}`,
         date_of_birth: `{{ $employee->date_of_birth }}`,
         start_date: `{{ $employee->start_date }}`,
@@ -907,8 +941,11 @@ $(function() {
             const employee = e.data;
             const detailsSection = document.getElementById('employee-details-section');
             const detailsCard = document.getElementById('employee-details-card');
-            let html = `<div class="row">
-                <div >
+            const addressCard = document.getElementById('employee-address-card');
+            
+            // Employee Details Tab Content
+            let detailsHtml = `<div class="row">
+                <div>
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
                         ${employee.image}
                         <h5 style="margin: 0; margin-left: 15px;">${employee.name}</h5>
@@ -916,16 +953,8 @@ $(function() {
                     <p><strong>Email:</strong> ${employee.email ?? ''}</p>
                     <p><strong>Phone:</strong> ${employee.phone ?? ''}</p>
                     <p><strong>Birthdate:</strong> ${employee.date_of_birth ?? ''}</p>
-                    <p><strong>Address:</strong> ${employee.address ?? ''}</p>
-                    <p><strong>City:</strong> ${employee.city ?? ''}</p>
-                    <p><strong>Province:</strong> ${employee.province ?? ''}</p>
-                    <p><strong>Building Name:</strong> ${employee.building_name ?? ''}</p>
-                    <p><strong>Floor:</strong> ${employee.floor ?? ''}</p>
-                    <p><strong>Housing Type:</strong> ${employee.housing_type ? employee.housing_type.charAt(0).toUpperCase() + employee.housing_type.slice(1) : ''}</p>
-                    ${employee.housing_type === 'rent' && (employee.owner_name || employee.owner_mobile_number) ? `
-                        <p><strong>Owner Name:</strong> ${employee.owner_name ?? ''}</p>
-                        <p><strong>Owner Mobile:</strong> ${employee.owner_mobile_number ?? ''}</p>
-                    ` : ''}
+                    <p><strong>Position:</strong> ${employee.position ?? ''}</p>
+                    <p><strong>Employment Type:</strong> ${employee.employment_type ?? ''}</p>
                     <p><strong>Account Number:</strong> ${employee.acc_number ?? ''}</p>
                     <p><strong>Start Date:</strong> ${employee.start_date ?? ''}</p>
                     <p><strong>End Date:</strong> ${employee.end_date ?? ''}</p>
@@ -937,7 +966,62 @@ $(function() {
                     <p><strong>Status:</strong> ${formatStatus(employee.status ?? '')}</p>
                 </div>
             </div>`;
-            detailsCard.innerHTML = html;
+            
+            // Employee Address Tab Content
+            // Create combined address
+            const addressParts = [
+                employee.address,
+                employee.building_name,
+                employee.floor ? `Floor ${employee.floor}` : '',
+                employee.city,
+                employee.province
+            ].filter(part => part && part.trim() !== '');
+            const combinedAddress = addressParts.length > 0 ? addressParts.join(', ') : 'No address provided';
+            
+            let addressHtml = `<div class="row">
+                <div>
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        ${employee.image}
+                        <h5 style="margin: 0; margin-left: 15px;">${employee.name}</h5>
+                    </div>
+                    <p><strong>Address:</strong> ${combinedAddress}</p>
+                    <hr style="margin: 15px 0;">
+                    <p><strong>Street:</strong> ${employee.address ?? ''}</p>
+                    <p><strong>City:</strong> ${employee.city ?? ''}</p>
+                    <p><strong>Province:</strong> ${employee.province ?? ''}</p>
+                    <p><strong>Building Name:</strong> ${employee.building_name ?? ''}</p>
+                    <p><strong>Floor:</strong> ${employee.floor ?? ''}</p>
+                    <p><strong>Housing Type:</strong> ${employee.housing_type ? employee.housing_type.charAt(0).toUpperCase() + employee.housing_type.slice(1) : ''}</p>
+                    ${employee.housing_type === 'rent' && (employee.owner_name || employee.owner_mobile_number) ? `
+                        <p><strong>Owner Name:</strong> ${employee.owner_name ?? ''}</p>
+                        <p><strong>Owner Mobile:</strong> ${employee.owner_mobile_number ?? ''}</p>
+                    ` : ''}
+                </div>
+            </div>`;
+            
+            detailsCard.innerHTML = detailsHtml;
+            addressCard.innerHTML = addressHtml;
+            
+            // Set up tab click handlers for employee detail tabs
+            $("#tab-employee-details").off("click").on("click", function() {
+                $(this).addClass("active btn-info").removeClass("btn-outline-info");
+                $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
+                $("#employee-details-card").show();
+                $("#employee-address-card").hide();
+            });
+            
+            $("#tab-employee-address").off("click").on("click", function() {
+                $(this).addClass("active btn-info").removeClass("btn-outline-info");
+                $("#tab-employee-details").removeClass("active btn-info").addClass("btn-outline-info");
+                $("#employee-details-card").hide();
+                $("#employee-address-card").show();
+            });
+            
+            // Ensure the details tab is active by default
+            $("#tab-employee-details").addClass("active btn-info").removeClass("btn-outline-info");
+            $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
+            $("#employee-details-card").show();
+            $("#employee-address-card").hide();
             // Show correct tab and grid
             if ($("#tab-employee-salaries").hasClass("active")) {
                 renderEmployeeSalariesGrid(employee.positionImprovements || []);
@@ -956,8 +1040,11 @@ $(function() {
                 const firstEmployee = e.component.getVisibleRows()[0].data;
                 const detailsSection = document.getElementById('employee-details-section');
                 const detailsCard = document.getElementById('employee-details-card');
-                let html = `<div class="row">
-                    <div >
+                const addressCard = document.getElementById('employee-address-card');
+                
+                // Employee Details Tab Content
+                let detailsHtml = `<div class="row">
+                    <div>
                         <div style="display: flex; align-items: center; margin-bottom: 15px;">
                             ${firstEmployee.image}
                             <h5 style="margin: 0; margin-left: 15px;">${firstEmployee.name}</h5>
@@ -965,16 +1052,8 @@ $(function() {
                         <p><strong>Email:</strong> ${firstEmployee.email ?? ''}</p>
                         <p><strong>Phone:</strong> ${firstEmployee.phone ?? ''}</p>
                         <p><strong>Birthdate:</strong> ${firstEmployee.date_of_birth ?? ''}</p>
-                        <p><strong>Address:</strong> ${firstEmployee.address ?? ''}</p>
-                        <p><strong>City:</strong> ${firstEmployee.city ?? ''}</p>
-                        <p><strong>Province:</strong> ${firstEmployee.province ?? ''}</p>
-                        <p><strong>Building Name:</strong> ${firstEmployee.building_name ?? ''}</p>
-                        <p><strong>Floor:</strong> ${firstEmployee.floor ?? ''}</p>
-                        <p><strong>Housing Type:</strong> ${firstEmployee.housing_type ? firstEmployee.housing_type.charAt(0).toUpperCase() + firstEmployee.housing_type.slice(1) : ''}</p>
-                        ${firstEmployee.housing_type === 'rent' && (firstEmployee.owner_name || firstEmployee.owner_mobile_number) ? `
-                            <p><strong>Owner Name:</strong> ${firstEmployee.owner_name ?? ''}</p>
-                            <p><strong>Owner Mobile:</strong> ${firstEmployee.owner_mobile_number ?? ''}</p>
-                        ` : ''}
+                        <p><strong>Position:</strong> ${firstEmployee.position ?? ''}</p>
+                        <p><strong>Employment Type:</strong> ${firstEmployee.employment_type ?? ''}</p>
                         <p><strong>Account Number:</strong> ${firstEmployee.acc_number ?? ''}</p>
                         <p><strong>Start Date:</strong> ${firstEmployee.start_date ?? ''}</p>
                         <p><strong>End Date:</strong> ${firstEmployee.end_date ?? ''}</p>
@@ -986,7 +1065,62 @@ $(function() {
                         <p><strong>Status:</strong> ${formatStatus(firstEmployee.status ?? '')}</p>
                     </div>
                 </div>`;
-                detailsCard.innerHTML = html;
+                
+                // Employee Address Tab Content
+                // Create combined address
+                const firstEmployeeAddressParts = [
+                    firstEmployee.address,
+                    firstEmployee.building_name,
+                    firstEmployee.floor ? `Floor ${firstEmployee.floor}` : '',
+                    firstEmployee.city,
+                    firstEmployee.province
+                ].filter(part => part && part.trim() !== '');
+                const firstEmployeeCombinedAddress = firstEmployeeAddressParts.length > 0 ? firstEmployeeAddressParts.join(', ') : 'No address provided';
+                
+                let addressHtml = `<div class="row">
+                    <div>
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            ${firstEmployee.image}
+                            <h5 style="margin: 0; margin-left: 15px;">${firstEmployee.name}</h5>
+                        </div>
+                        <p><strong>Address:</strong> ${firstEmployeeCombinedAddress}</p>
+                        <hr style="margin: 15px 0;">
+                        <p><strong>Street:</strong> ${firstEmployee.address ?? ''}</p>
+                        <p><strong>City:</strong> ${firstEmployee.city ?? ''}</p>
+                        <p><strong>Province:</strong> ${firstEmployee.province ?? ''}</p>
+                        <p><strong>Building Name:</strong> ${firstEmployee.building_name ?? ''}</p>
+                        <p><strong>Floor:</strong> ${firstEmployee.floor ?? ''}</p>
+                        <p><strong>Housing Type:</strong> ${firstEmployee.housing_type ? firstEmployee.housing_type.charAt(0).toUpperCase() + firstEmployee.housing_type.slice(1) : ''}</p>
+                        ${firstEmployee.housing_type === 'rent' && (firstEmployee.owner_name || firstEmployee.owner_mobile_number) ? `
+                            <p><strong>Owner Name:</strong> ${firstEmployee.owner_name ?? ''}</p>
+                            <p><strong>Owner Mobile:</strong> ${firstEmployee.owner_mobile_number ?? ''}</p>
+                        ` : ''}
+                    </div>
+                </div>`;
+                
+                detailsCard.innerHTML = detailsHtml;
+                addressCard.innerHTML = addressHtml;
+                
+                // Set up tab click handlers for employee detail tabs
+                $("#tab-employee-details").off("click").on("click", function() {
+                    $(this).addClass("active btn-info").removeClass("btn-outline-info");
+                    $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
+                    $("#employee-details-card").show();
+                    $("#employee-address-card").hide();
+                });
+                
+                $("#tab-employee-address").off("click").on("click", function() {
+                    $(this).addClass("active btn-info").removeClass("btn-outline-info");
+                    $("#tab-employee-details").removeClass("active btn-info").addClass("btn-outline-info");
+                    $("#employee-details-card").hide();
+                    $("#employee-address-card").show();
+                });
+                
+                // Ensure the details tab is active by default
+                $("#tab-employee-details").addClass("active btn-info").removeClass("btn-outline-info");
+                $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
+                $("#employee-details-card").show();
+                $("#employee-address-card").hide();
                 if ($("#tab-employee-salaries").hasClass("active")) {
                     renderEmployeeSalariesGrid(firstEmployee.positionImprovements || []);
                 } else if ($("#tab-employee-vacations").hasClass("active")) {
