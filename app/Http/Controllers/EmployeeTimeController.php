@@ -114,15 +114,19 @@ class EmployeeTimeController extends Controller
             $isVacation = $row->off_day && $row->reason === 'vacation';
             $status = $row->off_day ? 'Off' : 'Attended';
             // Parse total_time as H:i:s string to decimal hours
-            $totalHours = 0;
+            $totalHourscalc = 0;
             if ($row->total_time) {
                 $parts = explode(':', $row->total_time);
                 $h = isset($parts[0]) ? (int)$parts[0] : 0;
                 $m = isset($parts[1]) ? (int)$parts[1] : 0;
                 $s = isset($parts[2]) ? (int)$parts[2] : 0;
-                $totalHours = round($h + ($m / 60) + ($s / 3600), 2);
+                $totalHourscalc = round($h + ($m / 60) + ($s / 3600), 2);
             }
-            $extra = $totalHours - 9;
+            $totalHours = 0;
+            if ($row->total_time) {
+                $totalHours = $row->total_time;
+            }
+            $extra = $totalHourscalc - 9;
             $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
             $notes = $row->off_day ? ($row->reason ?: 'Off') : ($row->reason ?: '');
             return [
@@ -130,6 +134,7 @@ class EmployeeTimeController extends Controller
                 'timein' => $row->clock_in,
                 'timeout' => $row->clock_out,
                 'totalhours' => $totalHours,
+                'totalhourscalc' => $totalHourscalc,
                 'status' => $status,
                 'extra' => $extraFormatted,
                 'notes' => $notes,

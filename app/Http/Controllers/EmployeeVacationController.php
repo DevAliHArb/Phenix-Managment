@@ -52,15 +52,33 @@ class EmployeeVacationController extends Controller
             \App\Models\EmployeeVacation::create($validated);
             
 
-            // Set off_day and reason in employee_times if not already off_day
+            // Set vacation_type based on lookup_type_id
+            $vacationType = null;
+            if ($validated['lookup_type_id'] == 31) {
+                $vacationType = 'Vacation';
+            } elseif ($validated['lookup_type_id'] == 32) {
+                $vacationType = 'Sick Leave';
+            }
+
+            // Set off_day and reason in employee_times, create if not exist
             $employeeTime = \App\Models\EmployeeTime::where('employee_id', $validated['employee_id'])
                 ->where('date', $validated['date'])
                 ->first();
-            if ($employeeTime && !$employeeTime->off_day) {
-                $employeeTime->off_day = true;
-                $employeeTime->reason = $validated['reason'];
-                $employeeTime->vacation_type = 'Sick Leave';
-                $employeeTime->save();
+            if ($employeeTime) {
+                if (!$employeeTime->off_day) {
+                    $employeeTime->off_day = true;
+                    $employeeTime->reason = $validated['reason'];
+                    $employeeTime->vacation_type = $vacationType;
+                    $employeeTime->save();
+                }
+            } else {
+                \App\Models\EmployeeTime::create([
+                    'employee_id' => $validated['employee_id'],
+                    'date' => $validated['date'],
+                    'off_day' => true,
+                    'reason' => $validated['reason'],
+                    'vacation_type' => $vacationType,
+                ]);
             }
             $returnUrl = $request->get('return_url', route('employee-vacations.index'));
             
@@ -110,6 +128,17 @@ class EmployeeVacationController extends Controller
                 'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png',
             ]);
             $model = \App\Models\EmployeeVacation::findOrFail($id);
+            // Revert old date: set off_day = false, reason = null, vacation_type = null
+            $oldEmployeeTime = \App\Models\EmployeeTime::where('employee_id', $model->employee_id)
+                ->where('date', $model->date)
+                ->first();
+            if ($oldEmployeeTime && $oldEmployeeTime->off_day) {
+                $oldEmployeeTime->off_day = false;
+                $oldEmployeeTime->reason = null;
+                $oldEmployeeTime->vacation_type = null;
+                $oldEmployeeTime->save();
+            }
+
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
                 $filename = uniqid().'.'.$file->getClientOriginalExtension();
@@ -119,6 +148,36 @@ class EmployeeVacationController extends Controller
                 unset($validated['attachment']);
             }
             $model->update($validated);
+
+            // Set vacation_type based on lookup_type_id
+            $vacationType = null;
+            if ($validated['lookup_type_id'] == 31) {
+                $vacationType = 'Vacation';
+            } elseif ($validated['lookup_type_id'] == 32) {
+                $vacationType = 'Sick Leave';
+            }
+
+            // Set off_day and reason in employee_times for new date, create if not exist
+            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $validated['employee_id'])
+                ->where('date', $validated['date'])
+                ->first();
+            if ($employeeTime) {
+                if (!$employeeTime->off_day) {
+                    $employeeTime->off_day = true;
+                    $employeeTime->reason = $validated['reason'];
+                    $employeeTime->vacation_type = $vacationType;
+                    $employeeTime->save();
+                }
+            } else {
+                \App\Models\EmployeeTime::create([
+                    'employee_id' => $validated['employee_id'],
+                    'date' => $validated['date'],
+                    'off_day' => true,
+                    'reason' => $validated['reason'],
+                    'vacation_type' => $vacationType,
+                ]);
+            }
+
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employee-vacations.index')]);
             }

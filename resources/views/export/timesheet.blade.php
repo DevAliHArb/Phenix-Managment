@@ -103,14 +103,41 @@
                     $reason = '';
                     $rowClass = '';
                 }
-                $extra = isset($row['totalhours']) ? (float)$row['totalhours'] - 9 : 0;
-                $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
+                // If dayoff, extra is 0
+                if (!empty($row['dayoff'])) {
+                    $extra = 0;
+                } else {
+                    $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
+                }
+                // Format extra as +H:MM or -H:MM
+                $extraSign = $extra >= 0 ? '+' : '-';
+                $extraMinutes = (int)round(abs($extra * 60));
+                $extraH = floor($extraMinutes / 60);
+                $extraM = $extraMinutes % 60;
+                $extraFormatted = $extraSign . $extraH . ':' . str_pad($extraM, 2, '0', STR_PAD_LEFT);
             @endphp
             <tr class="{{ $rowClass }}">
                 <td>{{ $dateObj->format('d/m/Y') }}</td>
-                <td>{{ $row['timein'] ?? '' }}</td>
-                <td>{{ $row['timeout'] ?? '' }}</td>
-                <td>{{ $row['totalhours'] ?? '' }}</td>
+                <td>
+                    @if(!empty($row['timein']))
+                        {{ \Carbon\Carbon::parse($row['timein'])->format('g:i a') }}
+                    @endif
+                </td>
+                <td>
+                    @if(!empty($row['timeout']))
+                        {{ \Carbon\Carbon::parse($row['timeout'])->format('g:i a') }}
+                    @endif
+                </td>
+                <td>
+                    @if(!empty($row['totalhours']))
+                        @php
+                            $parts = explode(':', $row['totalhours']);
+                            $h = isset($parts[0]) ? (int)$parts[0] : 0;
+                            $m = isset($parts[1]) ? (int)$parts[1] : 0;
+                        @endphp
+                        {{ $h }}:{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}
+                    @endif
+                </td>
                 <td>{{ $status }}</td>
                 <td>{{ $extraFormatted }}</td>
                 <td>{{ $reason }}</td>
@@ -146,25 +173,29 @@
         })->count();
         $leaveDays = $vacationOffTotal; // If you want to separate leave/vacation, adjust here
         $timeRequired = $attendanceTotal * $dailyHoursRequired;
-        $extraTime = 0;
-        $extraTimeSeconds = 0;
-        foreach ($timesheet as $row) {
-            $extra = isset($row['totalhours']) ? ($row['totalhours'] - 9) : 0;
-            $extraTime += $extra;
-            $extraTimeSeconds += $extra * 3600;
-        }
-        $extraSign = $extraTimeSeconds < 0 ? '-' : '';
-        $extraTimeSeconds = abs($extraTimeSeconds);
-        $extraH = floor($extraTimeSeconds / 3600);
-        $extraM = floor(($extraTimeSeconds % 3600) / 60);
-        $extraS = $extraTimeSeconds % 60;
-        $extraTimeFormatted = $extraSign . sprintf('%d:%02d', $extraH, $extraM);
 
+        $extraTimeFormatted = 0;
         $totalLoggedTime = sumTimes($timesheet->pluck('totalhours_raw') ?? []);
         // If totalhours_raw is not set, fallback to total_time from $times
         if ($totalLoggedTime == '0:00:00') {
             $totalLoggedTime = sumTimes($times->pluck('total_time') ?? []);
         }
+
+    // Calculate total extra-minus time (sum of all daily $extra values)
+    $totalExtraMinutes = 0;
+    foreach ($timesheet as $row) {
+        if (!empty($row['dayoff'])) {
+            $extra = 0;
+        } else {
+            $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
+        }
+        $totalExtraMinutes += (int)round($extra * 60);
+    }
+    $extraSign = $totalExtraMinutes >= 0 ? '+' : '-';
+    $absMinutes = abs($totalExtraMinutes);
+    $extraH = floor($absMinutes / 60);
+    $extraM = $absMinutes % 60;
+    $extraTimeFormatted = $extraSign . $extraH . ':' . str_pad($extraM, 2, '0', STR_PAD_LEFT);
     @endphp
 
     <div style="margin-top:10px;">
@@ -190,14 +221,29 @@
                 </td>
                 <td style="width:20%; text-align:left; font-weight:bold; border:none;row-gap: 10px;">
                     Attendance Total<br>
-                    Vacation Off Total<br>
-                    Leave Days<br>
+                    Off Days Total<br>
+                    Sick Leaves Total<br>
+                    Vacations Total<br>
                     Time logged Total<br>
                 </td>
                 <td style="width:10%; background:#fbe4d5; text-align:center; font-weight:normal; border:none; row-gap: 10px;">
-                    {{ $attendanceTotal }}<br>
-                    {{ $vacationOffTotal }}<br>
-                    {{ $leaveDays }}<br>
+                    {{-- Attendance Total: count of status Attended --}}
+                    {{ collect($timesheet)->filter(function($row) use ($vacations, $sickleave, $offdays) {
+                        $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
+                        if (!$date) return false;
+                        if (in_array($date, $vacations ?? [])) return false;
+                        if (in_array($date, $sickleave ?? [])) return false;
+                        if (in_array($date, $offdays ?? [])) return false;
+                        $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : false;
+                        if ($isWeekend) return false;
+                        return true;
+                    })->count() }}<br>
+                    {{-- Off Days Total: length of offdays --}}
+                    {{ isset($offdays) ? count($offdays) : 0 }}<br>
+                    {{-- Sick Leaves Total: length of sickleave --}}
+                    {{ isset($sickleave) ? count($sickleave) : 0 }}<br>
+                    {{-- Vacations Total: length of vacations --}}
+                    {{ isset($vacations) ? count($vacations) : 0 }}<br>
                     {{ $totalLoggedTime }}<br>
                 </td>
             </tr>
