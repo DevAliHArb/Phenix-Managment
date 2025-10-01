@@ -20,6 +20,9 @@ class EmployeeController extends Controller
             'attachments',
             'yearlyVacations',
             'sickLeaves',
+            'employeeVacations' => function ($query) {
+                $query->with('type');
+            },
             'lateEarlyRecords',
             'employeeTimes'
         ])->get();
