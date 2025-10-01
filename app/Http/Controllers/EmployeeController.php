@@ -109,13 +109,30 @@ class EmployeeController extends Controller
 
             // Handle attachments
             if ($request->has('attachments')) {
-                foreach ($request->attachments as $attachment) {
-                    $url = AttachmentHelper::handleAttachment($attachment);
-                    EmployeeAttachment::create([
-                        'employee_id' => $employee->id,
-                        'image' => $url,
-                        'type' => 'attachment',
-                    ]);
+                foreach ($request->input('attachments') as $index => $attachment) {
+                    // Check if both file and type are present
+                    if (isset($attachment['type']) && !empty($attachment['type']) && $request->hasFile("attachments.{$index}.file")) {
+                        // Get the uploaded file
+                        $uploadedFile = $request->file("attachments.{$index}.file");
+                        
+                        // Create attachments directory if it doesn't exist
+                        $attachmentsPath = public_path('attachments');
+                        if (!file_exists($attachmentsPath)) {
+                            mkdir($attachmentsPath, 0755, true);
+                        }
+                        
+                        // Move file to attachments directory
+                        $fileName = time() . '_' . $index . '_' . $uploadedFile->getClientOriginalName();
+                        $uploadedFile->move($attachmentsPath, $fileName);
+                        $url = asset('attachments/' . $fileName);
+                        
+                        // Create attachment record
+                        EmployeeAttachment::create([
+                            'employee_id' => $employee->id,
+                            'image' => $url,
+                            'type' => $attachment['type'],
+                        ]);
+                    }
                 }
             }
 
@@ -186,13 +203,30 @@ class EmployeeController extends Controller
 
             // Handle attachments
             if ($request->has('attachments')) {
-                foreach ($request->attachments as $attachment) {
-                    $url = AttachmentHelper::handleAttachment($attachment);
-                    EmployeeAttachment::create([
-                        'employee_id' => $employee->id,
-                        'image' => $url,
-                        'type' => 'attachment',
-                    ]);
+                foreach ($request->input('attachments') as $index => $attachment) {
+                    // Check if both file and type are present
+                    if (isset($attachment['type']) && !empty($attachment['type']) && $request->hasFile("attachments.{$index}.file")) {
+                        // Get the uploaded file
+                        $uploadedFile = $request->file("attachments.{$index}.file");
+                        
+                        // Create attachments directory if it doesn't exist
+                        $attachmentsPath = public_path('attachments');
+                        if (!file_exists($attachmentsPath)) {
+                            mkdir($attachmentsPath, 0755, true);
+                        }
+                        
+                        // Move file to attachments directory
+                        $fileName = time() . '_' . $index . '_' . $uploadedFile->getClientOriginalName();
+                        $uploadedFile->move($attachmentsPath, $fileName);
+                        $url = asset('attachments/' . $fileName);
+                        
+                        // Create attachment record
+                        EmployeeAttachment::create([
+                            'employee_id' => $employee->id,
+                            'image' => $url,
+                            'type' => $attachment['type'],
+                        ]);
+                    }
                 }
             }
 

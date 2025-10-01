@@ -174,7 +174,7 @@
             @enderror
         </div>
         <div class="mb-3">
-            <label for="image" class="form-label">Image</label>
+            <label for="image" class="form-label">Profile Image</label>
             <input type="file" accept="image/*" id="imageInput" class="form-control @error('image') is-invalid @enderror" required>
             <input type="hidden" name="image" id="imageBase64" value="{{ old('image') }}">
             @error('image')
@@ -182,8 +182,9 @@
             @enderror
             <div id="imagePreview" style="margin-top:10px;"></div>
         </div>
+
         <div class="form-group mb-3">
-            <label for="working_days"><strong>Working Days</strong></label>
+            <label for="working_days">Working Days</label>
             <div id="working_days">
                 <div class="row mb-2">
                     <div class="col-md-4 col-6">
@@ -299,6 +300,46 @@
             @enderror
         </div> --}}
         
+        <!-- Attachments Section -->
+        {{-- <div class="mb-4">
+            <p class="mb-3">Employee Documents</p>
+            <div id="attachments-container">
+                <div class="attachment-item border p-3 mb-3" style="border-radius: 8px; background-color: #f8f9fa;">
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Document Type</label>
+                            <select name="attachments[0][type]" class="form-control attachment-type">
+                                <option value="">Select Document Type</option>
+                                <option value="CV">CV</option>
+                                <option value="Cover Letter">Cover Letter</option>
+                                <option value="ID">ID</option>
+                                <option value="Passport">Passport</option>
+                                <option value="Probation Contract">Probation Contract</option>
+                                <option value="Employment Contract">Employment Contract</option>
+                                <option value="ID Papers">ID Papers</option>
+                                <option value="Salary Slip">Salary Slip</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Document File</label>
+                            <input type="file" name="attachments[0][file]" class="form-control attachment-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
+                        </div>
+                        <div class="col-md-2 mb-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-attachment" style="display: none;">Remove</button>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="add-attachment" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus"></i> Add Another Document
+            </button>
+        </div> --}}
         </div>
         <div class="formContainer" style="margin-top:30px;">
              <a href="{{ route('employees.index') }}" class="btn btn-secondary mb-3">Back</a>
@@ -453,6 +494,88 @@
 
             // Handle change event
             housingTypeSelect.addEventListener('change', toggleRentFields);
+
+            // Attachments functionality
+            let attachmentIndex = 1;
+            const attachmentsContainer = document.getElementById('attachments-container');
+            const addAttachmentBtn = document.getElementById('add-attachment');
+
+            function updateRemoveButtons() {
+                const attachmentItems = document.querySelectorAll('.attachment-item');
+                attachmentItems.forEach((item, index) => {
+                    const removeBtn = item.querySelector('.remove-attachment');
+                    if (attachmentItems.length > 1) {
+                        removeBtn.style.display = 'block';
+                    } else {
+                        removeBtn.style.display = 'none';
+                    }
+                });
+            }
+
+            function createAttachmentItem(index) {
+                return `
+                    <div class="attachment-item border p-3 mb-3" style="border-radius: 8px; background-color: #f8f9fa;">
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label">Document Type</label>
+                                <select name="attachments[${index}][type]" class="form-control attachment-type">
+                                    <option value="">Select Document Type</option>
+                                    <option value="CV">CV</option>
+                                    <option value="Cover Letter">Cover Letter</option>
+                                    <option value="ID">ID</option>
+                                    <option value="Passport">Passport</option>
+                                    <option value="Probation Contract">Probation Contract</option>
+                                    <option value="Employment Contract">Employment Contract</option>
+                                    <option value="ID Papers">ID Papers</option>
+                                    <option value="Salary Slip">Salary Slip</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Document File</label>
+                                <input type="file" name="attachments[${index}][file]" class="form-control attachment-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
+                            </div>
+                            <div class="col-md-2 mb-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-attachment">Remove</button>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            addAttachmentBtn.addEventListener('click', function() {
+                const newAttachmentHTML = createAttachmentItem(attachmentIndex);
+                attachmentsContainer.insertAdjacentHTML('beforeend', newAttachmentHTML);
+                attachmentIndex++;
+                updateRemoveButtons();
+            });
+
+            // Handle remove attachment
+            attachmentsContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-attachment')) {
+                    e.target.closest('.attachment-item').remove();
+                    updateRemoveButtons();
+                }
+            });
+
+            // File size validation
+            attachmentsContainer.addEventListener('change', function(e) {
+                if (e.target.classList.contains('attachment-file')) {
+                    const file = e.target.files[0];
+                    if (file && file.size > 10 * 1024 * 1024) { // 10MB limit
+                        alert('File size must be less than 10MB');
+                        e.target.value = '';
+                    }
+                }
+            });
+
+            // Initialize remove buttons visibility
+            updateRemoveButtons();
         });
         </script>
     </form>
