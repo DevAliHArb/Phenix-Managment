@@ -187,45 +187,6 @@
             </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Employee Documents</label>
-            <div id="attachments-container">
-                @if(isset($employee->attachments) && count($employee->attachments))
-                    @foreach($employee->attachments as $i => $attachment)
-                        <div class="attachment-item border p-3 mb-3" style="border-radius: 8px; background-color: #f8f9fa;">
-                            <div class="row">
-                                <div class="col-md-4 mb-2">
-                                    <label class="form-label">Document Type</label>
-                                    <select name="attachments[{{ $i }}][type]" class="form-control attachment-type">
-                                        <option value="">Select Document Type</option>
-                                        <option value="CV" {{ $attachment->type == 'CV' ? 'selected' : '' }}>CV</option>
-                                        <option value="Cover Letter" {{ $attachment->type == 'Cover Letter' ? 'selected' : '' }}>Cover Letter</option>
-                                        <option value="ID" {{ $attachment->type == 'ID' ? 'selected' : '' }}>ID</option>
-                                        <option value="Passport" {{ $attachment->type == 'Passport' ? 'selected' : '' }}>Passport</option>
-                                        <option value="Probation Contract" {{ $attachment->type == 'Probation Contract' ? 'selected' : '' }}>Probation Contract</option>
-                                        <option value="Employment Contract" {{ $attachment->type == 'Employment Contract' ? 'selected' : '' }}>Employment Contract</option>
-                                        <option value="ID Papers" {{ $attachment->type == 'ID Papers' ? 'selected' : '' }}>ID Papers</option>
-                                        <option value="Salary Slip" {{ $attachment->type == 'Salary Slip' ? 'selected' : '' }}>Salary Slip</option>
-                                        <option value="Others" {{ $attachment->type == 'Others' ? 'selected' : '' }}>Others</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <label class="form-label">Document File</label>
-                                    <a href="{{ $attachment->image }}" target="_blank">View File</a>
-                                </div>
-                                <div class="col-md-2 mb-2 d-flex align-items-end">
-                                    <button type="button" class="btn btn-danger btn-sm remove-attachment" style="display: none;">Remove</button>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                @endif
-            </div>
-            <button type="button" id="add-attachment" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-plus"></i> Add Another Document
-            </button>
-            <small class="text-muted d-block mt-2">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
-        </div>
         <div class="form-group mb-3">
             <label for="working_days"><strong>Working Days</strong></label>
             <div id="working_days">
@@ -308,6 +269,45 @@
             @enderror
         </div>
         
+        <div class="mb-3">
+            <label class="form-label">Employee Documents</label>
+            <div id="attachments-container">
+                @if(isset($employee->attachments) && count($employee->attachments))
+                    @foreach($employee->attachments as $i => $attachment)
+                        <div class="attachment-item border p-3 mb-3" style="border-radius: 8px; background-color: #f8f9fa;">
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <label class="form-label">Document Type</label>
+                                    <select name="attachments[{{ $i }}][type]" class="form-control attachment-type">
+                                        <option value="">Select Document Type</option>
+                                        <option value="CV" {{ $attachment->type == 'CV' ? 'selected' : '' }}>CV</option>
+                                        <option value="Cover Letter" {{ $attachment->type == 'Cover Letter' ? 'selected' : '' }}>Cover Letter</option>
+                                        <option value="ID" {{ $attachment->type == 'ID' ? 'selected' : '' }}>ID</option>
+                                        <option value="Passport" {{ $attachment->type == 'Passport' ? 'selected' : '' }}>Passport</option>
+                                        <option value="Probation Contract" {{ $attachment->type == 'Probation Contract' ? 'selected' : '' }}>Probation Contract</option>
+                                        <option value="Employment Contract" {{ $attachment->type == 'Employment Contract' ? 'selected' : '' }}>Employment Contract</option>
+                                        <option value="ID Papers" {{ $attachment->type == 'ID Papers' ? 'selected' : '' }}>ID Papers</option>
+                                        <option value="Salary Slip" {{ $attachment->type == 'Salary Slip' ? 'selected' : '' }}>Salary Slip</option>
+                                        <option value="Others" {{ $attachment->type == 'Others' ? 'selected' : '' }}>Others</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label">Document File</label>
+                                    <a href="{{ $attachment->image }}" target="_blank">View File</a>
+                                </div>
+                                <div class="col-md-2 mb-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-attachment" style="display: none;">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+            <button type="button" id="add-attachment" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus"></i> Add Another Document
+            </button>
+            <small class="text-muted d-block mt-2">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
+        </div>
         </div>
         <div class="formContainer" style="margin-top:30px;">
             <a href="{{ route('employees.index') }}" class="btn btn-secondary mb-3">Back</a>
