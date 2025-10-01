@@ -43,6 +43,8 @@ class Employee extends Model
         'building_name',
         'floor',
         'housing_type',
+        'owner_name',
+        'owner_mobile_number',
     ];
 
     protected $dates = ['birthdate', 'start_date', 'end_date', 'deleted_at'];

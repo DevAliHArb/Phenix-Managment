@@ -59,7 +59,9 @@ class EmployeeController extends Controller
         try {
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
+                'mid_name' => 'nullable|string|max:255',
                 'last_name' => 'required|string|max:255',
+                'email' => 'nullable|email|max:255',
                 'address' => 'required|string|max:255',
                 'date_of_birth' => 'required|date|before:today',
                 'phone' => 'required|string|max:20',
@@ -77,12 +79,13 @@ class EmployeeController extends Controller
                 // 'sick_leave_used' => 'integer|min:0',
                 // 'last_salary' => 'numeric|min:0',
                 // New fields (not required)
-                'email' => 'nullable|email',
                 'city' => 'nullable|string|max:255',
                 'province' => 'nullable|string|max:255',
                 'building_name' => 'nullable|string|max:255',
                 'floor' => 'nullable|string|max:255',
                 'housing_type' => 'nullable|in:rent,own',
+                'owner_name' => 'nullable|string|max:255',
+                'owner_mobile_number' => 'nullable|string|max:20',
             ]);
             $validated['image'] = AttachmentHelper::handleAttachment($request['image']);
 
@@ -145,20 +148,30 @@ class EmployeeController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'sometimes|string',
+                'first_name' => 'required|string|max:255',
+                'mid_name' => 'nullable|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'nullable|email|max:255',
+                'address' => 'required|string|max:255',
+                'date_of_birth' => 'required|date|before:today',
+                'phone' => 'required|string|max:20',
                 'image' => 'nullable|string',
-                'position_id' => 'sometimes|integer|exists:lookup,id',
-                'birthdate' => 'sometimes|date',
-                'start_date' => 'sometimes|date',
+                'position_id' => 'required|integer|exists:lookup,id',
+                'lookup_employee_type_id' => 'required|integer|exists:lookup,id',
+                'start_date' => 'required|date',
                 'end_date' => 'nullable|date',
-                'lookup_employee_type_id' => 'sometimes|integer|exists:lookup,id',
+                'status' => 'required|in:active,inactive',
+                'working_hours_from' => 'required|date_format:H:i',
+                'working_hours_to' => 'required|date_format:H:i|after:working_hours_from',
                 // New fields (not required)
-                'email' => 'nullable|email',
                 'city' => 'nullable|string|max:255',
                 'province' => 'nullable|string|max:255',
                 'building_name' => 'nullable|string|max:255',
                 'floor' => 'nullable|string|max:255',
                 'housing_type' => 'nullable|in:rent,own',
+                'owner_name' => 'nullable|string|max:255',
+                'owner_mobile_number' => 'nullable|string|max:20',
+                'acc_number' => 'nullable|integer',
             ]);
             $employee = Employee::findOrFail($id);
             $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);

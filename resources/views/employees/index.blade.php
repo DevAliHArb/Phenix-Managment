@@ -142,7 +142,7 @@ const employeesData = [
     @foreach($employees as $employee)
     {
         id: {{ $employee->id }},
-        name: `{{ $employee->first_name }} {{ $employee->last_name }}`,
+        name: `{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}`,
         image: `<img src='{{ $employee->image }}' alt='Image' style='max-width:50px;max-height:50px;'>`,
         position: `{{ optional($employee->position)->name }}`,
         date_of_birth: `{{ $employee->date_of_birth }}`,
@@ -150,6 +150,12 @@ const employeesData = [
         end_date: `{{ $employee->end_date }}`,
         employment_type: `{{ optional($employee->EmployeeType)->name }}`,
         address: `{{ $employee->address ?? '' }}`,
+        email: `{{ $employee->email ?? '' }}`,
+        city: `{{ $employee->city ?? '' }}`,
+        province: `{{ $employee->province ?? '' }}`,
+        building_name: `{{ $employee->building_name ?? '' }}`,
+        floor: `{{ $employee->floor ?? '' }}`,
+        acc_number: `{{ $employee->acc_number ?? '' }}`,
         phone: `{{ $employee->phone ?? '' }}`,
         status: `{{ $employee->status ?? '' }}`,
         working_hours_from: `{{ $employee->working_hours_from ?? '' }}`,
@@ -166,6 +172,9 @@ const employeesData = [
         yearly_vacations_left: `{{ $employee->yearly_vacations_left ?? 0 }}`,
         sick_leave_used: `{{ $employee->sick_leave_used ?? 0 }}`,
         last_salary: `{{ $employee->last_salary ?? '' }}`,
+        housing_type: `{{ $employee->housing_type ?? '' }}`,
+        owner_name: `{{ $employee->owner_name ?? '' }}`,
+        owner_mobile_number: `{{ $employee->owner_mobile_number ?? '' }}`,
         employee_times: @json($employee->employeeTimes ?? []),
         yearly_vacations: @json($employee->yearlyVacations ?? []),
         employee_vacations: @json($employee->employeeVacations ?? []),
@@ -874,9 +883,20 @@ $(function() {
                         ${employee.image}
                         <h5 style="margin: 0; margin-left: 15px;">${employee.name}</h5>
                     </div>
-                    <p><strong>Address:</strong> ${employee.address ?? ''}</p>
-                    <p><strong>Birthdate:</strong> ${employee.date_of_birth ?? ''}</p>
+                    <p><strong>Email:</strong> ${employee.email ?? ''}</p>
                     <p><strong>Phone:</strong> ${employee.phone ?? ''}</p>
+                    <p><strong>Birthdate:</strong> ${employee.date_of_birth ?? ''}</p>
+                    <p><strong>Address:</strong> ${employee.address ?? ''}</p>
+                    <p><strong>City:</strong> ${employee.city ?? ''}</p>
+                    <p><strong>Province:</strong> ${employee.province ?? ''}</p>
+                    <p><strong>Building Name:</strong> ${employee.building_name ?? ''}</p>
+                    <p><strong>Floor:</strong> ${employee.floor ?? ''}</p>
+                    <p><strong>Housing Type:</strong> ${employee.housing_type ? employee.housing_type.charAt(0).toUpperCase() + employee.housing_type.slice(1) : ''}</p>
+                    ${employee.housing_type === 'rent' && (employee.owner_name || employee.owner_mobile_number) ? `
+                        <p><strong>Owner Name:</strong> ${employee.owner_name ?? ''}</p>
+                        <p><strong>Owner Mobile:</strong> ${employee.owner_mobile_number ?? ''}</p>
+                    ` : ''}
+                    <p><strong>Account Number:</strong> ${employee.acc_number ?? ''}</p>
                     <p><strong>Start Date:</strong> ${employee.start_date ?? ''}</p>
                     <p><strong>End Date:</strong> ${employee.end_date ?? ''}</p>
                     <p><strong>Working Hours:</strong> ${formatTime(employee.working_hours_from)} - ${formatTime(employee.working_hours_to)}</p>
@@ -912,9 +932,20 @@ $(function() {
                             ${firstEmployee.image}
                             <h5 style="margin: 0; margin-left: 15px;">${firstEmployee.name}</h5>
                         </div>
-                        <p><strong>Address:</strong> ${firstEmployee.address ?? ''}</p>
-                        <p><strong>Birthdate:</strong> ${firstEmployee.date_of_birth ?? ''}</p>
+                        <p><strong>Email:</strong> ${firstEmployee.email ?? ''}</p>
                         <p><strong>Phone:</strong> ${firstEmployee.phone ?? ''}</p>
+                        <p><strong>Birthdate:</strong> ${firstEmployee.date_of_birth ?? ''}</p>
+                        <p><strong>Address:</strong> ${firstEmployee.address ?? ''}</p>
+                        <p><strong>City:</strong> ${firstEmployee.city ?? ''}</p>
+                        <p><strong>Province:</strong> ${firstEmployee.province ?? ''}</p>
+                        <p><strong>Building Name:</strong> ${firstEmployee.building_name ?? ''}</p>
+                        <p><strong>Floor:</strong> ${firstEmployee.floor ?? ''}</p>
+                        <p><strong>Housing Type:</strong> ${firstEmployee.housing_type ? firstEmployee.housing_type.charAt(0).toUpperCase() + firstEmployee.housing_type.slice(1) : ''}</p>
+                        ${firstEmployee.housing_type === 'rent' && (firstEmployee.owner_name || firstEmployee.owner_mobile_number) ? `
+                            <p><strong>Owner Name:</strong> ${firstEmployee.owner_name ?? ''}</p>
+                            <p><strong>Owner Mobile:</strong> ${firstEmployee.owner_mobile_number ?? ''}</p>
+                        ` : ''}
+                        <p><strong>Account Number:</strong> ${firstEmployee.acc_number ?? ''}</p>
                         <p><strong>Start Date:</strong> ${firstEmployee.start_date ?? ''}</p>
                         <p><strong>End Date:</strong> ${firstEmployee.end_date ?? ''}</p>
                         <p><strong>Working Hours:</strong> ${formatTime(firstEmployee.working_hours_from)} - ${formatTime(firstEmployee.working_hours_to)}</p>
