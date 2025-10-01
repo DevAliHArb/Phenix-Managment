@@ -195,8 +195,25 @@ class EmployeeVacationController extends Controller
      */
     public function destroy(string $id)
     {
-        $item = \App\Models\EmployeeVacation::findOrFail($id);
-        $item->delete();
-        return redirect()->route('employee-vacations.index')->with('success', 'Employee vacation deleted successfully');
+        try {
+            $item = \App\Models\EmployeeVacation::findOrFail($id);
+            
+            // Revert employee_times: set off_day = false, reason = null, vacation_type = null
+            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $item->employee_id)
+                ->where('date', $item->date)
+                ->first();
+            if ($employeeTime && $employeeTime->off_day) {
+                $employeeTime->off_day = false;
+                $employeeTime->reason = null;
+                $employeeTime->vacation_type = null;
+                $employeeTime->save();
+            }
+            
+            $item->delete();
+            
+            return redirect()->back()->with('success', 'Employee vacation deleted successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete employee vacation: ' . $e->getMessage());
+        }
     }
 }

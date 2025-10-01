@@ -82,12 +82,12 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('employee-vacations.index') }}"><i class="bi bi-person-check"></i> <span>Employee Vacations</span></a>
                     </li>
-                    <li class="nav-item mb-2">
+                    {{-- <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('yearly-vacations.index') }}"><i class="bi bi-calendar3"></i> <span>Yearly Days Truncations</span></a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('sick-leaves.index') }}"><i class="bi bi-thermometer-half"></i> <span>Sick Leaves</span></a>
-                    </li>
+                    </li> --}}
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('position-improvements.index') }}"><i class="bi bi-bar-chart"></i> <span>Positions</span></a>
                     </li>

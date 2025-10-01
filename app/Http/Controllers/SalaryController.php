@@ -88,4 +88,16 @@ class SalaryController extends Controller
             throw $e;
         }
     }
+
+    public function destroy($id)
+    {
+        try {
+            $salary = Salary::findOrFail($id);
+            $salary->delete();
+            
+            return redirect()->back()->with('success', 'Salary record deleted successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete salary record: ' . $e->getMessage());
+        }
+    }
 }
