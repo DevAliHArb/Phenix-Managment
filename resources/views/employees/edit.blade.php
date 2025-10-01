@@ -89,12 +89,26 @@
         </div>
         <div class="mb-3">
             <label for="housing_type" class="form-label">Housing Type</label>
-            <select name="housing_type" class="form-control @error('housing_type') is-invalid @enderror">
+            <select name="housing_type" id="housing_type" class="form-control @error('housing_type') is-invalid @enderror">
                 <option value="">Select Housing Type</option>
                 <option value="rent" {{ old('housing_type', $employee->housing_type) == 'rent' ? 'selected' : '' }}>Rent</option>
                 <option value="own" {{ old('housing_type', $employee->housing_type) == 'own' ? 'selected' : '' }}>Own</option>
             </select>
             @error('housing_type')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div id="owner_name_field" class="mb-3 rent-field" style="display: none;">
+            <label for="owner_name" class="form-label">Owner Name <span class="text-danger">*</span></label>
+            <input type="text" name="owner_name" id="owner_name" class="form-control @error('owner_name') is-invalid @enderror" value="{{ old('owner_name', $employee->owner_name) }}">
+            @error('owner_name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div id="owner_mobile_field" class="mb-3 rent-field" style="display: none;">
+            <label for="owner_mobile_number" class="form-label">Owner Mobile Number <span class="text-danger">*</span></label>
+            <input type="text" name="owner_mobile_number" id="owner_mobile_number" class="form-control @error('owner_mobile_number') is-invalid @enderror" value="{{ old('owner_mobile_number', $employee->owner_mobile_number) }}">
+            @error('owner_mobile_number')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
@@ -316,6 +330,9 @@
             const working_hours_from = form.working_hours_from.value;
             const working_hours_to = form.working_hours_to.value;
             const lookup_employee_type_id = form.lookup_employee_type_id.value.trim();
+            const housing_type = form.housing_type.value.trim();
+            const owner_name = form.owner_name ? form.owner_name.value.trim() : '';
+            const owner_mobile_number = form.owner_mobile_number ? form.owner_mobile_number.value.trim() : '';
 
             // First Name
             if (!first_name) errors.push('First Name is required.');
@@ -352,6 +369,11 @@
             if (!working_hours_to) errors.push('Working Hours To is required.');
             // Employment Type
             if (!lookup_employee_type_id) errors.push('Employment Type is required.');
+            // Housing Type validation
+            if (housing_type === 'rent') {
+                if (!owner_name) errors.push('Owner Name is required when housing type is rent.');
+                if (!owner_mobile_number) errors.push('Owner Mobile Number is required when housing type is rent.');
+            }
 
             if (errors.length > 0) {
                 e.preventDefault();
@@ -394,6 +416,34 @@
             const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
             errorModal.show();
         }
+
+        // Handle housing type change
+        const housingTypeSelect = document.getElementById('housing_type');
+        const ownerNameField = document.getElementById('owner_name_field');
+        const ownerMobileField = document.getElementById('owner_mobile_field');
+        const ownerNameInput = document.getElementById('owner_name');
+        const ownerMobileInput = document.getElementById('owner_mobile_number');
+
+        function toggleRentFields() {
+            if (housingTypeSelect.value === 'rent') {
+                ownerNameField.style.display = 'block';
+                ownerMobileField.style.display = 'block';
+                ownerNameInput.required = true;
+                ownerMobileInput.required = true;
+            } else {
+                ownerNameField.style.display = 'none';
+                ownerMobileField.style.display = 'none';
+                ownerNameInput.required = false;
+                ownerMobileInput.required = false;
+                // Don't clear values on edit form in case user changes mind
+            }
+        }
+
+        // Initialize on page load
+        toggleRentFields();
+
+        // Handle change event
+        housingTypeSelect.addEventListener('change', toggleRentFields);
     });
     </script>
 </div>
