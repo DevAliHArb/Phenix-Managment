@@ -104,8 +104,8 @@
                     </style>
                     <div class="btn-group w-100" role="group" aria-label="Employee Tabs">
                         <button id="tab-employee-salaries" type="button" class="btn employee-tab-btn btn-info active">Progression</button>
-                        <button id="tab-employee-times" type="button" class="btn employee-tab-btn btn-outline-info">PunchTime</button>
-                        <button id="tab-employee-vacations" type="button" class="btn employee-tab-btn btn-outline-info">Vacations</button>
+                        <button id="tab-employee-times" type="button" class="btn employee-tab-btn btn-outline-info">Punch Time</button>
+                        <button id="tab-employee-vacations" type="button" class="btn employee-tab-btn btn-outline-info">Transactions Days</button>
                     </div>
                 </div>
                 <div class="card-body" style="min-height: 400px;">
@@ -634,7 +634,7 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacati
                             const deleteUrl = `{{ route('employee-vacations.destroy', '') }}/${options.data.id}`;
                             
                             const editLink = `<a href="${editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
-                            const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="deleteItem('${deleteUrl}', '{{ csrf_token() }}')">Delete</a>`;
+                            const deleteLink = `<a href="javascript:void(0)" style="color: #dc3545; text-decoration: underline;" onclick="deleteItem('${deleteUrl}', '{{ csrf_token() }}')">Delete</a>`;
                             $(container).append(editLink + deleteLink);
                         },
                         width: 180,
@@ -874,7 +874,7 @@ $(function() {
     columns: [ 
             { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
             { dataField: "name", caption: "Name", allowFiltering: true, headerFilter: { allowSearch: true } },
-            { dataField: "position", caption: "Position", allowFiltering: true, headerFilter: { allowSearch: true } },
+            { dataField: "position", caption: "Current Position", allowFiltering: true, headerFilter: { allowSearch: true } },
             // { dataField: "date_of_birth", caption: "Birthdate", allowFiltering: true, headerFilter: { allowSearch: true } },
             // { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true } },
             // { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true } },
@@ -883,7 +883,7 @@ $(function() {
                 caption: "Actions",
                 cellTemplate: function(container, options) {
                     const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
-                    const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="deleteItem('${options.data.deleteUrl}', '{{ csrf_token() }}')">Delete</a>`;
+                    const deleteLink = `<a href="javascript:void(0)" style="color: #dc3545; text-decoration: underline;" onclick="deleteItem('${options.data.deleteUrl}', '{{ csrf_token() }}')">Delete</a>`;
                     $(container).append(editLink + deleteLink);
                 },
                 width: 200,
@@ -1031,7 +1031,6 @@ $(function() {
                 renderEmployeeTimesGrid(employee.employee_times || []);
             }
             detailsSection.style.display = '';
-            detailsSection.scrollIntoView({behavior: 'smooth'});
         },
         onContentReady: function(e) {
             // Select and show the first employee by default

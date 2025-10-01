@@ -499,26 +499,14 @@
             if (!first_name) errors.push('First Name is required.');
             // Last Name
             if (!last_name) errors.push('Last Name is required.');
-            // Address
-            if (!address) errors.push('Address is required.');
-            // Date of Birth
-            if (!date_of_birth) errors.push('Date of Birth is required.');
-            else if (new Date(date_of_birth) >= new Date()) errors.push('Date of Birth must be before today.');
-            // Phone
-            if (!phone) errors.push('Phone is required.');
             // Image (base64) - not required for edit
             // if (!image) {
             //     errors.push('Image is required.');
             // } else if (!image.startsWith('data:image/')) {
             //     errors.push('Image must be a valid image file.');
             // }
-            // Position ID
-            if (!position_id) errors.push('Position ID is required.');
-            else if (isNaN(position_id) || parseInt(position_id) <= 0) errors.push('Position ID must be a positive number.');
-            // Working Days
             if (!working_days || (working_days.length === 0)) errors.push('At least one working day must be selected.');
             // Start Date
-            if (!start_date) errors.push('Start Date is required.');
             if (!status) errors.push('Status is required.');
             // Working Hours From
             if (!working_hours_from) errors.push('Working Hours From is required.');
