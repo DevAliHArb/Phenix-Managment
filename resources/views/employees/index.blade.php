@@ -209,6 +209,7 @@ const employeesData = [
         housing_type: `{{ $employee->housing_type ?? '' }}`,
         owner_name: `{{ $employee->owner_name ?? '' }}`,
         owner_mobile_number: `{{ $employee->owner_mobile_number ?? '' }}`,
+        created_at: `{{ $employee->created_at }}`,
         employee_times: @json($employee->employeeTimes ?? []),
         yearly_vacations: @json($employee->yearlyVacations ?? []),
         employee_vacations: @json($employee->employeeVacations ?? []),
@@ -592,7 +593,7 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacati
                 dataSource: employeeVacations,
                 columns: [
                     { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
-                    { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true }, sortOrder: "desc" },
                     { dataField: "reason", caption: "Reason", allowFiltering: true, headerFilter: { allowSearch: true } },
                     { 
                         dataField: "type", 
@@ -707,7 +708,7 @@ function renderEmployeeSalariesGrid(positionImprovements) {
             { dataField: "id", caption: "ID", visible: false },
             { dataField: "position_name", caption: "Current Position" },
             { dataField: "employee_name", caption: "Employee", visible: false },
-            { dataField: "start_date", caption: "Start Date" },
+            { dataField: "start_date", caption: "Start Date", sortOrder: "desc" },
             { dataField: "end_date", caption: "End Date" }
         ],
         showBorders: true,
@@ -805,7 +806,7 @@ function renderEmployeeSalariesGrid(positionImprovements) {
         $("#salariesGrid").dxDataGrid({
             dataSource: salaries,
             columns: [
-                { dataField: "id", caption: "ID" },
+                { dataField: "id", caption: "ID", visible: false },
                 { dataField: "salary", caption: "Salary" },
                 { dataField: "status", caption: "Status" }
             ],
@@ -873,6 +874,7 @@ $(function() {
     dataSource: employeesData,
     columns: [ 
             { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "created_at", caption: "Date Added", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false, sortOrder: "asc" },
             { dataField: "name", caption: "Name", allowFiltering: true, headerFilter: { allowSearch: true } },
             { dataField: "position", caption: "Current Position", allowFiltering: true, headerFilter: { allowSearch: true } },
             // { dataField: "date_of_birth", caption: "Birthdate", allowFiltering: true, headerFilter: { allowSearch: true } },
