@@ -256,14 +256,14 @@
         </div>
         <div class="mb-3">
             <label for="working_hours_from" class="form-label">Working Hours From</label>
-            <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from', $employee->working_hours_from) }}" required>
+            <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from', $employee->working_hours_from ? \Carbon\Carbon::parse($employee->working_hours_from)->format('H:i') : '') }}" required>
             @error('working_hours_from')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
             <label for="working_hours_to" class="form-label">Working Hours To</label>
-            <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to', $employee->working_hours_to) }}" required>
+            <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to', $employee->working_hours_to ? \Carbon\Carbon::parse($employee->working_hours_to)->format('H:i') : '') }}" required>
             @error('working_hours_to')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -472,10 +472,6 @@
             if (!working_days || (working_days.length === 0)) errors.push('At least one working day must be selected.');
             // Start Date
             if (!start_date) errors.push('Start Date is required.');
-            // End Date
-            if (!end_date) errors.push('End Date is required.');
-            else if (start_date && new Date(end_date) < new Date(start_date)) errors.push('End Date must be after or equal to Start Date.');
-            // Status
             if (!status) errors.push('Status is required.');
             // Working Hours From
             if (!working_hours_from) errors.push('Working Hours From is required.');
