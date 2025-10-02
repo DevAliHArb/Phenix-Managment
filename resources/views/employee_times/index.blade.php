@@ -98,11 +98,11 @@
                             <div id="import-errors" class="alert alert-danger d-none"></div>
                             <div id="import-success" class="alert alert-success d-none"></div>
                             <!-- Progress bar -->
-                            {{-- <div id="import-progress-container" class="d-none mt-3">
+                            <div id="import-progress-container" class="d-none mt-3">
                                 <div class="progress">
                                     <div id="import-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
                                 </div>
-                            </div> --}}
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -142,11 +142,7 @@
                         importBtnText.textContent = 'Importing...';
                         importSubmitBtn.disabled = true;
 
-                        // Generate a unique progressKey before upload
-                        const progressKey = 'import_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-                        window.sessionStorage.setItem('import_progress_key', progressKey);
-                        formData.append('progress_key', progressKey);
-
+                        let progressKey = null;
                         let pollInterval = null;
 
                         // Use XMLHttpRequest for progress
@@ -199,9 +195,13 @@
 
                         xhr.send(formData);
 
-                        // Poll progress endpoint every 500ms using the generated progressKey
+                        // Poll progress endpoint every 500ms
                         pollInterval = setInterval(function() {
-                            fetch('/employee_times/import/progress?progress_key=' + encodeURIComponent(progressKey), {
+                            if (!progressKey) {
+                                // Try to get progressKey from session (first poll)
+                                progressKey = window.sessionStorage.getItem('import_progress_key');
+                            }
+                            fetch('/employee_times/import/progress' + (progressKey ? ('?progress_key=' + encodeURIComponent(progressKey)) : ''), {
                                 method: 'GET',
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             })
@@ -217,6 +217,17 @@
                             })
                             .catch(() => {});
                         }, 500);
+
+                        // After upload, store progressKey from response
+                        xhr.onload = function() {
+                            try {
+                                const data = JSON.parse(xhr.responseText);
+                                if (data.progress_key) {
+                                    window.sessionStorage.setItem('import_progress_key', data.progress_key);
+                                    progressKey = data.progress_key;
+                                }
+                            } catch (e) {}
+                        };
                     });
                 }
 
