@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <div class="container">
-    <h2>Employee Vacation Details</h2>
+    <h2>Transaction Day Details</h2>
     <div class="card">
         <div class="card-body">
             <p><strong>Employee:</strong> {{ $item->employee->first_name ?? '' }} {{ $item->employee->last_name ?? '' }}</p>

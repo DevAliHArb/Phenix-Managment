@@ -16,7 +16,7 @@
                         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
                         <!-- Export All Button triggers modal -->
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportAllModal">Export All</button>
-                        <a href="{{ route('employee_times.create') }}" class="btn btn-primary">Add Time Log</a>
+                        <a href="{{ route('employee_times.create') }}" class="btn btn-primary">Add Punch Time</a>
                 </div>
 
         <!-- Export All Modal -->

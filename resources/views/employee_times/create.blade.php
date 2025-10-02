@@ -3,12 +3,19 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+    <style>
+        .form-control[readonly] {
+            border: 2px dotted #dddddd !important;
+            background-color: #fff !important;
+            color: #acacac !important;
+        }
+    </style>
 @endsection
 
 @section('content')
 <div class="container">
     <div class="headerContainer">
-        <h1>Add Employee Time Log</h1>
+        <h1>Add Punch Time</h1>
     </div>
     @if ($errors->any())
         <div class="alert alert-danger">
@@ -55,17 +62,30 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-            {{-- <div class="mb-3">
-                <label for="total_time" class="form-label">Total Time (min)</label>
-                <input type="number" name="total_time" class="form-control @error('total_time') is-invalid @enderror" value="{{ old('total_time') }}">
+            <div class="mb-3">
+                <label for="total_time" class="form-label">Total Time</label>
+                <input type="text" name="total_time" class="form-control @error('total_time') is-invalid @enderror" value="{{ old('total_time') }}" readonly>
                 @error('total_time')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
-            </div> --}}
-            {{-- <div class="mb-3">
-                <label for="off_day" class="form-label">Off Day</label>
-                <input type="checkbox" name="off_day" value="1" {{ old('off_day') ? 'checked' : '' }}>
-            </div> --}}
+            </div>
+
+            <div class="mb-3">
+                <label for="vacation_type" class="form-label">Status</label>
+                <select name="vacation_type" class="form-control @error('vacation_type') is-invalid @enderror">
+                    <option value="">Select Status</option>
+                    <option value="Attended" {{ old('vacation_type') == 'Attended' ? 'selected' : '' }}>Attended</option>
+                    <option value="Weekend" {{ old('vacation_type') == 'Weekend' ? 'selected' : '' }}>Weekend</option>
+                    <option value="Vacation" {{ old('vacation_type') == 'Vacation' ? 'selected' : '' }}>Vacation</option>
+                    <option value="Holiday" {{ old('vacation_type') == 'Holiday' ? 'selected' : '' }}>Holiday</option>
+                    <option value="Sick Leave" {{ old('vacation_type') == 'Sick Leave' ? 'selected' : '' }}>Sick Leave</option>
+                    <option value="UnPaid" {{ old('vacation_type') == 'UnPaid' ? 'selected' : '' }}>UnPaid</option>
+                </select>
+                @error('vacation_type')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
             <div class="mb-3">
                 <label for="reason" class="form-label">Reason</label>
                 <input type="text" name="reason" class="form-control @error('reason') is-invalid @enderror" value="{{ old('reason') }}">
@@ -80,4 +100,88 @@
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.querySelector('input[name="date"]');
+    const vacationTypeSelect = document.querySelector('select[name="vacation_type"]');
+    const clockInInput = document.querySelector('input[name="clock_in"]');
+    const clockOutInput = document.querySelector('input[name="clock_out"]');
+    const totalTimeInput = document.querySelector('input[name="total_time"]');
+    
+    // Store initial values to use as fallback
+    let initialClockIn = '';
+    let initialClockOut = '';
+    
+    if (clockInInput) {
+        initialClockIn = clockInInput.value || clockInInput.defaultValue || clockInInput.getAttribute('value') || '';
+    }
+    if (clockOutInput) {
+        initialClockOut = clockOutInput.value || clockOutInput.defaultValue || clockOutInput.getAttribute('value') || '';
+    }
+    
+    // Function to calculate time difference in HH:MM:SS format
+    function calculateTotalTime() {
+        // Get current values - use current input value first, then fall back to initial values
+        let clockInValue = clockInInput.value || initialClockIn;
+        let clockOutValue = clockOutInput.value || initialClockOut;
+        
+        if (clockInValue && clockOutValue) {
+            const clockIn = new Date('1970-01-01T' + clockInValue + ':00');
+            const clockOut = new Date('1970-01-01T' + clockOutValue + ':00');
+            
+            // Handle case where clock out is next day (past midnight)
+            if (clockOut < clockIn) {
+                clockOut.setDate(clockOut.getDate() + 1);
+            }
+            
+            const diffInMs = clockOut - clockIn;
+            const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+            
+            if (diffInMinutes >= 0) {
+                const hours = Math.floor(diffInMinutes / 60);
+                const minutes = diffInMinutes % 60;
+                const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+                totalTimeInput.value = formattedTime;
+            } else {
+                totalTimeInput.value = '00:00:00';
+            }
+        } else {
+            totalTimeInput.value = '';
+        }
+    }
+    
+    // Add event listeners for time calculation
+    if (clockInInput && clockOutInput && totalTimeInput) {
+        // Add multiple event listeners to ensure calculation triggers
+        clockInInput.addEventListener('change', calculateTotalTime);
+        clockInInput.addEventListener('input', calculateTotalTime);
+        clockOutInput.addEventListener('change', calculateTotalTime);
+        clockOutInput.addEventListener('input', calculateTotalTime);
+        
+        // Use setTimeout to ensure DOM values are properly set
+        setTimeout(function() {
+            // Calculate initial value if both times are present
+            calculateTotalTime();
+        }, 100);
+    }
+    
+    // Weekend/weekday vacation type logic
+    if (dateInput && vacationTypeSelect) {
+        dateInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+            
+            // If it's Saturday (6) or Sunday (0), set vacation type to "Weekend"
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                vacationTypeSelect.value = 'Weekend';
+            } else {
+                // If it's a weekday (Monday-Friday), set vacation type to "Attended"
+                vacationTypeSelect.value = 'Attended';
+            }
+        });
+    }
+});
+</script>
+
 @endsection

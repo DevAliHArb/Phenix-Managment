@@ -7,7 +7,7 @@
 @section('content')
 <div style="width:100%">
     <div class="headerContainer" >
-        <h1>Employee Vacations</h1>
+        <h1>Transaction Days</h1>
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif

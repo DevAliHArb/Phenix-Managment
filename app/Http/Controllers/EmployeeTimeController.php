@@ -239,12 +239,19 @@ class EmployeeTimeController extends Controller
                 'date' => 'required|date',
                 'clock_in' => 'nullable',
                 'clock_out' => 'nullable',
-                'total_time' => 'nullable|integer',
+                'total_time' => 'nullable',
                 'off_day' => 'nullable|boolean',
                 'reason' => 'nullable|string',
                 'vacation_type' => 'nullable|string',
             ]);
-            $validated['off_day'] = $request->has('off_day');
+            
+            // Set off_day to true if vacation_type is Weekend, Vacation, Holiday, or Sick Leave
+            $offDayTypes = ['Week End', 'Vacation', 'Holiday', 'Sick Leave'];
+            if (in_array($validated['vacation_type'] ?? null, $offDayTypes)) {
+                $validated['off_day'] = true;
+            } else {
+                $validated['off_day'] = $request->has('off_day');
+            }
             EmployeeTime::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
@@ -273,12 +280,19 @@ class EmployeeTimeController extends Controller
                 'date' => 'sometimes|date',
                 'clock_in' => 'sometimes',
                 'clock_out' => 'nullable',
-                'total_time' => 'nullable|integer',
+                'total_time' => 'nullable',
                 'off_day' => 'nullable|boolean',
                 'reason' => 'nullable|string',
                 'vacation_type' => 'nullable|string',
             ]);
-            $validated['off_day'] = $request->has('off_day');
+            
+            // Set off_day to true if vacation_type is Weekend, Vacation, Holiday, or Sick Leave
+            $offDayTypes = ['Week End', 'Vacation', 'Holiday', 'Sick Leave'];
+            if (in_array($validated['vacation_type'] ?? null, $offDayTypes)) {
+                $validated['off_day'] = true;
+            } else {
+                $validated['off_day'] = $request->has('off_day');
+            }
             $model = EmployeeTime::findOrFail($id);
             $model->update($validated);
             if ($request->ajax()) {

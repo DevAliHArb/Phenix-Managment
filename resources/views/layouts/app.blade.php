@@ -80,7 +80,7 @@
                         <a class="nav-link" href="{{ route('employee_times.index') }}"><i class="bi bi-clock-history"></i> <span> Punch Time</span></a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{{ route('employee-vacations.index') }}"><i class="bi bi-person-check"></i> <span>Employee Vacations</span></a>
+                        <a class="nav-link" href="{{ route('employee-vacations.index') }}"><i class="bi bi-person-check"></i> <span>Transaction Days</span></a>
                     </li>
                     {{-- <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('yearly-vacations.index') }}"><i class="bi bi-calendar3"></i> <span>Yearly Days Truncations</span></a>
