@@ -228,7 +228,8 @@ class EmployeeTimeController extends Controller
     public function create()
     {
         $employees = Employee::all();
-        return view('employee_times.create', compact('employees'));
+        $vacationDates = VacationDate::orderBy('date')->get();
+        return view('employee_times.create', compact('employees', 'vacationDates'));
     }
 
     public function store(Request $request)
@@ -244,9 +245,9 @@ class EmployeeTimeController extends Controller
                 'reason' => 'nullable|string',
                 'vacation_type' => 'nullable|string',
             ]);
-            
-            // Set off_day to true if vacation_type is Weekend, Vacation, Holiday, or Sick Leave
-            $offDayTypes = ['Week End', 'Vacation', 'Holiday', 'Sick Leave'];
+
+            // Set off_day to true if vacation_type is Off, Vacation, Holiday, or Sick Leave
+            $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave'];
             if (in_array($validated['vacation_type'] ?? null, $offDayTypes)) {
                 $validated['off_day'] = true;
             } else {
@@ -269,7 +270,8 @@ class EmployeeTimeController extends Controller
     {
         $employeeTime = EmployeeTime::findOrFail($id);
         $employees = Employee::all();
-        return view('employee_times.edit', compact('employeeTime', 'employees'));
+        $vacationDates = VacationDate::orderBy('date')->get();
+        return view('employee_times.edit', compact('employeeTime', 'employees', 'vacationDates'));
     }
 
     public function update(Request $request, $id)
@@ -285,9 +287,9 @@ class EmployeeTimeController extends Controller
                 'reason' => 'nullable|string',
                 'vacation_type' => 'nullable|string',
             ]);
-            
-            // Set off_day to true if vacation_type is Weekend, Vacation, Holiday, or Sick Leave
-            $offDayTypes = ['Week End', 'Vacation', 'Holiday', 'Sick Leave'];
+
+            // Set off_day to true if vacation_type is Off, Vacation, Holiday, or Sick Leave
+            $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave'];
             if (in_array($validated['vacation_type'] ?? null, $offDayTypes)) {
                 $validated['off_day'] = true;
             } else {

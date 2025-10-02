@@ -75,7 +75,7 @@
                 <select name="vacation_type" class="form-control @error('vacation_type') is-invalid @enderror">
                     <option value="">Select Status</option>
                     <option value="Attended" {{ old('vacation_type') == 'Attended' ? 'selected' : '' }}>Attended</option>
-                    <option value="Weekend" {{ old('vacation_type') == 'Weekend' ? 'selected' : '' }}>Weekend</option>
+                    <option value="Off" {{ old('vacation_type') == 'Off' ? 'selected' : '' }}>Off</option>
                     <option value="Vacation" {{ old('vacation_type') == 'Vacation' ? 'selected' : '' }}>Vacation</option>
                     <option value="Holiday" {{ old('vacation_type') == 'Holiday' ? 'selected' : '' }}>Holiday</option>
                     <option value="Sick Leave" {{ old('vacation_type') == 'Sick Leave' ? 'selected' : '' }}>Sick Leave</option>
@@ -88,7 +88,19 @@
 
             <div class="mb-3">
                 <label for="reason" class="form-label">Reason</label>
-                <input type="text" name="reason" class="form-control @error('reason') is-invalid @enderror" value="{{ old('reason') }}">
+                <!-- Text input for normal reasons -->
+                <input type="text" id="reason-input" name="reason" class="form-control @error('reason') is-invalid @enderror" value="{{ old('reason') }}">
+                <!-- Dropdown for holiday reasons (hidden by default) -->
+                <select id="reason-select" name="reason_select" class="form-control @error('reason') is-invalid @enderror" style="display: none;" required>
+                    <option value="">Select Holiday</option>
+                    @if(isset($vacationDates))
+                        @foreach($vacationDates as $vacationDate)
+                            <option value="{{ $vacationDate->name }}" data-date="{{ $vacationDate->date }}">
+                                {{ $vacationDate->name }} ({{ \Carbon\Carbon::parse($vacationDate->date)->format('M d, Y') }})
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
                 @error('reason')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -166,18 +178,79 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
     
+    // Reason field handling
+    const reasonInput = document.getElementById('reason-input');
+    const reasonSelect = document.getElementById('reason-select');
+    
+    function handleVacationTypeChange() {
+        const selectedType = vacationTypeSelect.value;
+        const currentReason = reasonInput.value;
+        
+        if (selectedType === 'Off') {
+            // Show text input, make it readonly with value "Weekend"
+            reasonInput.style.display = 'block';
+            reasonSelect.style.display = 'none';
+            reasonInput.value = 'Weekend';
+            reasonInput.readOnly = true;
+            reasonInput.classList.add('form-control[readonly]');
+            reasonInput.name = 'reason'; // Ensure input name is correct
+            reasonSelect.name = 'reason_select'; // Change dropdown name so it doesn't submit
+            reasonSelect.removeAttribute('required');
+            reasonInput.removeAttribute('required');
+        } else if (selectedType === 'Holiday') {
+            // Show dropdown, hide text input, make it required
+            reasonInput.style.display = 'none';
+            reasonSelect.style.display = 'block';
+            reasonSelect.name = 'reason'; // Change name to submit the dropdown value
+            reasonInput.name = 'reason_temp'; // Change input name so it doesn't submit
+            reasonSelect.setAttribute('required', 'required');
+            reasonInput.removeAttribute('required');
+        } else {
+            // Show normal text input
+            reasonInput.style.display = 'block';
+            reasonSelect.style.display = 'none';
+            reasonInput.readOnly = false;
+            reasonInput.classList.remove('form-control[readonly]');
+            reasonInput.name = 'reason'; // Ensure input name is correct
+            reasonSelect.name = 'reason_select'; // Change dropdown name so it doesn't submit
+            reasonSelect.removeAttribute('required');
+            reasonInput.removeAttribute('required');
+            
+            // Reset reason if it was "Weekend" and we're changing from "Off" to another type
+            if (currentReason === 'Weekend') {
+                reasonInput.value = '';
+            }
+        }
+    }
+    
+    // Add event listener for vacation type changes
+    if (vacationTypeSelect) {
+        vacationTypeSelect.addEventListener('change', handleVacationTypeChange);
+        // Initialize on page load
+        handleVacationTypeChange();
+    }
+    
+    // Handle dropdown selection for holidays
+    if (reasonSelect) {
+        reasonSelect.addEventListener('change', function() {
+            // The selected value will be automatically submitted as the reason
+        });
+    }
+
     // Weekend/weekday vacation type logic
     if (dateInput && vacationTypeSelect) {
         dateInput.addEventListener('change', function() {
             const selectedDate = new Date(this.value);
             const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
             
-            // If it's Saturday (6) or Sunday (0), set vacation type to "Weekend"
+            // If it's Saturday (6) or Sunday (0), set vacation type to "Off"
             if (dayOfWeek === 0 || dayOfWeek === 6) {
-                vacationTypeSelect.value = 'Weekend';
+                vacationTypeSelect.value = 'Off';
+                handleVacationTypeChange(); // Update reason field
             } else {
                 // If it's a weekday (Monday-Friday), set vacation type to "Attended"
                 vacationTypeSelect.value = 'Attended';
+                handleVacationTypeChange(); // Update reason field
             }
         });
     }
