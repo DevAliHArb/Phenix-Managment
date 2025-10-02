@@ -44,7 +44,7 @@ class EmployeeTimeController extends Controller
                 ->orderBy('date')->get();
 
             $timesheet = $times->map(function ($row) {
-                $isWeekend = false;
+                $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
                 $isVacation = $row->off_day && $row->reason === 'vacation';
                 $status = $row->off_day ? 'Off' : 'Attended';
                 $totalHours = 0;
@@ -110,7 +110,7 @@ class EmployeeTimeController extends Controller
         $times = $query->orderBy('date')->get();
 
         $timesheet = $times->map(function ($row) {
-            $isWeekend = false; // You can enhance this logic if you have weekend info
+                $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
             $isVacation = $row->off_day && $row->reason === 'vacation';
             $status = $row->off_day ? 'Off' : 'Attended';
             // Parse total_time as H:i:s string to decimal hours
