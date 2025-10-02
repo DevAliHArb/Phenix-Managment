@@ -15,6 +15,13 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
     *
     * @return \Illuminate\Database\Eloquent\Model|null
     */
+    protected $progressKey;
+
+    public function __construct($progressKey = null)
+    {
+        $this->progressKey = $progressKey;
+    }
+
     public function collection(Collection $rows)
     {
         // Skip header row
@@ -26,6 +33,10 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
         $grouped = $rows->groupBy(function($row) {
             return $row[1]; // AC-No.
         });
+
+    $total = $rows->count();
+    $processed = 0;
+
 
         foreach ($grouped as $acNo => $employeeRows) {
             // Sort by date
@@ -96,12 +107,17 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
                         'reason'      => $reason,
                         'vacation_type' => $vacationType,
                     ]);
+                    // Progress update for each inserted row (missing date)
+                    $processed++;
+                    if ($this->progressKey && $total > 0) {
+                        $percent = intval(($processed / $total) * 100);
+                        \Cache::put($this->progressKey, $percent, 600); // 10 min expiry
+                    }
                 }
             }
 
             // Process present dates (imported rows)
             foreach ($employeeRows as $row) {
-                // Skip header row (should already be filtered)
                 // Emp No. and AC-No. are in columns 0 and 1
                 $acNo = isset($row[1]) ? $row[1] : null;
 
@@ -122,18 +138,18 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
 
                 // Handle Clock In from column 5
                 $clockIn = null;
-                if (!empty($row[9])) {
-                    $clockIn = is_numeric($row[9]) 
-                        ? Date::excelToDateTimeObject($row[9])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[9]));
+                if (!empty($row[5])) {
+                    $clockIn = is_numeric($row[5]) 
+                        ? Date::excelToDateTimeObject($row[5])->format('H:i:s')
+                        : date('H:i:s', strtotime($row[5]));
                 }else if (!empty($row[7])) {
                     $clockIn = is_numeric($row[7]) 
                         ? Date::excelToDateTimeObject($row[7])->format('H:i:s')
                         : date('H:i:s', strtotime($row[7]));
-                }else if (!empty($row[5])) {
-                    $clockIn = is_numeric($row[5]) 
-                        ? Date::excelToDateTimeObject($row[5])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[5]));
+                }else if (!empty($row[9])) {
+                    $clockIn = is_numeric($row[9]) 
+                        ? Date::excelToDateTimeObject($row[9])->format('H:i:s')
+                        : date('H:i:s', strtotime($row[9]));
                 }
 
                 // Handle Clock Out from column 6
@@ -225,7 +241,6 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
                     }
                 }
 
-                // Save EmployeeTime for present date
                 EmployeeTime::create([
                     'employee_id' => $employeeId,
                     'acc_number'  => $acNo,
@@ -237,7 +252,17 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
                     'reason'      => $reason,
                     'vacation_type' => $vacationType,
                 ]);
+                // Progress update for each inserted row (present date)
+                $processed++;
+                if ($this->progressKey && $total > 0) {
+                    $percent = intval(($processed / $total) * 100);
+                    \Cache::put($this->progressKey, $percent, 600); // 10 min expiry
+                }
             }
+        }
+
+        if ($this->progressKey) {
+            \Cache::put($this->progressKey, 100, 600);
         }
     }
 

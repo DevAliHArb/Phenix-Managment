@@ -11,6 +11,18 @@ use Carbon\Carbon;
 
 class EmployeeTimeController extends Controller
 {
+    /**
+     * Return import progress for the current session/key
+     */
+    public function importProgress(Request $request)
+    {
+        $progressKey = $request->get('progress_key') ?? $request->session()->get('import_progress_key');
+        if (!$progressKey) {
+            return response()->json(['progress' => 0]);
+        }
+        $progress = \Cache::get($progressKey, 0);
+        return response()->json(['progress' => $progress]);
+    }
 
     /**
      * Export multiple employees' timesheets as individual PDFs in a zip file
@@ -154,13 +166,13 @@ class EmployeeTimeController extends Controller
             $carbon = \Carbon\Carbon::parse($date);
             $weekday = strtolower($carbon->format('l'));
             if ($workSchedule && $workSchedule->$weekday) {
-                if (in_array($date, $vacationDates)) {
-                    continue;
-                }
-                $hasYearlyVacation = $employee->yearlyVacations()->whereDate('date', $date)->exists();
-                if ($hasYearlyVacation) {
-                    continue;
-                }
+                // if (in_array($date, $vacationDates)) {
+                //     continue;
+                // }
+                // $hasYearlyVacation = $employee->yearlyVacations()->whereDate('date', $date)->exists();
+                // if ($hasYearlyVacation) {
+                //     continue;
+                // }
                 $attendanceRequiredCount++;
             }
         }
@@ -327,13 +339,17 @@ class EmployeeTimeController extends Controller
         }
 
         try {
-            $import = new \App\Imports\EmployeeTimeImport();
+            // Generate a unique progress key for this import (per user/session)
+            $progressKey = 'import_progress_' . ($request->user() ? $request->user()->id : $request->ip()) . '_' . uniqid();
+            $request->session()->put('import_progress_key', $progressKey);
+            \Cache::put($progressKey, 0, 600);
+            $import = new \App\Imports\EmployeeTimeImport($progressKey);
             \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('excel_file'));
 
-            // You can extend EmployeeTimeImport to collect results if needed
             return response()->json([
                 'status' => 'success',
                 'message' => 'Punch Time import completed',
+                'progress_key' => $progressKey
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()], 500);

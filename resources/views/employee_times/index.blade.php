@@ -97,10 +97,19 @@
                             </div>
                             <div id="import-errors" class="alert alert-danger d-none"></div>
                             <div id="import-success" class="alert alert-success d-none"></div>
+                            <!-- Progress bar -->
+                            {{-- <div id="import-progress-container" class="d-none mt-3">
+                                <div class="progress">
+                                    <div id="import-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+                                </div>
+                            </div> --}}
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Import</button>
+                            <button type="submit" id="importSubmitBtn" class="btn btn-primary">
+                                <span id="importBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                <span id="importBtnText">Import</span>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -119,35 +128,95 @@
                         const formData = new FormData(importForm);
                         const errorsDiv = document.getElementById('import-errors');
                         const successDiv = document.getElementById('import-success');
+                        const progressContainer = document.getElementById('import-progress-container');
+                        const progressBar = document.getElementById('import-progress-bar');
+                        const importBtnSpinner = document.getElementById('importBtnSpinner');
+                        const importBtnText = document.getElementById('importBtnText');
+                        const importSubmitBtn = document.getElementById('importSubmitBtn');
                         errorsDiv.classList.add('d-none');
                         successDiv.classList.add('d-none');
-                        fetch(importForm.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                            },
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if(data.status === 'success') {
-                                successDiv.textContent = data.message;
-                                successDiv.classList.remove('d-none');
-                                errorsDiv.classList.add('d-none');
-                                setTimeout(() => { window.location.reload(); }, 1200);
-                            } else {
-                                let msg = data.message || '';
-                                if(data.errors) {
-                                    msg += Object.values(data.errors).flat().join(' ');
+                        progressContainer.classList.remove('d-none');
+                        progressBar.style.width = '0%';
+                        progressBar.textContent = '0%';
+                        importBtnSpinner.classList.remove('d-none');
+                        importBtnText.textContent = 'Importing...';
+                        importSubmitBtn.disabled = true;
+
+                        // Generate a unique progressKey before upload
+                        const progressKey = 'import_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+                        window.sessionStorage.setItem('import_progress_key', progressKey);
+                        formData.append('progress_key', progressKey);
+
+                        let pollInterval = null;
+
+                        // Use XMLHttpRequest for progress
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', importForm.action, true);
+                        xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('input[name="_token"]').value);
+                        xhr.onreadystatechange = function() {
+                            if (xhr.readyState === 4) {
+                                importBtnSpinner.classList.add('d-none');
+                                importBtnText.textContent = 'Import';
+                                importSubmitBtn.disabled = false;
+                                setTimeout(() => {
+                                    progressContainer.classList.add('d-none');
+                                    progressBar.style.width = '0%';
+                                    progressBar.textContent = '0%';
+                                }, 1000);
+                                let data;
+                                try {
+                                    data = JSON.parse(xhr.responseText);
+                                } catch (e) {
+                                    data = { status: 'error', message: 'Import failed. Please try again.' };
                                 }
-                                errorsDiv.textContent = msg;
-                                errorsDiv.classList.remove('d-none');
+                                if (pollInterval) clearInterval(pollInterval);
+                                progressBar.style.width = '100%';
+                                progressBar.textContent = '100%';
+                                if(data.status === 'success') {
+                                    successDiv.textContent = data.message;
+                                    successDiv.classList.remove('d-none');
+                                    errorsDiv.classList.add('d-none');
+                                    setTimeout(() => { window.location.reload(); }, 1200);
+                                } else {
+                                    let msg = data.message || '';
+                                    if(data.errors) {
+                                        msg += Object.values(data.errors).flat().join(' ');
+                                    }
+                                    errorsDiv.textContent = msg;
+                                    errorsDiv.classList.remove('d-none');
+                                }
                             }
-                        })
-                        .catch(err => {
+                        };
+                        xhr.onerror = function() {
+                            importBtnSpinner.classList.add('d-none');
+                            importBtnText.textContent = 'Import';
+                            importSubmitBtn.disabled = false;
                             errorsDiv.textContent = 'Import failed. Please try again.';
                             errorsDiv.classList.remove('d-none');
-                        });
+                            progressContainer.classList.add('d-none');
+                            if (pollInterval) clearInterval(pollInterval);
+                        };
+
+                        xhr.send(formData);
+
+                        // Poll progress endpoint every 500ms using the generated progressKey
+                        pollInterval = setInterval(function() {
+                            fetch('/employee_times/import/progress?progress_key=' + encodeURIComponent(progressKey), {
+                                method: 'GET',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (typeof data.progress === 'number') {
+                                    progressBar.style.width = data.progress + '%';
+                                    progressBar.textContent = data.progress + '%';
+                                }
+                                if (data.progress >= 100 && pollInterval) {
+                                    clearInterval(pollInterval);
+                                }
+                            })
+                            .catch(() => {});
+                        }, 500);
                     });
                 }
 

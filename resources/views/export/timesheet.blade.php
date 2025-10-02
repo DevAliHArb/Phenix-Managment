@@ -23,29 +23,31 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ public_path('optimumLogo.jpeg') }}" class="logo" alt="Logo">
+        <img src="{{ public_path('optimumLogo1.jpeg') }}" class="logo" alt="Logo">
         <span class="title">Time Sheet</span>
     </div>
     <table style="width:100%; border:none; margin-bottom:10px;">
         <tr>
-            <td style="width:70%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Manager Name:</strong> Ali Harb</td>
-            <td style="width:30%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Employee Name:</strong> {{ $employee->name }}</td>
+            <td style="width:80%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Employee Name:</strong> {{ $employee->name }}</td>
+            <td style="width:20%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Manager Name:</strong> Ali Harb</td>
         </tr>
         <tr>
-            <td style="width:70%; text-align:left; border:none; padding:0 0 2px 0;">
+            <td style="width:80%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Position:</strong> {{ $department }}</td>
+            <td style="width:20%; text-align:left; border:none; padding:0 0 2px 0;">
                 <strong>Date:</strong>
                 {{ isset($month) && isset($year) 
                     ? (\Carbon\Carbon::create($year, $month, 1)->addMonth()->format('d/m/Y')) 
                     : (\Carbon\Carbon::now()->addMonth()->startOfMonth()->format('d/m/Y')) 
                 }}
             </td>
-            <td style="width:30%; text-align:left; border:none; padding:0 0 2px 0;"><strong>Position:</strong> {{ $department }}</td>
         </tr>
     </table>
     <table>
         <thead>
             <tr>
+                <th style="width: 24px;"></th>
                 <th>Date</th>
+                <th style="background:#ffe599;">&nbsp;</th>
                 <th>Time In</th>
                 <th>Time Out</th>
                 <th>Total Hours</th>
@@ -109,15 +111,21 @@
                 } else {
                     $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
                 }
-                // Format extra as +H:MM or -H:MM
-                $extraSign = $extra >= 0 ? '+' : '-';
-                $extraMinutes = (int)round(abs($extra * 60));
-                $extraH = floor($extraMinutes / 60);
-                $extraM = $extraMinutes % 60;
-                $extraFormatted = $extraSign . $extraH . ':' . str_pad($extraM, 2, '0', STR_PAD_LEFT);
+                // Format extra as +H:MM or -H:MM, but keep empty for off days
+                if (!empty($row['dayoff'])) {
+                    $extraFormatted = '';
+                } else {
+                    $extraSign = $extra >= 0 ? '+' : '-';
+                    $extraMinutes = (int)round(abs($extra * 60));
+                    $extraH = floor($extraMinutes / 60);
+                    $extraM = $extraMinutes % 60;
+                    $extraFormatted = $extraSign . $extraH . ':' . str_pad($extraM, 2, '0', STR_PAD_LEFT);
+                }
             @endphp
             <tr class="{{ $rowClass }}">
+                <td>{{ $d }}</td>
                 <td>{{ $dateObj->format('d/m/Y') }}</td>
+                <td style="background:#ffe599; width: 6px;"></td>
                 <td>
                     @if(!empty($row['timein']))
                         {{ \Carbon\Carbon::parse($row['timein'])->format('g:i a') }}
@@ -180,6 +188,9 @@
         if ($totalLoggedTime == '0:00:00') {
             $totalLoggedTime = sumTimes($times->pluck('total_time') ?? []);
         }
+        // Format totalLoggedTime as H:i (00:00)
+        list($h, $m, $s) = explode(':', $totalLoggedTime);
+        $totalLoggedTimeFormatted = sprintf('%02d:%02d', $h, $m);
 
     // Calculate total extra-minus time (sum of all daily $extra values)
     $totalExtraMinutes = 0;
@@ -203,9 +214,9 @@
             <tr>
                 <td style="width:20%; vertical-align:top; padding-right:10px; border:none; text-align:left;">
                     <div style="margin-bottom:10px;">Employee Signature:</div>
-                    <div style="border-bottom:1px solid #333; width:90%; margin-bottom:18px;"></div>
+                    <div style="border-bottom:1px solid #333; width:90%; margin-bottom:13px;height: 13px;"></div>
                     <div style="margin-bottom:10px;">Manager Signature:</div>
-                    <div style="border-bottom:1px solid #333; width:90%; margin-bottom:0;"></div>
+                    <div style="border-bottom:1px solid #333; width:90%; margin-bottom:0; height: 13px;"></div>
                 </td>
                 <td style="width:23%; text-align:left; font-weight:bold; border:none;row-gap: 10px;">
                     Attendance Required<br>
@@ -221,9 +232,9 @@
                 </td>
                 <td style="width:20%; text-align:left; font-weight:bold; border:none;row-gap: 10px;">
                     Attendance Total<br>
-                    Off Days Total<br>
-                    Sick Leaves Total<br>
+                    Holidays Total<br>
                     Vacations Total<br>
+                    Sick Leaves Total<br>
                     Time logged Total<br>
                 </td>
                 <td style="width:10%; background:#fbe4d5; text-align:center; font-weight:normal; border:none; row-gap: 10px;">
@@ -240,11 +251,11 @@
                     })->count() }}<br>
                     {{-- Off Days Total: length of offdays --}}
                     {{ isset($offdays) ? count($offdays) : 0 }}<br>
-                    {{-- Sick Leaves Total: length of sickleave --}}
-                    {{ isset($sickleave) ? count($sickleave) : 0 }}<br>
                     {{-- Vacations Total: length of vacations --}}
                     {{ isset($vacations) ? count($vacations) : 0 }}<br>
-                    {{ $totalLoggedTime }}<br>
+                    {{-- Sick Leaves Total: length of sickleave --}}
+                    {{ isset($sickleave) ? count($sickleave) : 0 }}<br>
+                    {{ $totalLoggedTimeFormatted }}<br>
                 </td>
             </tr>
         </table>
