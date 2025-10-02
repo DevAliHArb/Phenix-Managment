@@ -8,7 +8,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 use Illuminate\Support\Collection;
 
-class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
+class EmployeeTimeImport implements ToCollection
 {
     /**
     * @param array $row
