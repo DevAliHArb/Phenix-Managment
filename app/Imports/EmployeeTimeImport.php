@@ -72,6 +72,10 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
                 if (!$dateSet->has($dateStr)) {
                     $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
                     $employeeId = $employee ? $employee->id : null;
+                    // Skip if already exists
+                    if ($employeeId && EmployeeTime::where('employee_id', $employeeId)->where('date', $dateStr)->exists()) {
+                        continue;
+                    }
                     $offDay = false;
                     $reason = null;
                     $vacationType = null;
@@ -241,6 +245,10 @@ class EmployeeTimeImport implements \Maatwebsite\Excel\Concerns\ToCollection
                     }
                 }
 
+                // Skip if already exists
+                if ($employeeId && $date && EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->exists()) {
+                    continue;
+                }
                 EmployeeTime::create([
                     'employee_id' => $employeeId,
                     'acc_number'  => $acNo,
