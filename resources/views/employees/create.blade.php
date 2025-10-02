@@ -133,7 +133,7 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="mb-3">
+        {{-- <div class="mb-3">
             <label for="position_id" class="form-label">Current Position</label>
             <select name="position_id" class="form-control @error('position_id') is-invalid @enderror" required>
                 <option value="">Select Position</option>
@@ -146,7 +146,7 @@
             @error('position_id')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
+        </div> --}}
 
         <div class="mb-3">
             <label for="lookup_employee_type_id" class="form-label">Employment Type</label>
@@ -162,7 +162,7 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="mb-3">
+        {{-- <div class="mb-3">
             <label for="status" class="form-label">Status</label>
             <select name="status" class="form-control @error('status') is-invalid @enderror" required>
                 <option value="">Select Status</option>
@@ -172,7 +172,7 @@
             @error('status')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
+        </div> --}}
         <div class="mb-3">
             <label for="image" class="form-label">Profile Image</label>
             <input type="file" accept="image/*" id="imageInput" class="form-control @error('image') is-invalid @enderror" required>
@@ -236,20 +236,20 @@
                 </div>
             </div>
         </div>
-        <div class="mb-3">
+        {{-- <div class="mb-3">
             <label for="start_date" class="form-label">Start Date</label>
             <input type="date" name="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date') }}" required>
             @error('start_date')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
-        <div class="mb-3">
+        </div> --}}
+        {{-- <div class="mb-3">
             <label for="end_date" class="form-label">End Date</label>
             <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date') }}" required>
             @error('end_date')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
+        </div> --}}
         <div class="mb-3">
             <label for="working_hours_from" class="form-label">Working Hours From</label>
             <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from') }}" required>

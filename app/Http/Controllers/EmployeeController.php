@@ -108,6 +108,11 @@ class EmployeeController extends Controller
             }
             $validated['yearly_vacations_total'] = floor($monthsCompleted * 1.25);
 
+            // Set status to active by default if not provided
+            if (!isset($validated['status']) || empty($validated['status'])) {
+                $validated['status'] = 'active';
+            }
+
             $employee = Employee::create($validated);
 
             // Handle attachments
