@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
+use App\Models\Lookup;
 use App\Models\PositionImprovement;
+use App\Models\Salary;
 use Illuminate\Http\Request;
 
 class PositionImprovementController extends Controller
@@ -13,7 +16,7 @@ class PositionImprovementController extends Controller
     public function index()
     {
     $items = PositionImprovement::all();
-    $salaryItems = \App\Models\Salary::all();
+    $salaryItems = Salary::all();
     return view('position-improvements.index', compact('items', 'salaryItems'));
     }
 
@@ -22,8 +25,8 @@ class PositionImprovementController extends Controller
      */
     public function create(Request $request)
     {
-        $positions = \App\Models\Lookup::where('parent_id', 1)->get();
-        $employees = \App\Models\Employee::all();
+        $positions = Lookup::where('parent_id', 1)->get();
+        $employees = Employee::all();
         $selectedEmployeeId = $request->get('employee_id');
         $lockEmployee = $request->get('lock_employee', false);
         $returnUrl = $request->get('return_url', route('position-improvements.index'));
@@ -42,9 +45,23 @@ class PositionImprovementController extends Controller
                 'start_date' => 'required|date',
             ]);
 
+            // Check if there's already an active position improvement for the same employee and position
+            $existingActive = PositionImprovement::where('employee_id', $validated['employee_id'])
+                ->where('position_id', $validated['position_id'])
+                ->where('is_active', true)
+                ->first();
+
+            if ($existingActive) {
+                $errorMessage = 'This employee already has an active position improvement for the selected position.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'errors' => [$errorMessage]], 422);
+                }
+                return back()->withInput()->withErrors(['position_id' => $errorMessage]);
+            }
+
             $newSalary = null;
             // Deactivate current active row for this employee and set its end_date
-            $activeRow = \App\Models\PositionImprovement::where('employee_id', $validated['employee_id'])
+            $activeRow = PositionImprovement::where('employee_id', $validated['employee_id'])
                 ->where('is_active', true)
                 ->first();
             if ($activeRow) {
@@ -52,7 +69,7 @@ class PositionImprovementController extends Controller
                 $activeRow->end_date = $validated['start_date'];
                 $activeRow->save();
 
-                $activeSalary = \App\Models\Salary::where('position_improvement_id', $activeRow->id)
+                $activeSalary = Salary::where('position_improvement_id', $activeRow->id)
                     ->where('status', true)
                     ->first();
                 if ($activeSalary) {
@@ -68,7 +85,7 @@ class PositionImprovementController extends Controller
                 }
             }
 
-            $newPositionImprovement = \App\Models\PositionImprovement::create($validated);
+            $newPositionImprovement = PositionImprovement::create($validated);
 
             // If a new salary was prepared, assign the new position_improvement_id and save
             if ($newSalary) {
@@ -104,8 +121,8 @@ class PositionImprovementController extends Controller
     public function edit(string $id)
     {
         $positionImprovement = PositionImprovement::findOrFail($id);
-        $positions = \App\Models\Lookup::where('parent_id', 1)->get();
-        $employees = \App\Models\Employee::all();
+        $positions = Lookup::where('parent_id', 1)->get();
+        $employees = Employee::all();
         return view('position-improvements.edit', compact('positionImprovement', 'positions', 'employees'));
     }
 

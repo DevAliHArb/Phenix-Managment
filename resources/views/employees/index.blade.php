@@ -945,10 +945,58 @@ $(function() {
             { dataField: "created_at", caption: "Date Added", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false, sortOrder: "asc" },
             { dataField: "name", caption: "Name", allowFiltering: true, headerFilter: { allowSearch: true } },
             { dataField: "position", caption: "Current Position", allowFiltering: true, headerFilter: { allowSearch: true } },
-            // { dataField: "date_of_birth", caption: "Birthdate", allowFiltering: true, headerFilter: { allowSearch: true } },
-            // { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true } },
-            // { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true } },
             { dataField: "employment_type", caption: "Employment Type", allowFiltering: true, headerFilter: { allowSearch: true } },
+            
+            // Personal Information - Hidden
+            { dataField: "first_name", caption: "First Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "mid_name", caption: "Middle Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "last_name", caption: "Last Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "email", caption: "Email", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "phone", caption: "Phone", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "date_of_birth", caption: "Date of Birth", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "acc_number", caption: "Account Number", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Address Information - Hidden
+            { dataField: "address", caption: "Address", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "city", caption: "City", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "province", caption: "Province", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "building_name", caption: "Building Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "floor", caption: "Floor", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "housing_type", caption: "Housing Type", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "owner_name", caption: "Owner Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "owner_mobile_number", caption: "Owner Mobile", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Employment Information - Hidden
+            { dataField: "position_id", caption: "Position ID", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "lookup_employee_type_id", caption: "Employee Type ID", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Working Hours & Days - Hidden
+            { dataField: "working_hours_from", caption: "Working Hours From", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "working_hours_to", caption: "Working Hours To", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "sunday", caption: "Sunday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "monday", caption: "Monday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "tuesday", caption: "Tuesday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "wednesday", caption: "Wednesday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "thursday", caption: "Thursday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "friday", caption: "Friday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "saturday", caption: "Saturday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Vacation & Leave Information - Hidden
+            { dataField: "yearly_vacations_total", caption: "Yearly Vacations Total", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "yearly_vacations_used", caption: "Yearly Vacations Used", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "yearly_vacations_left", caption: "Yearly Vacations Left", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "sick_leave_used", caption: "Sick Leave Used", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Salary Information - Hidden
+            { dataField: "last_salary", caption: "Last Salary", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // System Fields - Hidden
+            { dataField: "image", caption: "Image", allowFiltering: false, visible: false },
+            { dataField: "updated_at", caption: "Last Updated", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "deleted_at", caption: "Deleted At", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
             {
                 caption: "Actions",
                 cellTemplate: function(container, options) {

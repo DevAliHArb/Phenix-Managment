@@ -9,7 +9,7 @@ class SalaryController extends Controller
 {
     public function edit($id)
     {
-        $item = \App\Models\Salary::findOrFail($id);
+        $item = Salary::findOrFail($id);
         return view('salary.edit', compact('item'));
     }
     public function create(Request $request)
@@ -41,8 +41,24 @@ class SalaryController extends Controller
                 'status' => 'required|boolean',
                 'start_date' => 'required|date',
             ]);
+
+            // Check if trying to create an active salary when one already exists for this position improvement
+            if ($validated['status'] == true) {
+                $existingActiveSalary = Salary::where('position_improvement_id', $validated['position_improvement_id'])
+                    ->where('status', true)
+                    ->first();
+
+                if ($existingActiveSalary && $existingActiveSalary->salary == $validated['salary']) {
+                    $errorMessage = 'There is already an active salary record with the same amount for this position improvement.';
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'errors' => [$errorMessage]], 422);
+                    }
+                    return back()->withInput()->withErrors(['salary' => $errorMessage]);
+                }
+            }
+
             // Deactivate current active row for this employee and set its end_date
-            $activeRow = \App\Models\Salary::where('position_improvement_id', $request['position_improvement_id'])
+            $activeRow = Salary::where('position_improvement_id', $request['position_improvement_id'])
                 ->where('status', true)
                 ->first();
             if ($activeRow) {
@@ -50,7 +66,7 @@ class SalaryController extends Controller
                 $activeRow->end_date = $request['start_date'];
                 $activeRow->save();
             }
-            \App\Models\Salary::create($request->all());
+            Salary::create($request->all());
             
             $returnUrl = $request->get('return_url', route('salary.index'));
             
@@ -75,7 +91,7 @@ class SalaryController extends Controller
                 'status' => 'required|boolean',
                 'start_date' => 'required|date',
             ]);
-            $model = \App\Models\Salary::findOrFail($id);
+            $model = Salary::findOrFail($id);
             $model->update($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('salary.index')]);
