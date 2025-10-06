@@ -153,10 +153,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (diffInMinutes >= 0) {
                 const hours = Math.floor(diffInMinutes / 60);
                 const minutes = diffInMinutes % 60;
-                const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+                const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
                 totalTimeInput.value = formattedTime;
             } else {
-                totalTimeInput.value = '00:00:00';
+                totalTimeInput.value = '00:00';
             }
         } else {
             totalTimeInput.value = '';

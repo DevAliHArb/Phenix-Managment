@@ -89,7 +89,7 @@
                         <a class="nav-link" href="{{ route('sick-leaves.index') }}"><i class="bi bi-thermometer-half"></i> <span>Sick Leaves</span></a>
                     </li> --}}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{{ route('position-improvements.index') }}"><i class="bi bi-bar-chart"></i> <span>Positions</span></a>
+                        <a class="nav-link" href="{{ route('position-improvements.index') }}"><i class="bi bi-bar-chart"></i> <span>Job Progression </span></a>
                     </li>
                     {{-- <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('salary.index') }}"><i class="bi bi-cash"></i> <span>Position Salary</span></a>

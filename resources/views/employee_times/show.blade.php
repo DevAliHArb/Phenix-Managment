@@ -11,7 +11,7 @@
             <p><strong>Total Time:</strong> {{ $employeeTime->total_time }}</p>
             <p><strong>Off Day:</strong> {{ $employeeTime->off_day ? 'Yes' : 'No' }}</p>
             <p><strong>Reason:</strong> {{ $employeeTime->reason }}</p>
-            <p><strong>Vacation Type:</strong> {{ $employeeTime->vacation_type }}</p>
+            <p><strong>Status:</strong> {{ $employeeTime->vacation_type }}</p>
             <a href="{{ route('employee_times.edit', $employeeTime->id) }}" class="btn btn-warning">Edit</a>
             <a href="{{ route('employee_times.index') }}" class="btn btn-secondary">Back</a>
         </div>

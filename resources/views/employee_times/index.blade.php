@@ -431,10 +431,20 @@
                         { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true }, sortOrder: "desc" },
                         { dataField: "time_in", caption: "Time In", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_in)); } },
                         { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_out)); } },
-                        { dataField: "total_time", caption: "Total Time", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "total_time", caption: "Total Time", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTotalTime(options.data.total_time)); } },
+                        { 
+                            dataField: "extra_minus", 
+                            caption: "Extra-Minus", 
+                            allowFiltering: true, 
+                            headerFilter: { allowSearch: true },
+                            cellTemplate: function(container, options) {
+                                const extraMinusTime = calculateExtraMinus(options.data.total_time);
+                                $(container).text(extraMinusTime);
+                            }
+                        },
                         { dataField: "status", caption: "Off Day", allowFiltering: true, headerFilter: { allowSearch: true } },
                         { dataField: "vacation_type", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { dataField: "reason", caption: "Notes", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "reason", caption: "Reason", allowFiltering: true, headerFilter: { allowSearch: true } },
                         {
                             caption: "Actions",
                             cellTemplate: function(container, options) {
@@ -457,10 +467,10 @@
                             e.rowElement.css('color', '#856404');
                         }
                     },
-                    paging: { pageSize: 10 },
+                    paging: { pageSize: 30 },
                     pager: {
                         showPageSizeSelector: true,
-                        allowedPageSizes: [5, 10, 20],
+                        allowedPageSizes: [5, 10, 30, 60, 100],
                         showInfo: false,
                         showNavigationButtons: true,
                         visible: true
@@ -522,6 +532,56 @@ function formatTime(timeString) {
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     
     return `${displayHour}:${minute} ${ampm}`;
+}
+
+// Function to format total time to hh:mm format (remove seconds)
+function formatTotalTime(timeString) {
+    if (!timeString || timeString === '') return '';
+    
+    // If the time string has seconds (hh:mm:ss), remove them
+    const timeParts = timeString.split(':');
+    if (timeParts.length >= 2) {
+        const hours = timeParts[0].padStart(2, '0');
+        const minutes = timeParts[1].padStart(2, '0');
+        return `${hours}:${minutes}`;
+    }
+    
+    return timeString;
+}
+// Function to calculate extra/minus time compared to 9 hours
+function calculateExtraMinus(totalTimeString) {
+    if (!totalTimeString || totalTimeString === '') return '';
+    
+    // Parse total time string (format: "hh:mm:ss" or "hh:mm")
+    const timeParts = totalTimeString.split(':');
+    if (timeParts.length < 2) return '';
+    
+    const hours = parseInt(timeParts[0], 10) || 0;
+    const minutes = parseInt(timeParts[1], 10) || 0;
+    const seconds = parseInt(timeParts[2], 10) || 0;
+    
+    // Convert total time to minutes
+    const totalMinutes = (hours * 60) + minutes + (seconds / 60);
+    
+    // 9 hours in minutes
+    const standardMinutes = 9 * 60;
+    
+    // Calculate difference
+    const diffMinutes = totalMinutes - standardMinutes;
+    
+    // Convert back to hours, minutes
+    const absMinutes = Math.abs(diffMinutes);
+    const diffHours = Math.floor(absMinutes / 60);
+    const diffMins = Math.floor(absMinutes % 60);
+    
+    // Format with leading zeros
+    const formattedHours = diffHours.toString().padStart(2, '0');
+    const formattedMins = diffMins.toString().padStart(2, '0');
+    
+    // Add sign (always show + for zero or positive, - for negative)
+    const sign = diffMinutes >= 0 ? '+' : '-';
+    
+    return `${sign}${formattedHours}:${formattedMins}`;
 }
 </script>
 
