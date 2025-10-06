@@ -2,6 +2,12 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+    <style>
+        .weekend { background: #fbe4d5 !important; }
+        .vacation { background: #daeef3 !important; }
+        .sickleave { background: #ffe6e6 !important; }
+        .holiday { background: #e6ffe6 !important; }
+    </style>
 @endsection
 
 @section('content')
@@ -461,10 +467,19 @@
                         mode: "multiple"
                     },
                     onRowPrepared: function(e) {
-                        if (e.rowType === 'data' && e.data.status === 'Yes') {
-                            // Highlight off-day rows with a light orange/amber background
-                            e.rowElement.css('background-color', '#fff3cd');
-                            e.rowElement.css('color', '#856404');
+                        if (e.rowType === 'data') {
+                            // Apply colors based on vacation_type
+                            const vacationType = e.data.vacation_type ? e.data.vacation_type.toLowerCase() : '';
+                            
+                            if (vacationType === 'off') {
+                                e.rowElement.addClass('weekend');
+                            } else if (vacationType === 'vacation') {
+                                e.rowElement.addClass('vacation');
+                            } else if (vacationType === 'holiday') {
+                                e.rowElement.addClass('holiday');
+                            } else if (vacationType === 'sick leave') {
+                                e.rowElement.addClass('sickleave');
+                            }
                         }
                     },
                     paging: { pageSize: 30 },

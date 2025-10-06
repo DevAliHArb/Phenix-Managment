@@ -10,6 +10,11 @@
         .dx-datagrid-rowsview .dx-row:not(.dx-freespace-row):hover {
             background-color: #e9ecef !important;
         }
+        /* Vacation type colors */
+        .weekend { background: #fbe4d5 !important; }
+        .vacation { background: #daeef3 !important; }
+        .sickleave { background: #ffe6e6 !important; }
+        .holiday { background: #e6ffe6 !important; }
     </style>
 @endsection
 
@@ -462,6 +467,22 @@ function renderEmployeeTimesGrid(times) {
             emptyPanelText: 'Drag a column here to hide it'
         },
         allowColumnReordering: true,
+        onRowPrepared: function(e) {
+            if (e.rowType === 'data') {
+                // Apply colors based on vacation_type
+                const vacationType = e.data.vacation_type ? e.data.vacation_type.toLowerCase() : '';
+                
+                if (vacationType === 'off') {
+                    e.rowElement.addClass('weekend');
+                } else if (vacationType === 'vacation') {
+                    e.rowElement.addClass('vacation');
+                } else if (vacationType === 'holiday') {
+                    e.rowElement.addClass('holiday');
+                } else if (vacationType === 'sick leave') {
+                    e.rowElement.addClass('sickleave');
+                }
+            }
+        },
         summary: {
             totalItems: [
                 {

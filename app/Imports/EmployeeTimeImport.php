@@ -78,7 +78,7 @@ class EmployeeTimeImport implements ToCollection
                     }
                     $offDay = false;
                     $reason = null;
-                    $vacationType = null;
+                    $vacationType = 'Attended';
                     $dayOfWeek = $dateObj->format('N');
                     if ($dayOfWeek == 6 || $dayOfWeek == 7) {
                         $offDay = true;
@@ -97,7 +97,7 @@ class EmployeeTimeImport implements ToCollection
                         if ($employeeVacation) {
                             $offDay = true;
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : null);
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : 'Attended');
                         }
                     }
                     EmployeeTime::create([
@@ -189,7 +189,7 @@ class EmployeeTimeImport implements ToCollection
                 // Detect if the date is Saturday or Sunday, or in SickLeave/YearlyVacation
                 $offDay = false;
                 $reason = null;
-                $vacationType = null;
+                $vacationType = 'Attended';
                 $excelDateValue = $row[4] ?? null;
                 $checkDate = null;
                 if (!empty($excelDateValue)) {
@@ -216,6 +216,7 @@ class EmployeeTimeImport implements ToCollection
                         if ($dayOfWeek == 6 || $dayOfWeek == 7) {
                             $offDay = true;
                             $reason = 'Weekend';
+                            $vacationType = 'Off';
                         }
                     }
                 }
@@ -240,9 +241,14 @@ class EmployeeTimeImport implements ToCollection
                         if ($employeeVacation) {
                             $offDay = true;
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : null);
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : 'Attended');
                         }
                     }
+                }
+
+                // If both clock_in and clock_out are null, set vacation_type to null
+                if ($clockIn === null && $clockOut === null) {
+                    $vacationType = null;
                 }
 
                 // Skip if already exists
