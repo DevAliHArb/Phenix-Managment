@@ -1,6 +1,4 @@
-// Import progress polling endpoint
-use Illuminate\Support\Facades\Route;
-Route::get('employee_times/import/progress', [EmployeeTimeController::class, 'importProgress'])->name('employee_times.import.progress');
+
 <?php
 
 use App\Http\Controllers\VacationDateController;

@@ -143,15 +143,15 @@ class EmployeeTimeImport implements ToCollection
                 // Handle Clock In from column 5
                 $clockIn = null;
                 if (!empty($row[5])) {
-                    $clockIn = is_numeric($row[5]) 
+                    $clockIn = is_numeric($row[5])
                         ? Date::excelToDateTimeObject($row[5])->format('H:i:s')
                         : date('H:i:s', strtotime($row[5]));
                 }else if (!empty($row[7])) {
-                    $clockIn = is_numeric($row[7]) 
+                    $clockIn = is_numeric($row[7])
                         ? Date::excelToDateTimeObject($row[7])->format('H:i:s')
                         : date('H:i:s', strtotime($row[7]));
                 }else if (!empty($row[9])) {
-                    $clockIn = is_numeric($row[9]) 
+                    $clockIn = is_numeric($row[9])
                         ? Date::excelToDateTimeObject($row[9])->format('H:i:s')
                         : date('H:i:s', strtotime($row[9]));
                 }
@@ -159,15 +159,15 @@ class EmployeeTimeImport implements ToCollection
                 // Handle Clock Out from column 6
                 $clockOut = null;
                 if (!empty($row[10])) {
-                    $clockOut = is_numeric($row[10]) 
+                    $clockOut = is_numeric($row[10])
                         ? Date::excelToDateTimeObject($row[10])->format('H:i:s')
                         : date('H:i:s', strtotime($row[10]));
                 }else if (!empty($row[8])) {
-                    $clockOut = is_numeric($row[8]) 
+                    $clockOut = is_numeric($row[8])
                         ? Date::excelToDateTimeObject($row[8])->format('H:i:s')
                         : date('H:i:s', strtotime($row[8]));
                 }else if (!empty($row[6])) {
-                    $clockOut = is_numeric($row[6]) 
+                    $clockOut = is_numeric($row[6])
                         ? Date::excelToDateTimeObject($row[6])->format('H:i:s')
                         : date('H:i:s', strtotime($row[6]));
                 }
