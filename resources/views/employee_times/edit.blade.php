@@ -70,9 +70,9 @@
                 @enderror
             </div>
             <div class="mb-3">
-                <label for="vacation_type" class="form-label">Vacation Type</label>
+                <label for="vacation_type" class="form-label">Status</label>
                 <select name="vacation_type" class="form-control @error('vacation_type') is-invalid @enderror">
-                    <option value="">Select Vacation Type</option>
+                    <option value="">Select Status</option>
                     <option value="Attended" {{ $employeeTime->vacation_type == 'Attended' ? 'selected' : '' }}>Attended</option>
                     <option value="Off" {{ $employeeTime->vacation_type == 'Off' ? 'selected' : '' }}>Off</option>
                     <option value="Vacation" {{ $employeeTime->vacation_type == 'Vacation' ? 'selected' : '' }}>Vacation</option>
@@ -206,11 +206,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (diffInMinutes >= 0) {
                     const hours = Math.floor(diffInMinutes / 60);
                     const minutes = diffInMinutes % 60;
-                    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+                    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
                     totalTimeInput.value = formattedTime;
                     console.log('Calculated Total Time:', formattedTime); // Debug log
                 } else {
-                    totalTimeInput.value = '00:00:00';
+                    totalTimeInput.value = '00:00';
                 }
             } catch (error) {
                 console.error('Error calculating time:', error);

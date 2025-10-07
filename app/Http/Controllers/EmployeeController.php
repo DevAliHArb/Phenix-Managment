@@ -90,6 +90,21 @@ class EmployeeController extends Controller
                 'owner_name' => 'nullable|string|max:255',
                 'owner_mobile_number' => 'nullable|string|max:20',
             ]);
+
+            // Check if employee with same first_name, mid_name, and last_name already exists
+            $existingEmployee = Employee::where('first_name', $validated['first_name'])
+                ->where('mid_name', $validated['mid_name'])
+                ->where('last_name', $validated['last_name'])
+                ->first();
+
+            if ($existingEmployee) {
+                $errorMessage = 'An employee with the same first name, middle name, and last name already exists.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'errors' => [$errorMessage]], 422);
+                }
+                return back()->withInput()->withErrors(['first_name' => $errorMessage]);
+            }
+
             $validated['image'] = AttachmentHelper::handleAttachment($request['image']);
 
             // Set working day fields

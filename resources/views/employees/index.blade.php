@@ -10,6 +10,11 @@
         .dx-datagrid-rowsview .dx-row:not(.dx-freespace-row):hover {
             background-color: #e9ecef !important;
         }
+        /* Vacation type colors */
+        .weekend { background: #fbe4d5 !important; }
+        .vacation { background: #daeef3 !important; }
+        .sickleave { background: #ffe6e6 !important; }
+        .holiday { background: #e6ffe6 !important; }
     </style>
 @endsection
 
@@ -136,6 +141,41 @@ function formatTime(timeString) {
     return `${displayHour}:${minute} ${ampm}`;
 }
 
+// Function to calculate extra/minus time compared to 9 hours
+function calculateExtraMinus(totalTimeString) {
+    if (!totalTimeString || totalTimeString === '') return '';
+    
+    // Parse total time string (format: "hh:mm:ss" or "hh:mm")
+    const timeParts = totalTimeString.split(':');
+    if (timeParts.length < 2) return '';
+    
+    const hours = parseInt(timeParts[0], 10) || 0;
+    const minutes = parseInt(timeParts[1], 10) || 0;
+    const seconds = parseInt(timeParts[2], 10) || 0;
+    
+    // Convert total time to minutes
+    const totalMinutes = (hours * 60) + minutes + (seconds / 60);
+    
+    // 9 hours in minutes
+    const standardMinutes = 9 * 60;
+    
+    // Calculate difference
+    const diffMinutes = totalMinutes - standardMinutes;
+    
+    // Convert back to hours, minutes
+    const absMinutes = Math.abs(diffMinutes);
+    const diffHours = Math.floor(absMinutes / 60);
+    const diffMins = Math.floor(absMinutes % 60);
+    
+    // Format with leading zeros
+    const formattedHours = diffHours.toString().padStart(2, '0');
+    const formattedMins = diffMins.toString().padStart(2, '0');
+    
+    // Add sign (always show + for zero or positive, - for negative)
+    const sign = diffMinutes >= 0 ? '+' : '-';
+    
+    return `${sign}${formattedHours}:${formattedMins}`;
+}
 // Function to format status with color coding
 function formatStatus(status) {
     if (!status || status === '') return '';
@@ -177,7 +217,7 @@ const employeesData = [
     {
         id: {{ $employee->id }},
         name: `{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}`,
-        image: `<img src='{{ $employee->image }}' alt='Image' style='width:50px;height:50px;object-fit:cover;border-radius:0;border:none;'>`,
+        image: `<img src='{{ $employee->image }}' alt='Image' style='width:50px;height:50px;object-fit:contain;border-radius:0;border:none;'>`,
         position: `{{ optional($employee->position)->name }}`,
         date_of_birth: `{{ $employee->date_of_birth }}`,
         start_date: `{{ $employee->start_date }}`,
@@ -234,6 +274,7 @@ const employeesData = [
 ];
 
 let selectedEmployeeIndex = 0;
+let currentDetailTab = 'employee-details'; // Track current detail tab
 
 // Function to handle delete confirmation and submission
 function deleteItem(deleteUrl, csrfToken) {
@@ -381,7 +422,18 @@ function renderEmployeeTimesGrid(times) {
             { dataField: "clock_in", caption: "Clock In", cellTemplate: function(container, options) { $(container).text(formatTime(options.data.clock_in)); } },
             { dataField: "clock_out", caption: "Clock Out", cellTemplate: function(container, options) { $(container).text(formatTime(options.data.clock_out)); } },
             { dataField: "total_time", caption: "Total Time" },
+            { 
+                dataField: "extra_minus", 
+                caption: "Extra-Minus", 
+                allowFiltering: true, 
+                headerFilter: { allowSearch: true },
+                cellTemplate: function(container, options) {
+                    const extraMinusTime = calculateExtraMinus(options.data.total_time);
+                    $(container).text(extraMinusTime);
+                }
+            },
             { dataField: "off_day", caption: "Off Day", cellTemplate: function(container, options) { $(container).text(options.data.off_day ? 'Yes' : 'No'); } },
+            { dataField: "vacation_type", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } },
             { dataField: "reason", caption: "Notes" }
         ],
         showBorders: true,
@@ -415,6 +467,22 @@ function renderEmployeeTimesGrid(times) {
             emptyPanelText: 'Drag a column here to hide it'
         },
         allowColumnReordering: true,
+        onRowPrepared: function(e) {
+            if (e.rowType === 'data') {
+                // Apply colors based on vacation_type
+                const vacationType = e.data.vacation_type ? e.data.vacation_type.toLowerCase() : '';
+                
+                if (vacationType === 'off') {
+                    e.rowElement.addClass('weekend');
+                } else if (vacationType === 'vacation') {
+                    e.rowElement.addClass('vacation');
+                } else if (vacationType === 'holiday') {
+                    e.rowElement.addClass('holiday');
+                } else if (vacationType === 'sick leave') {
+                    e.rowElement.addClass('sickleave');
+                }
+            }
+        },
         summary: {
             totalItems: [
                 {
@@ -877,10 +945,58 @@ $(function() {
             { dataField: "created_at", caption: "Date Added", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false, sortOrder: "asc" },
             { dataField: "name", caption: "Name", allowFiltering: true, headerFilter: { allowSearch: true } },
             { dataField: "position", caption: "Current Position", allowFiltering: true, headerFilter: { allowSearch: true } },
-            // { dataField: "date_of_birth", caption: "Birthdate", allowFiltering: true, headerFilter: { allowSearch: true } },
-            // { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true } },
-            // { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true } },
             { dataField: "employment_type", caption: "Employment Type", allowFiltering: true, headerFilter: { allowSearch: true } },
+            
+            // Personal Information - Hidden
+            { dataField: "first_name", caption: "First Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "mid_name", caption: "Middle Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "last_name", caption: "Last Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "email", caption: "Email", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "phone", caption: "Phone", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "date_of_birth", caption: "Date of Birth", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "acc_number", caption: "Account Number", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Address Information - Hidden
+            { dataField: "address", caption: "Address", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "city", caption: "City", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "province", caption: "Province", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "building_name", caption: "Building Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "floor", caption: "Floor", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "housing_type", caption: "Housing Type", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "owner_name", caption: "Owner Name", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "owner_mobile_number", caption: "Owner Mobile", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Employment Information - Hidden
+            { dataField: "position_id", caption: "Position ID", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "lookup_employee_type_id", caption: "Employee Type ID", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Working Hours & Days - Hidden
+            { dataField: "working_hours_from", caption: "Working Hours From", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "working_hours_to", caption: "Working Hours To", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "sunday", caption: "Sunday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "monday", caption: "Monday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "tuesday", caption: "Tuesday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "wednesday", caption: "Wednesday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "thursday", caption: "Thursday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "friday", caption: "Friday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "saturday", caption: "Saturday", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Vacation & Leave Information - Hidden
+            { dataField: "yearly_vacations_total", caption: "Yearly Vacations Total", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "yearly_vacations_used", caption: "Yearly Vacations Used", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "yearly_vacations_left", caption: "Yearly Vacations Left", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "sick_leave_used", caption: "Sick Leave Used", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // Salary Information - Hidden
+            { dataField: "last_salary", caption: "Last Salary", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            
+            // System Fields - Hidden
+            { dataField: "image", caption: "Image", allowFiltering: false, visible: false },
+            { dataField: "updated_at", caption: "Last Updated", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+            { dataField: "deleted_at", caption: "Deleted At", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
             {
                 caption: "Actions",
                 cellTemplate: function(container, options) {
@@ -988,9 +1104,9 @@ $(function() {
                     </div>
                     <p><strong>Address:</strong> ${combinedAddress}</p>
                     <hr style="margin: 15px 0;">
-                    <p><strong>Street:</strong> ${employee.address ?? ''}</p>
-                    <p><strong>City:</strong> ${employee.city ?? ''}</p>
                     <p><strong>Province:</strong> ${employee.province ?? ''}</p>
+                    <p><strong>City:</strong> ${employee.city ?? ''}</p>
+                    <p><strong>Street:</strong> ${employee.address ?? ''}</p>
                     <p><strong>Building Name:</strong> ${employee.building_name ?? ''}</p>
                     <p><strong>Floor:</strong> ${employee.floor ?? ''}</p>
                     <p><strong>Housing Type:</strong> ${employee.housing_type ? employee.housing_type.charAt(0).toUpperCase() + employee.housing_type.slice(1) : ''}</p>
@@ -1006,6 +1122,7 @@ $(function() {
             
             // Set up tab click handlers for employee detail tabs
             $("#tab-employee-details").off("click").on("click", function() {
+                currentDetailTab = 'employee-details';
                 $(this).addClass("active btn-info").removeClass("btn-outline-info");
                 $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
                 $("#employee-details-card").show();
@@ -1013,17 +1130,25 @@ $(function() {
             });
             
             $("#tab-employee-address").off("click").on("click", function() {
+                currentDetailTab = 'employee-address';
                 $(this).addClass("active btn-info").removeClass("btn-outline-info");
                 $("#tab-employee-details").removeClass("active btn-info").addClass("btn-outline-info");
                 $("#employee-details-card").hide();
                 $("#employee-address-card").show();
             });
             
-            // Ensure the details tab is active by default
-            $("#tab-employee-details").addClass("active btn-info").removeClass("btn-outline-info");
-            $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
-            $("#employee-details-card").show();
-            $("#employee-address-card").hide();
+            // Show the currently selected tab
+            if (currentDetailTab === 'employee-address') {
+                $("#tab-employee-address").addClass("active btn-info").removeClass("btn-outline-info");
+                $("#tab-employee-details").removeClass("active btn-info").addClass("btn-outline-info");
+                $("#employee-address-card").show();
+                $("#employee-details-card").hide();
+            } else {
+                $("#tab-employee-details").addClass("active btn-info").removeClass("btn-outline-info");
+                $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
+                $("#employee-details-card").show();
+                $("#employee-address-card").hide();
+            }
             // Show correct tab and grid
             if ($("#tab-employee-salaries").hasClass("active")) {
                 renderEmployeeSalariesGrid(employee.positionImprovements || []);
@@ -1086,9 +1211,9 @@ $(function() {
                         </div>
                         <p><strong>Address:</strong> ${firstEmployeeCombinedAddress}</p>
                         <hr style="margin: 15px 0;">
-                        <p><strong>Street:</strong> ${firstEmployee.address ?? ''}</p>
-                        <p><strong>City:</strong> ${firstEmployee.city ?? ''}</p>
                         <p><strong>Province:</strong> ${firstEmployee.province ?? ''}</p>
+                        <p><strong>City:</strong> ${firstEmployee.city ?? ''}</p>
+                        <p><strong>Street:</strong> ${firstEmployee.address ?? ''}</p>
                         <p><strong>Building Name:</strong> ${firstEmployee.building_name ?? ''}</p>
                         <p><strong>Floor:</strong> ${firstEmployee.floor ?? ''}</p>
                         <p><strong>Housing Type:</strong> ${firstEmployee.housing_type ? firstEmployee.housing_type.charAt(0).toUpperCase() + firstEmployee.housing_type.slice(1) : ''}</p>
@@ -1104,6 +1229,7 @@ $(function() {
                 
                 // Set up tab click handlers for employee detail tabs
                 $("#tab-employee-details").off("click").on("click", function() {
+                    currentDetailTab = 'employee-details';
                     $(this).addClass("active btn-info").removeClass("btn-outline-info");
                     $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
                     $("#employee-details-card").show();
@@ -1111,17 +1237,25 @@ $(function() {
                 });
                 
                 $("#tab-employee-address").off("click").on("click", function() {
+                    currentDetailTab = 'employee-address';
                     $(this).addClass("active btn-info").removeClass("btn-outline-info");
                     $("#tab-employee-details").removeClass("active btn-info").addClass("btn-outline-info");
                     $("#employee-details-card").hide();
                     $("#employee-address-card").show();
                 });
                 
-                // Ensure the details tab is active by default
-                $("#tab-employee-details").addClass("active btn-info").removeClass("btn-outline-info");
-                $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
-                $("#employee-details-card").show();
-                $("#employee-address-card").hide();
+                // Show the currently selected tab
+                if (currentDetailTab === 'employee-address') {
+                    $("#tab-employee-address").addClass("active btn-info").removeClass("btn-outline-info");
+                    $("#tab-employee-details").removeClass("active btn-info").addClass("btn-outline-info");
+                    $("#employee-address-card").show();
+                    $("#employee-details-card").hide();
+                } else {
+                    $("#tab-employee-details").addClass("active btn-info").removeClass("btn-outline-info");
+                    $("#tab-employee-address").removeClass("active btn-info").addClass("btn-outline-info");
+                    $("#employee-details-card").show();
+                    $("#employee-address-card").hide();
+                }
                 if ($("#tab-employee-salaries").hasClass("active")) {
                     renderEmployeeSalariesGrid(firstEmployee.positionImprovements || []);
                 } else if ($("#tab-employee-vacations").hasClass("active")) {
