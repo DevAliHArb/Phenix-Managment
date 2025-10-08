@@ -40,7 +40,7 @@
                 <select name="position_improvement_id" class="form-control @error('position_improvement_id') is-invalid @enderror" 
                         {{ isset($lockPositionImprovement) && $lockPositionImprovement ? 'disabled' : '' }} required>
                     <option value="">Select Position Improvement</option>
-                    @foreach(App\Models\PositionImprovement::all() as $pi)
+                    @foreach(App\Models\PositionImprovement::where('is_active', true)->get() as $pi)
                         <option value="{{ $pi->id }}" 
                             {{ (old('position_improvement_id') == $pi->id) || (isset($selectedPositionImprovementId) && $selectedPositionImprovementId == $pi->id) ? 'selected' : '' }}>
                             {{ optional($pi->employee)->first_name }} {{ optional($pi->employee)->last_name }} - {{ optional($pi->position)->name }}

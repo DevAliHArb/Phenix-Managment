@@ -316,14 +316,19 @@
             @enderror
         </div>
         
-        <div class="mb-3">
+        </div>
+        <!-- Attachments Section -->
+        <div class="mb-4">
             <label class="form-label">Employee Documents</label>
-            <div id="attachments-container">
+            <div id="attachments-container" class="row">
                 @if(isset($employee->attachments) && count($employee->attachments))
                     @foreach($employee->attachments as $i => $attachment)
-                        <div class="attachment-item border p-3 mb-3" style="border-radius: 8px; background-color: #f8f9fa;">
-                            <div class="row">
-                                <div class="col-md-4 mb-2">
+                        <div class="col-md-4 mb-3">
+                            <div class="attachment-item border p-3 h-100 position-relative attachment-filled" style="border-radius: 8px; border: 2px solid #28a745; background-color: #f8fff9; min-height: 200px;">
+                                <button type="button" class="btn btn-sm remove-attachment position-absolute" style="top: 8px; right: 8px; visibility: visible; z-index: 10; background: transparent; color: #dc3545; border: none; width: 28px; height: 28px; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">
+                                    &times;
+                                </button>
+                                <div class="mb-3">
                                     <label class="form-label">Document Type</label>
                                     <select name="attachments[{{ $i }}][type]" class="form-control attachment-type">
                                         <option value="">Select Document Type</option>
@@ -338,23 +343,28 @@
                                         <option value="Others" {{ $attachment->type == 'Others' ? 'selected' : '' }}>Others</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6 mb-2">
+                                <div class="mb-3">
                                     <label class="form-label">Document File</label>
-                                    <a href="{{ $attachment->image }}" target="_blank">View File</a>
+                                    <div>
+                                        <a href="{{ $attachment->image }}" target="_blank" class="btn btn-outline-primary btn-sm">View File</a>
+                                    </div>
                                 </div>
-                                <div class="col-md-2 mb-2 d-flex align-items-end">
-                                    <button type="button" class="btn btn-danger btn-sm remove-attachment" style="display: none;">Remove</button>
+                                <div class="mt-2">
+                                    <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
                                 </div>
                             </div>
                         </div>
                     @endforeach
                 @endif
             </div>
-            <button type="button" id="add-attachment" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-plus"></i> Add Another Document
-            </button>
-            <small class="text-muted d-block mt-2">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
-        </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="button" id="add-attachment" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add Another Document
+                    </button>
+                    <small class="text-muted d-block mt-2">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
+                </div>
+            </div>
         </div>
         <div class="formContainer" style="margin-top:30px;">
             <a href="{{ route('employees.index') }}" class="btn btn-secondary mb-3">Back</a>
@@ -390,17 +400,39 @@
             attachmentItems.forEach((item, index) => {
                 const removeBtn = item.querySelector('.remove-attachment');
                 if (attachmentItems.length > 1) {
-                    removeBtn.style.display = 'block';
+                    removeBtn.style.visibility = 'visible';
                 } else {
-                    removeBtn.style.display = 'none';
+                    removeBtn.style.visibility = 'hidden';
                 }
             });
         }
+
+        function updateAttachmentStyle(attachmentItem) {
+            const typeSelect = attachmentItem.querySelector('.attachment-type');
+            const fileInput = attachmentItem.querySelector('.attachment-file');
+            
+            if (typeSelect.value && fileInput.files.length > 0) {
+                // Filled state
+                attachmentItem.classList.remove('attachment-empty');
+                attachmentItem.classList.add('attachment-filled');
+                attachmentItem.style.border = '2px solid #28a745';
+                attachmentItem.style.backgroundColor = '#f8fff9';
+            } else {
+                // Empty state
+                attachmentItem.classList.remove('attachment-filled');
+                attachmentItem.classList.add('attachment-empty');
+                attachmentItem.style.border = '2px dashed #dee2e6';
+                attachmentItem.style.backgroundColor = '#fff';
+            }
+        }
         function createAttachmentItem(index) {
             return `
-                <div class="attachment-item border p-3 mb-3" style="border-radius: 8px; background-color: #f8f9fa;">
-                    <div class="row">
-                        <div class="col-md-4 mb-2">
+                <div class="col-md-4 mb-3">
+                    <div class="attachment-item border p-3 h-100 position-relative attachment-empty" style="border-radius: 8px; border: 2px dashed #dee2e6; background-color: #fff; min-height: 200px;">
+                        <button type="button" class="btn btn-sm remove-attachment position-absolute" style="top: 8px; right: 8px; visibility: hidden; z-index: 10; background: transparent; color: #dc3545; border: none; width: 28px; height: 28px; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">
+                            &times;
+                        </button>
+                        <div class="mb-3">
                             <label class="form-label">Document Type</label>
                             <select name="attachments[${index}][type]" class="form-control attachment-type">
                                 <option value="">Select Document Type</option>
@@ -415,16 +447,11 @@
                                 <option value="Others">Others</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-2">
+                        <div class="mb-3">
                             <label class="form-label">Document File</label>
                             <input type="file" name="attachments[${index}][file]" class="form-control attachment-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
                         </div>
-                        <div class="col-md-2 mb-2 d-flex align-items-end">
-                            <button type="button" class="btn btn-danger btn-sm remove-attachment">Remove</button>
-                        </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-12">
+                        <div class="mt-2">
                             <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
                         </div>
                     </div>
@@ -438,8 +465,8 @@
             updateRemoveButtons();
         });
         attachmentsContainer.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-attachment')) {
-                e.target.closest('.attachment-item').remove();
+            if (e.target.classList.contains('remove-attachment') || e.target.closest('.remove-attachment')) {
+                e.target.closest('.col-md-4').remove();
                 updateRemoveButtons();
             }
         });
@@ -449,7 +476,17 @@
                 if (file && file.size > 10 * 1024 * 1024) {
                     alert('File size must be less than 10MB');
                     e.target.value = '';
+                    return;
                 }
+                // Update styling based on file selection
+                const attachmentItem = e.target.closest('.attachment-item');
+                updateAttachmentStyle(attachmentItem);
+            }
+            
+            if (e.target.classList.contains('attachment-type')) {
+                // Update styling based on type selection
+                const attachmentItem = e.target.closest('.attachment-item');
+                updateAttachmentStyle(attachmentItem);
             }
         });
         updateRemoveButtons();

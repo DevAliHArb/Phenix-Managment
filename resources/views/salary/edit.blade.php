@@ -2,6 +2,13 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+    <style>
+        .form-control[readonly] {
+            border: 2px dotted #dddddd !important;
+            background-color: #fff !important;
+            color: #acacac !important;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -24,14 +31,8 @@
         <div class="formContainer">
             <div class="mb-3">
                 <label for="position_improvement_id" class="form-label">Position Improvement</label>
-                <select name="position_improvement_id" class="form-control @error('position_improvement_id') is-invalid @enderror" required>
-                    <option value="">Select Position Improvement</option>
-                    @foreach(App\Models\PositionImprovement::all() as $pi)
-                        <option value="{{ $pi->id }}" {{ old('position_improvement_id', $item->position_improvement_id) == $pi->id ? 'selected' : '' }}>
-                            {{ optional($pi->employee)->first_name }} {{ optional($pi->employee)->last_name }} - {{ optional($pi->position)->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <input type="text" class="form-control" value="{{ optional($item->positionImprovement->employee)->first_name }} {{ optional($item->positionImprovement->employee)->last_name }} - {{ optional($item->positionImprovement->position)->name }}" readonly>
+                <input type="hidden" name="position_improvement_id" value="{{ $item->position_improvement_id }}">
                 @error('position_improvement_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror

@@ -2,6 +2,13 @@
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('resources/css/employees.css') }}">
+    <style>
+        .form-control[readonly] {
+            border: 2px dotted #dddddd !important;
+            background-color: #fff !important;
+            color: #acacac !important;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -55,7 +62,7 @@
             </div>
             <div class="mb-3">
                 <label for="end_date" class="form-label">End Date</label>
-                <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date', $positionImprovement->end_date) }}">
+                <input type="date" name="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date', $positionImprovement->end_date) }}" readonly>
                 @error('end_date')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror

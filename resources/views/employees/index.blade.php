@@ -266,6 +266,7 @@ const employeesData = [
             },
             @endforeach
         ],
+        attachments: @json($employee->attachments ?? []),
         showUrl: `{{ route('employees.show', $employee->id) }}`,
         editUrl: `{{ route('employees.edit', $employee->id) }}`,
         deleteUrl: `{{ route('employees.destroy', $employee->id) }}`
@@ -760,7 +761,7 @@ function renderEmployeeSalariesGrid(positionImprovements) {
     // Add titles for both tables if not present
     $("#employeeSalariesGrid").html('<div class="row">'
         + '<div class="col-md-7">'
-        + '<h6 id="positionImprovementsGridTitle" class="mb-2">Position Improvements</h6>'
+        + '<h6 id="positionImprovementsGridTitle" class="mb-2">Position</h6>'
         + '<div id="positionImprovementsGrid"></div>'
         + '</div>'
         + '<div class="col-md-5">'
@@ -1082,6 +1083,28 @@ $(function() {
                     <p><strong>Sick Leave Used:</strong> ${employee.sick_leave_used ?? 0}</p>
                     <p><strong>Last Salary:</strong> ${employee.last_salary ?? ''}</p>
                     <p><strong>Status:</strong> ${formatStatus(employee.status ?? '')}</p>
+                    
+                    <hr style="margin: 20px 0;">
+                    <h6><strong>Attachments:</strong></h6>
+                    <div style="margin-top: 10px;">
+                        ${employee.attachments && employee.attachments.length > 0 
+                            ? employee.attachments.map(attachment => `
+                                <div style="margin-bottom: 8px; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px; background-color: #f8f9fa;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong>Type:</strong> ${attachment.type || 'Unknown'}
+                                        </div>
+                                        <div>
+                                            <a href="${attachment.image}" target="_blank" class="btn btn-sm btn-primary" style="padding: 2px 8px; font-size: 12px;">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')
+                            : '<p style="color: #6c757d; font-style: italic;">No attachments found.</p>'
+                        }
+                    </div>
                 </div>
             </div>`;
             
@@ -1189,6 +1212,28 @@ $(function() {
                         <p><strong>Sick Leave Used:</strong> ${firstEmployee.sick_leave_used ?? 0}</p>
                         <p><strong>Last Salary:</strong> ${firstEmployee.last_salary ?? ''}</p>
                         <p><strong>Status:</strong> ${formatStatus(firstEmployee.status ?? '')}</p>
+                        
+                        <hr style="margin: 20px 0;">
+                        <h6><strong>Attachments:</strong></h6>
+                        <div style="margin-top: 10px;">
+                            ${firstEmployee.attachments && firstEmployee.attachments.length > 0 
+                                ? firstEmployee.attachments.map(attachment => `
+                                    <div style="margin-bottom: 8px; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px; background-color: #f8f9fa;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <strong>Type:</strong> ${attachment.type || 'Unknown'}
+                                            </div>
+                                            <div>
+                                                <a href="${attachment.image}" target="_blank" class="btn btn-sm btn-primary" style="padding: 2px 8px; font-size: 12px;">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')
+                                : '<p style="color: #6c757d; font-style: italic;">No attachments found.</p>'
+                            }
+                        </div>
                     </div>
                 </div>`;
                 

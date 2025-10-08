@@ -22,7 +22,7 @@
 @section('content')
 <div  style="width:100%">
     <div class="headerContainer" >
-    <h1>Position Improvements</h1>
+    <h1>Position</h1>
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif

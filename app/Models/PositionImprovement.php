@@ -11,6 +11,7 @@ class PositionImprovement extends Model
         'employee_id',
         'start_date',
         'end_date',
+        'is_active',
     ];
 
     protected $dates = ['start_date', 'end_date'];
