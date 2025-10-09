@@ -64,6 +64,8 @@ return new class extends Migration
             // Vacation Types
             ['id' => 31, 'parent_id' => 30, 'name' => 'Vacation'],
             ['id' => 32, 'parent_id' => 30, 'name' => 'Sick Leave'],
+            ['id' => 33, 'parent_id' => 30, 'name' => 'Holiday'],
+            ['id' => 34, 'parent_id' => 30, 'name' => 'Unpaid'],
         ];
 
         foreach ($lookupData as $data) {

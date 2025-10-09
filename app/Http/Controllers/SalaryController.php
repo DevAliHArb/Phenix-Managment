@@ -84,7 +84,17 @@ class SalaryController extends Controller
                 $activeRow->end_date = $request['start_date'];
                 $activeRow->save();
             }
-            Salary::create($request->all());
+            $newSalary = Salary::create($request->all());
+
+            // Update employee last_salary
+            $positionImprovement = \App\Models\PositionImprovement::find($request['position_improvement_id']);
+            if ($positionImprovement) {
+                $employee = \App\Models\Employee::find($positionImprovement->employee_id);
+                if ($employee) {
+                    $employee->last_salary = $request['salary'];
+                    $employee->save();
+                }
+            }
             
             $returnUrl = $request->get('return_url', route('salary.index'));
             
@@ -132,6 +142,16 @@ class SalaryController extends Controller
             }
             
             $model->update($request->all());
+
+            // Update employee last_salary
+            $positionImprovement = \App\Models\PositionImprovement::find($request['position_improvement_id']);
+            if ($positionImprovement) {
+                $employee = \App\Models\Employee::find($positionImprovement->employee_id);
+                if ($employee) {
+                    $employee->last_salary = $request['salary'];
+                    $employee->save();
+                }
+            }
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('salary.index')]);
             }
@@ -148,8 +168,29 @@ class SalaryController extends Controller
     {
         try {
             $salary = Salary::findOrFail($id);
+            $positionImprovementId = $salary->position_improvement_id;
             $salary->delete();
-            
+
+            // Find previous salary for same position improvement, set status true and end_date null
+            $previousSalary = Salary::where('position_improvement_id', $positionImprovementId)
+                ->orderByDesc('end_date')
+                ->first();
+            if ($previousSalary) {
+                $previousSalary->status = true;
+                $previousSalary->end_date = null;
+                $previousSalary->save();
+            }
+
+            // Update employee last_salary
+            $positionImprovement = \App\Models\PositionImprovement::find($positionImprovementId);
+            if ($positionImprovement) {
+                $employee = \App\Models\Employee::find($positionImprovement->employee_id);
+                if ($employee) {
+                    $employee->last_salary = $previousSalary ? $previousSalary->salary : 0;
+                    $employee->save();
+                }
+            }
+
             return redirect()->back()->with('success', 'Salary record deleted successfully');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to delete salary record: ' . $e->getMessage());

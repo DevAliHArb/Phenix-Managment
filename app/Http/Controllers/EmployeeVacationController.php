@@ -49,7 +49,7 @@ class EmployeeVacationController extends Controller
             } else {
                 $validated['attachment'] = null;
             }
-            \App\Models\EmployeeVacation::create($validated);
+            $vacation = \App\Models\EmployeeVacation::create($validated);
             
 
             // Set vacation_type based on lookup_type_id
@@ -58,6 +58,22 @@ class EmployeeVacationController extends Controller
                 $vacationType = 'Vacation';
             } elseif ($validated['lookup_type_id'] == 32) {
                 $vacationType = 'Sick Leave';
+            } elseif ($validated['lookup_type_id'] == 33) {
+                $vacationType = 'Holiday';
+            } elseif ($validated['lookup_type_id'] == 34) {
+                $vacationType = 'Unpaid';
+            }
+
+            // Update employee vacation counters
+            $employee = \App\Models\Employee::find($validated['employee_id']);
+            if ($employee) {
+                if ($vacationType === 'Vacation') {
+                    $employee->yearly_vacations_used = ($employee->yearly_vacations_used ?? 0) + 1;
+                    $employee->yearly_vacations_left = max(0, ($employee->yearly_vacations_left ?? 0) - 1);
+                } elseif ($vacationType === 'Sick Leave') {
+                    $employee->sick_leave_used = ($employee->sick_leave_used ?? 0) + 1;
+                }
+                $employee->save();
             }
 
             // Set off_day and reason in employee_times, create if not exist
@@ -139,6 +155,18 @@ class EmployeeVacationController extends Controller
                 $oldEmployeeTime->save();
             }
 
+            // Revert employee vacation counters for old type
+            $oldEmployee = \App\Models\Employee::find($model->employee_id);
+            if ($oldEmployee) {
+                if ($model->lookup_type_id == 31) {
+                    $oldEmployee->yearly_vacations_used = max(0, ($oldEmployee->yearly_vacations_used ?? 0) - 1);
+                    $oldEmployee->yearly_vacations_left = ($oldEmployee->yearly_vacations_left ?? 0) + 1;
+                } elseif ($model->lookup_type_id == 32) {
+                    $oldEmployee->sick_leave_used = max(0, ($oldEmployee->sick_leave_used ?? 0) - 1);
+                }
+                $oldEmployee->save();
+            }
+
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
                 $filename = uniqid().'.'.$file->getClientOriginalExtension();
@@ -155,6 +183,18 @@ class EmployeeVacationController extends Controller
                 $vacationType = 'Vacation';
             } elseif ($validated['lookup_type_id'] == 32) {
                 $vacationType = 'Sick Leave';
+            }
+
+            // Update employee vacation counters for new type
+            $employee = \App\Models\Employee::find($validated['employee_id']);
+            if ($employee) {
+                if ($vacationType === 'Vacation') {
+                    $employee->yearly_vacations_used = ($employee->yearly_vacations_used ?? 0) + 1;
+                    $employee->yearly_vacations_left = max(0, ($employee->yearly_vacations_left ?? 0) - 1);
+                } elseif ($vacationType === 'Sick Leave') {
+                    $employee->sick_leave_used = ($employee->sick_leave_used ?? 0) + 1;
+                }
+                $employee->save();
             }
 
             // Set off_day and reason in employee_times for new date, create if not exist
@@ -207,6 +247,18 @@ class EmployeeVacationController extends Controller
                 $employeeTime->reason = null;
                 $employeeTime->vacation_type = null;
                 $employeeTime->save();
+            }
+
+            // Revert employee vacation counters
+            $employee = \App\Models\Employee::find($item->employee_id);
+            if ($employee) {
+                if ($item->lookup_type_id == 31) {
+                    $employee->yearly_vacations_used = max(0, ($employee->yearly_vacations_used ?? 0) - 1);
+                    $employee->yearly_vacations_left = ($employee->yearly_vacations_left ?? 0) + 1;
+                } elseif ($item->lookup_type_id == 32) {
+                    $employee->sick_leave_used = max(0, ($employee->sick_leave_used ?? 0) - 1);
+                }
+                $employee->save();
             }
             
             $item->delete();

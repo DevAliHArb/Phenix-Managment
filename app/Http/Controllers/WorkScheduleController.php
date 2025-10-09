@@ -24,6 +24,7 @@ class WorkScheduleController extends Controller
                 'total_hours_per_day' => 'date_format:H:i',
                 'late_arrival' => 'required|integer',
                 'early_leave' => 'required|integer',
+                'vacation_days_per_month' => 'nullable|numeric|min:0',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -36,6 +37,13 @@ class WorkScheduleController extends Controller
         if (!$schedule) {
             $schedule = new WorkSchedule();
         }
+        // Ensure boolean checkboxes are set to false when not present
+        foreach (['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as $day) {
+            if (!array_key_exists($day, $validated)) {
+                $validated[$day] = false;
+            }
+        }
+
         $schedule->fill($validated);
         $schedule->save();
 

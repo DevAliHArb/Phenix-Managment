@@ -54,7 +54,7 @@
         <div class="row mb-3">
             <label for="total_hours_per_day" class="col-sm-2 col-form-label">Total Hours/Day</label>
             <div class="col-sm-10">
-                <input type="time" class="form-control" id="total_hours_per_day" name="total_hours_per_day" value="{{ old('total_hours_per_day', $schedule->total_hours_per_day ?? '') }}" disabled>
+                <input type="text" class="form-control" id="total_hours_per_day" name="total_hours_per_day" value="{{ old('total_hours_per_day', $schedule->total_hours_per_day ?? '') }}" disabled>
             </div>
         </div>
         <div class="row mb-3">
@@ -67,6 +67,12 @@
             <label for="early_leave" class="col-sm-2 col-form-label">Early Leave (min)</label>
             <div class="col-sm-10">
                 <input type="number" class="form-control" id="early_leave" name="early_leave" value="{{ old('early_leave', $schedule->early_leave ?? 0) }}">
+            </div>
+        </div>
+        <div class="row mb-3">
+            <label for="vacation_days_per_month" class="col-sm-2 col-form-label">Vacation Days/Month</label>
+            <div class="col-sm-10">
+                <input type="number" step="0.01" min="0" class="form-control" id="vacation_days_per_month" name="vacation_days_per_month" value="{{ old('vacation_days_per_month', isset($schedule) ? number_format($schedule->vacation_days_per_month ?? 0, 2, '.', '') : '0.00') }}">
             </div>
         </div>
                 <button type="submit" class="btn btn-primary">Update</button>

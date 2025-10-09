@@ -38,7 +38,10 @@ class EmployeeTimeImport implements ToCollection
     $processed = 0;
 
 
-        foreach ($grouped as $acNo => $employeeRows) {
+    // Load global work schedule once
+    $workSchedule = \App\Models\WorkSchedule::first();
+
+    foreach ($grouped as $acNo => $employeeRows) {
             // Sort by date
             $dates = $employeeRows->map(function($row) {
                 if (!empty($row[4])) {
@@ -76,14 +79,27 @@ class EmployeeTimeImport implements ToCollection
                     if ($employeeId && EmployeeTime::where('employee_id', $employeeId)->where('date', $dateStr)->exists()) {
                         continue;
                     }
-                    $offDay = false;
+                    // Default missing dates to off day with no vacation type
+                    $offDay = true;
                     $reason = null;
-                    $vacationType = 'Attended';
-                    $dayOfWeek = $dateObj->format('N');
-                    if ($dayOfWeek == 6 || $dayOfWeek == 7) {
-                        $offDay = true;
-                        $reason = 'Weekend';
-                        $vacationType = 'Off';
+                    $vacationType = null;
+                    // Determine weekend/off-day based on employee working days (columns: monday..sunday).
+                    // If employee record available, use its boolean flags; otherwise fallback to Sat/Sun.
+                    $dayName = strtolower($dateObj->format('l')); // monday, tuesday, ... sunday
+                    if ($employee) {
+                        $isWorking = (bool) ($employee->{$dayName} ?? true);
+                        if (!$isWorking) {
+                            $offDay = true;
+                            $reason = 'Weekend';
+                            $vacationType = 'Off';
+                        }
+                    } else {
+                        $dayOfWeek = $dateObj->format('N');
+                        if ($dayOfWeek == 6 || $dayOfWeek == 7) {
+                            $offDay = true;
+                            $reason = 'Weekend';
+                            $vacationType = 'Off';
+                        }
                     }
                     $vacationDate = \App\Models\VacationDate::where('date', $dateStr)->first();
                     if ($vacationDate) {
@@ -212,12 +228,11 @@ class EmployeeTimeImport implements ToCollection
                         }
                     }
                     if ($carbonDate) {
-                        $dayOfWeek = $carbonDate->format('N');
-                        if ($dayOfWeek == 6 || $dayOfWeek == 7) {
-                            $offDay = true;
-                            $reason = 'Weekend';
-                            $vacationType = 'Off';
-                        }
+                        // Determine weekend based on employee working days if we can resolve the employee later.
+                        // We'll check employee flags after resolving $employeeId below; for now keep $carbonDate available.
+                        $dayNameForCheck = strtolower($carbonDate->format('l'));
+                        // Temporarily store dayName to be used after resolving employee
+                        $dayName = $dayNameForCheck;
                     }
                 }
 
@@ -226,6 +241,57 @@ class EmployeeTimeImport implements ToCollection
                     $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
                     if ($employee) {
                         $employeeId = $employee->id;
+                    }
+                }
+                // If we have the $carbonDate dayName from above, determine weekend/off-day using employee flags
+                if (isset($dayName)) {
+                    if (isset($employee) && $employee) {
+                        $isWorkingDay = (bool) ($employee->{$dayName} ?? true);
+                        if (!$isWorkingDay) {
+                            $offDay = true;
+                            $reason = 'Weekend';
+                            $vacationType = 'Off';
+                        }
+                    } else {
+                        // fallback to Sat/Sun
+                        $dow = $carbonDate->format('N');
+                        if ($dow == 6 || $dow == 7) {
+                            $offDay = true;
+                            $reason = 'Weekend';
+                            $vacationType = 'Off';
+                        }
+                    }
+                }
+
+                // Determine late-arrival and early-leave thresholds from work schedule
+                // WorkSchedule stores start_time/end_time as 'H:i:s' and late_arrival/early_leave as minutes
+                $lateThreshold = null; // time string H:i:s
+                $earlyThreshold = null; // time string H:i:s
+                if ($workSchedule && $workSchedule->start_time) {
+                    $baseStart = $workSchedule->start_time; // e.g. '09:00:00'
+                    $lateMinutes = intval($workSchedule->late_arrival ?? 0);
+                    try {
+                        $dt = new \DateTime($baseStart);
+                        if ($lateMinutes > 0) {
+                            $dt->modify("+{$lateMinutes} minutes");
+                        }
+                        $lateThreshold = $dt->format('H:i:s');
+                    } catch (\Exception $e) {
+                        $lateThreshold = $baseStart;
+                    }
+                }
+                if ($workSchedule && $workSchedule->end_time) {
+                    $baseEnd = $workSchedule->end_time; // e.g. '17:00:00'
+                    $earlyMinutes = intval($workSchedule->early_leave ?? 0);
+                    try {
+                        $dt2 = new \DateTime($baseEnd);
+                        if ($earlyMinutes > 0) {
+                            // early leave threshold is end_time minus earlyMinutes
+                            $dt2->modify("-{$earlyMinutes} minutes");
+                        }
+                        $earlyThreshold = $dt2->format('H:i:s');
+                    } catch (\Exception $e) {
+                        $earlyThreshold = $baseEnd;
                     }
                 }
                 if ($checkDate) {
@@ -246,15 +312,54 @@ class EmployeeTimeImport implements ToCollection
                     }
                 }
 
-                // If both clock_in and clock_out are null, set vacation_type to null
+                // If both clock_in and clock_out are null, treat as potential day off.
                 if ($clockIn === null && $clockOut === null) {
                     $vacationType = null;
+                    $reason = null;
+                }
+
+                // Apply late arrival / early leave reason logic if not already off day or vacation
+                $reasons = [];
+                if (!$offDay && !$reason) {
+                    // Late arrival: clockIn exists and is after lateThreshold
+                    if ($clockIn && $lateThreshold) {
+                        // compare times using DateTime
+                        try {
+                            $ci = new \DateTime($clockIn);
+                            $lt = new \DateTime($lateThreshold);
+                            if ($ci > $lt) {
+                                $reasons[] = 'Late arrival';
+                            }
+                        } catch (\Exception $e) {
+                            // ignore parse errors
+                        }
+                    }
+
+                    // Early leave: clockOut exists and is before earlyThreshold
+                    if ($clockOut && $earlyThreshold) {
+                        try {
+                            $co = new \DateTime($clockOut);
+                            $et = new \DateTime($earlyThreshold);
+                            if ($co < $et) {
+                                $reasons[] = 'Early leave';
+                            }
+                        } catch (\Exception $e) {
+                            // ignore parse errors
+                        }
+                    }
+
+                    if (count($reasons) === 1) {
+                        $reason = $reasons[0];
+                    } else if (count($reasons) > 1) {
+                        $reason = implode(' / ', $reasons); // e.g. 'Late arrival / Early leave'
+                    }
                 }
 
                 // Skip if already exists
                 if ($employeeId && $date && EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->exists()) {
                     continue;
                 }
+
                 EmployeeTime::create([
                     'employee_id' => $employeeId,
                     'acc_number'  => $acNo,

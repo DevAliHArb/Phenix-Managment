@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('guestusers:clear-expired-email-verifications')->everyMinute();
         $schedule->command('employees:add-yearly-vacation')->monthlyOn(1, '00:00');
+        // Apply vacation_dates entries to active employees daily at 00:05
+        $schedule->command('vacationdates:apply')->dailyAt('00:05');
     }
 
     /**

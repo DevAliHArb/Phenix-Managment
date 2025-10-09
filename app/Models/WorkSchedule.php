@@ -24,5 +24,6 @@ class WorkSchedule extends Model
         'total_hours_per_day',
         'late_arrival',
         'early_leave',
+        'vacation_days_per_month',
     ];
 }

@@ -21,6 +21,9 @@
         </div>
     @endif
 
+    @php
+        $workSchedule = \App\Models\WorkSchedule::first();
+    @endphp
     <form action="{{ route('employees.store') }}" method="POST" novalidate id="employeeForm">
         @csrf
         <div class="formContainer">
@@ -189,48 +192,48 @@
                 <div class="row mb-2">
                     <div class="col-md-4 col-6">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-sunday" value="sunday">
-                            <label class="form-check-label" for="day-sunday">Sunday</label>
-                        </div>
-                    </div>
-                    <div class="col-md-4 col-6">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-monday" value="monday">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-monday" value="monday" {{ (old('working_days') && in_array('monday', old('working_days'))) ? 'checked' : ((!old('working_days') && isset($workSchedule) && $workSchedule->monday) ? 'checked' : '') }}>
                             <label class="form-check-label" for="day-monday">Monday</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-6">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-tuesday" value="tuesday">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-tuesday" value="tuesday" {{ (old('working_days') && in_array('tuesday', old('working_days'))) ? 'checked' : ((!old('working_days') && isset($workSchedule) && $workSchedule->tuesday) ? 'checked' : '') }}>
                             <label class="form-check-label" for="day-tuesday">Tuesday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-wednesday" value="wednesday" {{ (old('working_days') && in_array('wednesday', old('working_days'))) ? 'checked' : ((!old('working_days') && isset($workSchedule) && $workSchedule->wednesday) ? 'checked' : '') }}>
+                            <label class="form-check-label" for="day-wednesday">Wednesday</label>
                         </div>
                     </div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-md-4 col-6">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-wednesday" value="wednesday">
-                            <label class="form-check-label" for="day-wednesday">Wednesday</label>
-                        </div>
-                    </div>
-                    <div class="col-md-4 col-6">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-thursday" value="thursday">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-thursday" value="thursday" {{ (old('working_days') && in_array('thursday', old('working_days'))) ? 'checked' : ((!old('working_days') && isset($workSchedule) && $workSchedule->thursday) ? 'checked' : '') }}>
                             <label class="form-check-label" for="day-thursday">Thursday</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-6">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-friday" value="friday">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-friday" value="friday" {{ (old('working_days') && in_array('friday', old('working_days'))) ? 'checked' : ((!old('working_days') && isset($workSchedule) && $workSchedule->friday) ? 'checked' : '') }}>
                             <label class="form-check-label" for="day-friday">Friday</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-saturday" value="saturday" {{ (old('working_days') && in_array('saturday', old('working_days'))) ? 'checked' : ((!old('working_days') && isset($workSchedule) && $workSchedule->saturday) ? 'checked' : '') }}>
+                            <label class="form-check-label" for="day-saturday">Saturday</label>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4 col-6">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-saturday" value="saturday">
-                            <label class="form-check-label" for="day-saturday">Saturday</label>
+                            <input class="form-check-input" type="checkbox" name="working_days[]" id="day-sunday" value="sunday" {{ (old('working_days') && in_array('sunday', old('working_days'))) ? 'checked' : ((!old('working_days') && isset($workSchedule) && $workSchedule->sunday) ? 'checked' : '') }}>
+                            <label class="form-check-label" for="day-sunday">Sunday</label>
                         </div>
                     </div>
                 </div>
@@ -252,14 +255,14 @@
         </div> --}}
         <div class="mb-3">
             <label for="working_hours_from" class="form-label">Working Hours From</label>
-            <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from') }}" required>
+            <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from', isset($workSchedule) ? $workSchedule->start_time : null) }}" required>
             @error('working_hours_from')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
             <label for="working_hours_to" class="form-label">Working Hours To</label>
-            <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to') }}" required>
+            <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to', isset($workSchedule) ? $workSchedule->end_time : null) }}" required>
             @error('working_hours_to')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
