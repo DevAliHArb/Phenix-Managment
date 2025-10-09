@@ -328,6 +328,7 @@
                                 <button type="button" class="btn btn-sm remove-attachment position-absolute" style="top: 8px; right: 8px; visibility: visible; z-index: 10; background: transparent; color: #dc3545; border: none; width: 28px; height: 28px; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">
                                     &times;
                                 </button>
+                                <input type="hidden" name="attachments[{{ $i }}][id]" value="{{ $attachment->id }}">
                                 <div class="mb-3">
                                     <label class="form-label">Document Type</label>
                                     <select name="attachments[{{ $i }}][type]" class="form-control attachment-type">
@@ -348,6 +349,15 @@
                                     <div>
                                         <a href="{{ $attachment->image }}" target="_blank" class="btn btn-outline-primary btn-sm">View File</a>
                                     </div>
+                                    @php
+                                        $fileExtension = strtolower(pathinfo($attachment->image, PATHINFO_EXTENSION));
+                                        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                                    @endphp
+                                    @if(in_array($fileExtension, $imageExtensions))
+                                        <div class="attachment-preview mt-2">
+                                            <img src="{{ $attachment->image }}" alt="Document Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6;">
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="mt-2">
                                     <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
@@ -390,19 +400,17 @@
     </div>
 
     <script>
-    // Attachment dynamic add/remove (edit page)
     document.addEventListener('DOMContentLoaded', function() {
+        // Attachment functionality
         let attachmentIndex = {{ isset($employee->attachments) ? count($employee->attachments) : 0 }};
         const attachmentsContainer = document.getElementById('attachments-container');
         const addAttachmentBtn = document.getElementById('add-attachment');
         function updateRemoveButtons() {
-            const attachmentItems = document.querySelectorAll('.attachment-item');
-            attachmentItems.forEach((item, index) => {
-                const removeBtn = item.querySelector('.remove-attachment');
-                if (attachmentItems.length > 1) {
-                    removeBtn.style.visibility = 'visible';
-                } else {
-                    removeBtn.style.visibility = 'hidden';
+            const attachmentItems = document.querySelectorAll('#attachments-container .col-md-4:not([style*="display: none"])');
+            attachmentItems.forEach((col) => {
+                const removeBtn = col.querySelector('.remove-attachment');
+                if (removeBtn) {
+                    removeBtn.style.visibility = attachmentItems.length > 1 ? 'visible' : 'hidden';
                 }
             });
         }
@@ -411,14 +419,12 @@
             const typeSelect = attachmentItem.querySelector('.attachment-type');
             const fileInput = attachmentItem.querySelector('.attachment-file');
             
-            if (typeSelect.value && fileInput.files.length > 0) {
-                // Filled state
+            if (typeSelect && typeSelect.value && fileInput && fileInput.files.length > 0) {
                 attachmentItem.classList.remove('attachment-empty');
                 attachmentItem.classList.add('attachment-filled');
                 attachmentItem.style.border = '2px solid #28a745';
                 attachmentItem.style.backgroundColor = '#f8fff9';
             } else {
-                // Empty state
                 attachmentItem.classList.remove('attachment-filled');
                 attachmentItem.classList.add('attachment-empty');
                 attachmentItem.style.border = '2px dashed #dee2e6';
@@ -450,6 +456,9 @@
                         <div class="mb-3">
                             <label class="form-label">Document File</label>
                             <input type="file" name="attachments[${index}][file]" class="form-control attachment-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
+                            <div class="attachment-preview mt-2" style="display: none;">
+                                <img src="" alt="Document Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            </div>
                         </div>
                         <div class="mt-2">
                             <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
@@ -458,18 +467,50 @@
                 </div>
             `;
         }
-        addAttachmentBtn.addEventListener('click', function() {
+        // Add attachment button click handler
+        addAttachmentBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             const newAttachmentHTML = createAttachmentItem(attachmentIndex);
             attachmentsContainer.insertAdjacentHTML('beforeend', newAttachmentHTML);
             attachmentIndex++;
             updateRemoveButtons();
         });
+        // Remove attachment click handler (using event delegation)
         attachmentsContainer.addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-attachment') || e.target.closest('.remove-attachment')) {
-                e.target.closest('.col-md-4').remove();
+                const attachmentCol = e.target.closest('.col-md-4');
+                const attachmentItem = attachmentCol.querySelector('.attachment-item');
+                
+                if (attachmentItem.classList.contains('attachment-filled')) {
+                    // This is an existing attachment - mark for deletion
+                    const typeSelect = attachmentCol.querySelector('select[name*="[type]"]');
+                    if (typeSelect) {
+                        const nameAttr = typeSelect.getAttribute('name');
+                        const index = nameAttr.match(/\[(\d+)\]/)[1];
+                        
+                        // Add hidden input to mark for deletion
+                        const deleteInput = document.createElement('input');
+                        deleteInput.type = 'hidden';
+                        deleteInput.name = `attachments[${index}][delete]`;
+                        deleteInput.value = '1';
+                        attachmentCol.appendChild(deleteInput);
+                        
+                        // Hide the attachment visually
+                        attachmentCol.style.display = 'none';
+                    }
+                } else {
+                    // This is a new attachment - remove completely
+                    const fileInput = attachmentCol.querySelector('.attachment-file');
+                    const previewContainer = attachmentCol.querySelector('.attachment-preview');
+                    if (fileInput) fileInput.value = '';
+                    if (previewContainer) previewContainer.style.display = 'none';
+                    
+                    attachmentCol.remove();
+                }
                 updateRemoveButtons();
             }
         });
+        // File change handler (using event delegation)
         attachmentsContainer.addEventListener('change', function(e) {
             if (e.target.classList.contains('attachment-file')) {
                 const file = e.target.files[0];
@@ -478,20 +519,41 @@
                     e.target.value = '';
                     return;
                 }
-                // Update styling based on file selection
+                
+                // Handle image preview
                 const attachmentItem = e.target.closest('.attachment-item');
-                updateAttachmentStyle(attachmentItem);
+                const previewContainer = attachmentItem.querySelector('.attachment-preview');
+                const previewImg = previewContainer.querySelector('img');
+                
+                if (file) {
+                    // Check if file is an image
+                    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                    if (validImageTypes.includes(file.type)) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            previewImg.src = evt.target.result;
+                            previewContainer.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        // Hide preview for non-image files
+                        previewContainer.style.display = 'none';
+                        previewImg.src = '';
+                    }
+                } else {
+                    // No file selected
+                    previewContainer.style.display = 'none';
+                    previewImg.src = '';
+                }
+                
+                updateAttachmentStyle(e.target.closest('.attachment-item'));
             }
             
             if (e.target.classList.contains('attachment-type')) {
-                // Update styling based on type selection
-                const attachmentItem = e.target.closest('.attachment-item');
-                updateAttachmentStyle(attachmentItem);
+                updateAttachmentStyle(e.target.closest('.attachment-item'));
             }
         });
-        updateRemoveButtons();
-    });
-    document.addEventListener('DOMContentLoaded', function() {
+        
         // Image file to base64
         const imageInput = document.getElementById('imageInput');
         const imageBase64 = document.getElementById('imageBase64');
@@ -656,6 +718,9 @@
 
         // Initialize full address on page load
         updateFullAddress();
+        
+        // Initialize
+        updateRemoveButtons();
     });
     </script>
 </div>

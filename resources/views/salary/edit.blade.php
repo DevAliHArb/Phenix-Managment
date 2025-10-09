@@ -45,6 +45,13 @@
                 @enderror
             </div>
             <div class="mb-3">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date', $item->start_date) }}" required>
+                @error('start_date')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
                 <label for="status" class="form-label">Status</label>
                 <select name="status" class="form-control @error('status') is-invalid @enderror" required>
                     <option value="1" {{ old('status', $item->status) == 1 ? 'selected' : '' }}>Active</option>

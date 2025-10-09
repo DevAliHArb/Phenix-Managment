@@ -262,7 +262,20 @@ const employeesData = [
                 employee_name: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
                 start_date: `{{ $item->start_date }}`,
                 end_date: `{{ $item->end_date }}`,
-                salaries: @json($item->salaries ?? [])
+                status: `{{ $item->is_active ? 'Active' : 'Inactive' }}`,
+                salaries: [
+                    @foreach(($item->salaries ?? []) as $salary)
+                    {
+                        id: {{ $salary->id }},
+                        salary: `{{ $salary->salary }}`,
+                        status: `{{ $salary->status ? 'Active' : 'Inactive' }}`,
+                        start_date: `{{ $salary->start_date ?? '' }}`,
+                        end_date: `{{ $salary->end_date ?? '' }}`,
+                        start_time: `{{ $salary->start_time ?? '' }}`,
+                        end_time: `{{ $salary->end_time ?? '' }}`
+                    },
+                    @endforeach
+                ]
             },
             @endforeach
         ],
@@ -778,7 +791,8 @@ function renderEmployeeSalariesGrid(positionImprovements) {
             { dataField: "position_name", caption: "Current Position" },
             { dataField: "employee_name", caption: "Employee", visible: false },
             { dataField: "start_date", caption: "Start Date", sortOrder: "desc" },
-            { dataField: "end_date", caption: "End Date" }
+            { dataField: "end_date", caption: "End Date" },
+            { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } }
         ],
         showBorders: true,
         editing: {
@@ -877,7 +891,9 @@ function renderEmployeeSalariesGrid(positionImprovements) {
             columns: [
                 { dataField: "id", caption: "ID", visible: false },
                 { dataField: "salary", caption: "Salary" },
-                { dataField: "status", caption: "Status" }
+                { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } }
             ],
             showBorders: true,
             editing: {

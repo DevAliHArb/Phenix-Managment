@@ -50,6 +50,7 @@
                 employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
                 start_date: `{{ $item->start_date }}`,
                 end_date: `{{ $item->end_date }}`,
+                is_active: `{{ $item->is_active ? 'Active' : 'Inactive' }}`,
                 editUrl: `{{ route('position-improvements.edit', $item->id) }}`,
                 deleteUrl: `{{ route('position-improvements.destroy', $item->id) }}`
             },
@@ -117,6 +118,7 @@
                     { dataField: "employee", caption: "Employee", allowFiltering: true, headerFilter: { allowSearch: true } },
                     { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true } },
                     { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "is_active", caption: "Status", width: 100, allowFiltering: true, headerFilter: { allowSearch: true } },
                     {
                         caption: "Actions",
                         cellTemplate: function(container, options) {
@@ -191,6 +193,8 @@
                         employee: `{{ optional(optional($item->positionImprovement)->employee)->first_name }} {{ optional(optional($item->positionImprovement)->employee)->last_name }}`,
                         position: `{{ optional(optional($item->positionImprovement)->position)->name }}`,
                         salary: `{{ $item->salary }}`,
+                        start_date: `{{ $item->start_date }}`,
+                        end_date: `{{ $item->end_date }}`,
                         status: `{{ $item->status ? 'Active' : 'Inactive' }}`,
                         editUrl: `{{ route('salary.edit', $item->id) }}`,
                         deleteUrl: `{{ route('salary.destroy', $item->id) }}`
@@ -205,6 +209,8 @@
                     { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
                     { dataField: "employee", caption: "Employee", allowFiltering: true, headerFilter: { allowSearch: true } },
                     { dataField: "position", caption: "Position", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "start_date", caption: "Start Date", allowFiltering: true, headerFilter: { allowSearch: true } },
+                    { dataField: "end_date", caption: "End Date", allowFiltering: true, headerFilter: { allowSearch: true } },
                     { dataField: "salary", caption: "Salary", allowFiltering: true, headerFilter: { allowSearch: true } },
                     { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } },
                     {

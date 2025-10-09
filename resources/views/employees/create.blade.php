@@ -328,6 +328,9 @@
                         <div class="mb-3">
                             <label class="form-label">Document File</label>
                             <input type="file" name="attachments[0][file]" class="form-control attachment-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
+                            <div class="attachment-preview mt-2" style="display: none;">
+                                <img src="" alt="Document Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            </div>
                         </div>
                         <div class="mt-2">
                             <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
@@ -475,6 +478,9 @@
                             <div class="mb-3">
                                 <label class="form-label">Document File</label>
                                 <input type="file" name="attachments[${index}][file]" class="form-control attachment-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
+                                <div class="attachment-preview mt-2" style="display: none;">
+                                    <img src="" alt="Document Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6;">
+                                </div>
                             </div>
                             <div class="mt-2">
                                 <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>
@@ -491,7 +497,14 @@
             });
             attachmentsContainer.addEventListener('click', function(e) {
                 if (e.target.classList.contains('remove-attachment') || e.target.closest('.remove-attachment')) {
-                    e.target.closest('.col-md-4').remove();
+                    const attachmentCol = e.target.closest('.col-md-4');
+                    // Clear any file input and preview before removing
+                    const fileInput = attachmentCol.querySelector('.attachment-file');
+                    const previewContainer = attachmentCol.querySelector('.attachment-preview');
+                    if (fileInput) fileInput.value = '';
+                    if (previewContainer) previewContainer.style.display = 'none';
+                    
+                    attachmentCol.remove();
                     updateRemoveButtons();
                 }
             });
@@ -503,8 +516,34 @@
                         e.target.value = '';
                         return;
                     }
-                    // Update styling based on file selection
+                    
+                    // Handle image preview
                     const attachmentItem = e.target.closest('.attachment-item');
+                    const previewContainer = attachmentItem.querySelector('.attachment-preview');
+                    const previewImg = previewContainer.querySelector('img');
+                    
+                    if (file) {
+                        // Check if file is an image
+                        const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                        if (validImageTypes.includes(file.type)) {
+                            const reader = new FileReader();
+                            reader.onload = function(evt) {
+                                previewImg.src = evt.target.result;
+                                previewContainer.style.display = 'block';
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            // Hide preview for non-image files
+                            previewContainer.style.display = 'none';
+                            previewImg.src = '';
+                        }
+                    } else {
+                        // No file selected
+                        previewContainer.style.display = 'none';
+                        previewImg.src = '';
+                    }
+                    
+                    // Update styling based on file selection
                     updateAttachmentStyle(attachmentItem);
                 }
                 

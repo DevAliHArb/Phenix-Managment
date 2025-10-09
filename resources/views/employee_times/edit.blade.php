@@ -164,22 +164,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Initial Clock Out - Raw:', rawClockOut, 'Normalized:', initialClockOut);
     }
     
-    // Function to convert minutes to HH:MM:SS format
-    function minutesToTimeFormat(minutes) {
-        if (!minutes || minutes === '' || isNaN(minutes)) return '';
-        const totalMinutes = parseInt(minutes);
-        if (totalMinutes < 0) return '00:00:00';
-        
-        const hours = Math.floor(totalMinutes / 60);
-        const mins = totalMinutes % 60;
-        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:00`;
-    }
+
     
-    // Function to calculate time difference in HH:MM:SS format
+    // Function to calculate time difference in HH:MM format
     function calculateTotalTime() {
         // Get current values - normalize and use current input value first, then fall back to initial values
         let clockInValue = clockInInput.value ? normalizeTimeFormat(clockInInput.value) : initialClockIn;
         let clockOutValue = clockOutInput.value ? normalizeTimeFormat(clockOutInput.value) : initialClockOut;
+        
+        // Check if current input values are empty (user deleted them)
+        if (!clockInInput.value || !clockOutInput.value) {
+            totalTimeInput.value = '00:00';
+            console.log('Empty field detected - setting total time to 00:00'); // Debug log
+            return;
+        }
         
         console.log('Clock In Value:', clockInValue, 'Clock Out Value:', clockOutValue); // Debug log
         
@@ -191,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Check if dates are valid
                 if (isNaN(clockIn.getTime()) || isNaN(clockOut.getTime())) {
                     console.error('Invalid time format - Clock In:', clockInValue, 'Clock Out:', clockOutValue);
-                    totalTimeInput.value = '00:00:00';
+                    totalTimeInput.value = '00:00';
                     return;
                 }
                 
@@ -214,10 +212,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Error calculating time:', error);
-                totalTimeInput.value = '00:00:00';
+                totalTimeInput.value = '00:00';
             }
         } else {
-            totalTimeInput.value = '';
+            totalTimeInput.value = '00:00';
             console.log('Missing values - Clock In:', clockInValue, 'Clock Out:', clockOutValue); // Debug log
         }
     }
@@ -240,16 +238,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 clockOutInput.value = initialClockOut;
             }
             
-            // Initialize total time field with existing value converted to HH:MM:SS format
+            // Initialize total time field with existing value converted to HH:MM format
             const existingTotalTime = totalTimeInput.value || totalTimeInput.getAttribute('value') || '';
             if (existingTotalTime && existingTotalTime !== '') {
-                // Check if it's already in HH:MM:SS format or if it's in minutes
+                // Check if it's already in time format or if it's in minutes
                 if (existingTotalTime.includes(':')) {
-                    // Already in time format, keep as is
-                    totalTimeInput.value = existingTotalTime;
+                    // If it's in HH:MM:SS format, convert to HH:MM
+                    if (existingTotalTime.split(':').length === 3) {
+                        const timeParts = existingTotalTime.split(':');
+                        totalTimeInput.value = `${timeParts[0]}:${timeParts[1]}`;
+                    } else {
+                        // Already in HH:MM format, keep as is
+                        totalTimeInput.value = existingTotalTime;
+                    }
                 } else {
-                    // Convert from minutes to HH:MM:SS format
-                    totalTimeInput.value = minutesToTimeFormat(existingTotalTime);
+                    // Convert from minutes to HH:MM format
+                    const totalMinutes = parseInt(existingTotalTime);
+                    if (!isNaN(totalMinutes) && totalMinutes >= 0) {
+                        const hours = Math.floor(totalMinutes / 60);
+                        const mins = totalMinutes % 60;
+                        totalTimeInput.value = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                    } else {
+                        totalTimeInput.value = '00:00';
+                    }
                 }
             } else {
                 // Calculate initial value if both times are present but no total_time exists

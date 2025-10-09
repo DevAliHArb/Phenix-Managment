@@ -57,6 +57,24 @@ class SalaryController extends Controller
                 }
             }
 
+            // Check for same or earlier date validation
+            $lastSalary = Salary::where('position_improvement_id', $validated['position_improvement_id'])
+                ->orderBy('start_date', 'desc')
+                ->first();
+
+            if ($lastSalary) {
+                $newStartDate = new \DateTime($validated['start_date']);
+                $lastStartDate = new \DateTime($lastSalary->start_date);
+
+                if ($newStartDate <= $lastStartDate) {
+                    $errorMessage = 'Start date must be after the last salary record date (' . $lastSalary->start_date . ') for this position improvement.';
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'errors' => [$errorMessage]], 422);
+                    }
+                    return back()->withInput()->withErrors(['start_date' => $errorMessage]);
+                }
+            }
+
             // Deactivate current active row for this employee and set its end_date
             $activeRow = Salary::where('position_improvement_id', $request['position_improvement_id'])
                 ->where('status', true)
@@ -91,7 +109,28 @@ class SalaryController extends Controller
                 'status' => 'required|boolean',
                 'start_date' => 'required|date',
             ]);
+            
             $model = Salary::findOrFail($id);
+            
+            // Check for same or earlier date validation (excluding current record)
+            $lastSalary = Salary::where('position_improvement_id', $validated['position_improvement_id'])
+                ->where('id', '!=', $id) // Exclude current record
+                ->orderBy('start_date', 'desc')
+                ->first();
+
+            if ($lastSalary) {
+                $newStartDate = new \DateTime($validated['start_date']);
+                $lastStartDate = new \DateTime($lastSalary->start_date);
+
+                if ($newStartDate <= $lastStartDate) {
+                    $errorMessage = 'Start date must be after the last salary record date (' . $lastSalary->start_date . ') for this position improvement.';
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'errors' => [$errorMessage]], 422);
+                    }
+                    return back()->withInput()->withErrors(['start_date' => $errorMessage]);
+                }
+            }
+            
             $model->update($request->all());
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('salary.index')]);
