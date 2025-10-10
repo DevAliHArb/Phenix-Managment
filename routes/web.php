@@ -36,6 +36,7 @@ Route::resource('sick-leaves', SickLeaveController::class);
 Route::resource('salary', SalaryController::class);
 Route::resource('position-improvements', PositionImprovementController::class);
 Route::resource('vacation-dates', VacationDateController::class);
+Route::post('vacation-dates/add-yearly', [VacationDateController::class, 'addYearly'])->name('vacation-dates.addYearly');
 Route::resource('employee-vacations', EmployeeVacationController::class);
 
 // Work Schedule routes

@@ -520,160 +520,6 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacati
     // Hide Export Timesheet button and title if present
     $("#employeeTimesGridHeader").hide();
     
-    // Add titles for both tables if not present
-    // $("#employeeVacationsGrid").html('<div class="row">'
-    //     + '<div class="col-md-6">'
-    //     + '<h6 id="yearlyVacationsGridTitle" class="mb-2">Yearly Vacations</h6>'
-    //     + '<div id="yearlyVacationsGrid"></div>'
-    //     + '</div>'
-    //     + '<div class="col-md-6">'
-    //     + '<h6 id="sickLeavesGridTitle" class="mb-2">Sick Leaves</h6>'
-    //     + '<div id="sickLeavesGrid"></div>'
-    //     + '</div>'
-    //     + '</div>');
-
-    // Render Yearly Vacations grid
-    // $("#yearlyVacationsGrid").dxDataGrid({
-    //     dataSource: yearlyVacations,
-    //     columns: [
-    //         { dataField: "id", caption: "ID", width: 60, visible: false },
-    //         { dataField: "date", caption: "Date" },
-    //         { dataField: "reason", caption: "Reason" }
-    //     ],
-    //     showBorders: true,
-    //     editing: {
-    //         allowAdding: true
-    //     },
-    //     onToolbarPreparing: function(e) {
-    //         // Find and modify the Add button
-    //         const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
-    //         if (addButton) {
-    //             addButton.options.onClick = function() {
-    //                 const employee = employeesData[selectedEmployeeIndex];
-    //                 if (!employee) {
-    //                     alert('No employee selected.');
-    //                     return;
-    //                 }
-    //                 // Redirect to yearly vacations create page with employee ID as parameter
-    //                 window.location.href = `/yearly-vacations/create?employee_id=${employee.id}`;
-    //             };
-    //         }
-    //     },
-    //     paging: { pageSize: 10 },
-    //     pager: {
-    //         showPageSizeSelector: true,
-    //         allowedPageSizes: [5, 10, 20],
-    //         showInfo: false,
-    //         showNavigationButtons: true,
-    //         visible: true
-    //     },
-    //     searchPanel: {
-    //         visible: true,
-    //         width: 240,
-    //         placeholder: 'Search...'
-    //     },
-    //     filterRow: {
-    //         visible: true,
-    //         applyFilter: 'auto'
-    //     },
-    //     headerFilter: {
-    //         visible: true
-    //     },
-    //     columnChooser: {
-    //         enabled: true,
-    //         mode: 'dragAndDrop',
-    //         title: 'Column Chooser',
-    //         emptyPanelText: 'Drag a column here to hide it'
-    //     },
-    //     allowColumnReordering: true,
-    //     summary: {
-    //         totalItems: [
-    //             {
-    //                 summaryType: 'count',
-    //                 displayFormat: 'Total: {0} rows'
-    //             }
-    //         ]
-    //     },
-    //     noDataText: 'No yearly vacations found.'
-    // });
-
-    // // Render Sick Leaves grid
-    // $("#sickLeavesGrid").dxDataGrid({
-    //     dataSource: sickLeaves,
-    //     columns: [
-    //         { dataField: "id", caption: "ID", width: 60, visible: false },
-    //         { dataField: "date", caption: "Date" },
-    //         { dataField: "reason", caption: "Reason" },
-    //         { 
-    //             dataField: "attachment", 
-    //             caption: "Attachment",
-    //             cellTemplate: function(container, options) {
-    //                 if (options.data.attachment) {
-    //                     $(container).html(`<a href="${options.data.attachment}" target="_blank" style="color: #0d6efd;">View</a>`);
-    //                 } else {
-    //                     $(container).text('No attachment');
-    //                 }
-    //             }
-    //         }
-    //     ],
-    //     showBorders: true,
-    //     editing: {
-    //         allowAdding: true
-    //     },
-    //     onToolbarPreparing: function(e) {
-    //         // Find and modify the Add button
-    //         const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
-    //         if (addButton) {
-    //             addButton.options.onClick = function() {
-    //                 const employee = employeesData[selectedEmployeeIndex];
-    //                 if (!employee) {
-    //                     alert('No employee selected.');
-    //                     return;
-    //                 }
-    //                 // Redirect to sick leaves create page with employee ID as parameter
-    //                 window.location.href = `/sick-leaves/create?employee_id=${employee.id}`;
-    //             };
-    //         }
-    //     },
-    //     paging: { pageSize: 10 },
-    //     pager: {
-    //         showPageSizeSelector: true,
-    //         allowedPageSizes: [5, 10, 20],
-    //         showInfo: false,
-    //         showNavigationButtons: true,
-    //         visible: true
-    //     },
-    //     searchPanel: {
-    //         visible: true,
-    //         width: 240,
-    //         placeholder: 'Search...'
-    //     },
-    //     filterRow: {
-    //         visible: true,
-    //         applyFilter: 'auto'
-    //     },
-    //     headerFilter: {
-    //         visible: true
-    //     },
-    //     columnChooser: {
-    //         enabled: true,
-    //         mode: 'dragAndDrop',
-    //         title: 'Column Chooser',
-    //         emptyPanelText: 'Drag a column here to hide it'
-    //     },
-    //     allowColumnReordering: true,
-    //     summary: {
-    //         totalItems: [
-    //             {
-    //                 summaryType: 'count',
-    //                 displayFormat: 'Total: {0} rows'
-    //             }
-    //         ]
-    //     },
-    //     noDataText: 'No sick leaves found.'
-    // });
-
-
     $("#employeeVacationsGrid").dxDataGrid({
                 dataSource: employeeVacations,
                 columns: [
@@ -728,25 +574,34 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacati
                     }
                 ],
                 showBorders: true,
-                editing: {
-                    allowAdding: true
-                },
-                onToolbarPreparing: function(e) {
-                    // Find and modify the Add button
-                    const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
-                    if (addButton) {
-                        addButton.options.onClick = function() {
-                            const employee = employeesData[selectedEmployeeIndex];
-                            if (!employee) {
-                                alert('No employee selected.');
-                                return;
-                            }
-                            // Redirect to employee vacations create page with employee ID as parameter and lock it
-                            const returnUrl = encodeURIComponent(window.location.href);
-                            window.location.href = `/employee-vacations/create?employee_id=${employee.id}&lock_employee=1&return_url=${returnUrl}`;
-                        };
+                
+        onToolbarPreparing: function(e) {
+            // Remove default add button if present
+            e.toolbarOptions.items = e.toolbarOptions.items.filter(function(item) {
+                return item.name !== 'addRowButton';
+            });
+            // Add custom Add button
+            e.toolbarOptions.items.unshift({
+                location: 'after',
+                widget: 'dxButton',
+                options: {
+                    icon: 'add',
+                    text: '',
+                    type: 'normal',
+                    stylingMode: 'outlined', // Add border to button
+                    elementAttr: { style: 'border: 1px solid #ddd; border-radius: 4px;' },
+                    onClick: function() {
+                    const employee = employeesData[selectedEmployeeIndex];
+                        if (!employee) {
+                            alert('No employee selected.');
+                            return;
+                        }
+                        const returnUrl = encodeURIComponent(window.location.href);
+                        window.location.href = `/employee-vacations/create?employee_id=${employee.id}&lock_employee=1&return_url=${returnUrl}`;
                     }
-                },
+                }
+            });
+        },
                 paging: { pageSize: 10 },
                 pager: {
                     showPageSizeSelector: true,
@@ -798,24 +653,32 @@ function renderEmployeeSalariesGrid(positionImprovements) {
             { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } }
         ],
         showBorders: true,
-        editing: {
-            allowAdding: true
-        },
         onToolbarPreparing: function(e) {
-            // Find and modify the Add button
-            const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
-            if (addButton) {
-                addButton.options.onClick = function() {
+            // Remove default add button if present
+            e.toolbarOptions.items = e.toolbarOptions.items.filter(function(item) {
+                return item.name !== 'addRowButton';
+            });
+            // Add custom Add button
+            e.toolbarOptions.items.unshift({
+                location: 'after',
+                widget: 'dxButton',
+                options: {
+                    icon: 'add',
+                    text: '',
+                    type: 'normal',
+                    stylingMode: 'outlined', // Add border to button
+                    elementAttr: { style: 'border: 1px solid #ddd; border-radius: 4px;' },
+                    onClick: function() {
                     const employee = employeesData[selectedEmployeeIndex];
-                    if (!employee) {
-                        alert('No employee selected.');
-                        return;
+                        if (!employee) {
+                            alert('No employee selected.');
+                            return;
+                        }
+                        const returnUrl = encodeURIComponent(window.location.href);
+                        window.location.href = `/position-improvements/create?employee_id=${employee.id}&lock_employee=1&return_url=${returnUrl}`;
                     }
-                    // Redirect to position improvements create page with employee ID as parameter and lock it
-                    const returnUrl = encodeURIComponent(window.location.href);
-                    window.location.href = `/position-improvements/create?employee_id=${employee.id}&lock_employee=1&return_url=${returnUrl}`;
-                };
-            }
+                }
+            });
         },
         paging: { pageSize: 10 },
         pager: {
@@ -899,23 +762,31 @@ function renderEmployeeSalariesGrid(positionImprovements) {
                 { dataField: "status", caption: "Status", allowFiltering: true, headerFilter: { allowSearch: true } }
             ],
             showBorders: true,
-            editing: {
-                allowAdding: true
-            },
             onToolbarPreparing: function(e) {
-                // Find and modify the Add button
-                const addButton = e.toolbarOptions.items.find(item => item.name === 'addRowButton');
-                if (addButton) {
-                    addButton.options.onClick = function() {
-                        if (!positionImprovementId) {
-                            alert('No position improvement selected.');
-                            return;
+                // Remove default add button if present
+                e.toolbarOptions.items = e.toolbarOptions.items.filter(function(item) {
+                    return item.name !== 'addRowButton';
+                });
+                // Add custom Add button
+                e.toolbarOptions.items.unshift({
+                    location: 'after',
+                    widget: 'dxButton',
+                    options: {
+                        icon: 'add',
+                        text: '',
+                        type: 'normal',
+                        stylingMode: 'outlined', // Add border to button
+                        elementAttr: { style: 'border: 1px solid #ddd; border-radius: 4px;' },
+                        onClick: function() {
+                            if (!positionImprovementId) {
+                                alert('No position improvement selected.');
+                                return;
+                            }
+                            const returnUrl = encodeURIComponent(window.location.href);
+                            window.location.href = `/salary/create?position_improvement_id=${positionImprovementId}&lock_position_improvement=1&return_url=${returnUrl}`;
                         }
-                        // Redirect to salary create page with position improvement ID as parameter and lock it
-                        const returnUrl = encodeURIComponent(window.location.href);
-                        window.location.href = `/salary/create?position_improvement_id=${positionImprovementId}&lock_position_improvement=1&return_url=${returnUrl}`;
-                    };
-                }
+                    }
+                });
             },
             paging: { pageSize: 10 },
             pager: {

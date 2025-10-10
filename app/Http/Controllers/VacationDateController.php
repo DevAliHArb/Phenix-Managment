@@ -7,6 +7,33 @@ use Illuminate\Http\Request;
 
 class VacationDateController extends Controller
 {
+    public function addYearly(Request $request)
+    {
+        $year = intval($request->input('year'));
+        if ($year < 2000 || $year > 2100) {
+            return response()->json(['success' => false, 'message' => 'Invalid year.'], 400);
+        }
+        $dates = [
+            ['month' => '01', 'day' => '01', 'name' => 'New year'],
+            ['month' => '04', 'day' => '10', 'name' => 'Easter'],
+            ['month' => '07', 'day' => '14', 'name' => 'National holiday France'],
+            ['month' => '05', 'day' => '01', 'name' => 'Workers day'],
+            ['month' => '08', 'day' => '15', 'name' => 'Assumption of the virgin Mary'],
+            ['month' => '11', 'day' => '22', 'name' => 'Independence day'],
+        ];
+        $inserted = 0;
+        foreach ($dates as $d) {
+            $dateStr = sprintf('%04d-%02d-%02d', $year, $d['month'], $d['day']);
+            if (!VacationDate::where('date', $dateStr)->exists()) {
+                VacationDate::create([
+                    'date' => $dateStr,
+                    'name' => $d['name'],
+                ]);
+                $inserted++;
+            }
+        }
+        return response()->json(['success' => true, 'inserted' => $inserted]);
+    }
     public function index()
     {
         $vacations = VacationDate::orderBy('date')->get();

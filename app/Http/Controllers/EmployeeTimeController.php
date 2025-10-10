@@ -42,32 +42,30 @@ class EmployeeTimeController extends Controller
             return response()->json(['error' => 'No employee IDs provided'], 400);
         }
 
-        $zip = new \ZipArchive();
-        $zipFile = tempnam(sys_get_temp_dir(), 'timesheets_') . '.zip';
-        $zip->open($zipFile, \ZipArchive::CREATE);
-
+        $allSheets = [];
         foreach ($ids as $employeeId) {
-            $employee = Employee::with(['position'])->find($employeeId);
+            $employee = Employee::with(['position', 'yearlyVacations', 'employeeVacations'])->find($employeeId);
             if (!$employee) continue;
             $department = $employee->position ? $employee->position->name : '';
-            $times = EmployeeTime::where('employee_id', $employeeId)
+            $query = EmployeeTime::where('employee_id', $employeeId)
                 ->whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->orderBy('date')->get();
+                ->whereMonth('date', $month);
+            $times = $query->orderBy('date')->get();
 
             $timesheet = $times->map(function ($row) {
                 $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
                 $isVacation = $row->off_day && $row->reason === 'vacation';
                 $status = $row->off_day ? 'Off' : 'Attended';
-                $totalHours = 0;
+                $totalHourscalc = 0;
                 if ($row->total_time) {
                     $parts = explode(':', $row->total_time);
                     $h = isset($parts[0]) ? (int)$parts[0] : 0;
                     $m = isset($parts[1]) ? (int)$parts[1] : 0;
                     $s = isset($parts[2]) ? (int)$parts[2] : 0;
-                    $totalHours = round($h + ($m / 60) + ($s / 3600), 2);
+                    $totalHourscalc = round($h + ($m / 60) + ($s / 3600), 2);
                 }
-                $extra = $totalHours - 9;
+                $totalHours = $row->total_time ? $row->total_time : 0;
+                $extra = $totalHourscalc - 9;
                 $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
                 $notes = $row->off_day ? ($row->reason ?: 'Off') : ($row->reason ?: '');
                 return [
@@ -75,6 +73,7 @@ class EmployeeTimeController extends Controller
                     'timein' => $row->clock_in,
                     'timeout' => $row->clock_out,
                     'totalhours' => $totalHours,
+                    'totalhourscalc' => $totalHourscalc,
                     'status' => $status,
                     'extra' => $extraFormatted,
                     'notes' => $notes,
@@ -84,22 +83,82 @@ class EmployeeTimeController extends Controller
                 ];
             });
 
-            $data = [
+            // Calculate attendanceRequired for this employee/month/year
+            $workSchedule = \App\Models\WorkSchedule::first();
+            $vacationDates = \App\Models\VacationDate::whereYear('date', $year)->whereMonth('date', $month)->pluck('date')->toArray();
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+            $attendanceRequiredCount = 0;
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $date = sprintf('%04d-%02d-%02d', $year, $month, $day);
+                $carbon = \Carbon\Carbon::parse($date);
+                $weekday = strtolower($carbon->format('l'));
+                if ($workSchedule && $workSchedule->$weekday) {
+                    $attendanceRequiredCount++;
+                }
+            }
+
+            $dailyHoursRequired = null;
+            if ($workSchedule && $workSchedule->total_hours_per_day) {
+                $parts = explode(':', $workSchedule->total_hours_per_day);
+                $h = isset($parts[0]) ? (int)$parts[0] : 0;
+                $m = isset($parts[1]) ? (int)$parts[1] : 0;
+                $dailyHoursRequired = sprintf('%d:%02d', $h, $m);
+            }
+
+            $vacations = $employee->employeeVacations()
+                ->where('lookup_type_id', 31)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->pluck('date')
+                ->toArray();
+
+            $unpaid = $employee->employeeVacations()
+                ->where('lookup_type_id', 34)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->pluck('date')
+                ->toArray();
+
+            $sickleave = $employee->employeeVacations()
+                ->where('lookup_type_id', 32)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->pluck('date')
+                ->toArray();
+
+            $offDays = $vacationDates;
+
+            $allSheets[] = [
                 'department' => $department,
                 'employee' => (object)[
                     'name' => $employee->first_name . ' ' . $employee->mid_name . ' ' . $employee->last_name,
                 ],
                 'timesheet' => $timesheet,
                 'times' => $times,
+                'month' => $month,
+                'year' => $year,
+                'attendanceRequired' => $attendanceRequiredCount,
+                'dailyhoursrequired' => $dailyHoursRequired,
+                'vacations' => $vacations,
+                'sickleave' => $sickleave,
+                'offdays' => $offDays,
+                'unpaid' => $unpaid,
             ];
-
-            $pdf = Pdf::loadView('export.timesheet', $data);
-            $filename = 'timesheet_' . $employee->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
-            $zip->addFromString($filename, $pdf->output());
         }
 
-        $zip->close();
-        return response()->download($zipFile, 'timesheets_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.zip')->deleteFileAfterSend(true);
+        if (empty($allSheets)) {
+            return response()->json(['error' => 'No valid employees found'], 400);
+        }
+
+        // Render a single PDF with multiple sheets (pages)
+        $pdf = Pdf::loadView('export.timesheet_multiple', [
+            'sheets' => $allSheets,
+            'month' => $month,
+            'year' => $year,
+        ]);
+    $firstName = isset($allSheets[0]['employee']->name) ? str_replace(' ', '_', $allSheets[0]['employee']->name) : 'employees';
+    $filename = $firstName . '_timesheet_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
+    return $pdf->download($filename);
     }
     /**
      * Export employee timesheet as PDF
@@ -230,9 +289,10 @@ class EmployeeTimeController extends Controller
             'unpaid' => $unpaid,
         ];
 
-        $filename = 'timesheet_' . $employee->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
-        $pdf = Pdf::loadView('export.timesheet', $data);
-        return $pdf->download($filename);
+    $empName = str_replace(' ', '_', $employee->first_name . ' ' . $employee->mid_name . ' ' . $employee->last_name);
+    $filename = $empName . '_timesheet_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
+    $pdf = Pdf::loadView('export.timesheet', $data);
+    return $pdf->download($filename);
     }
     public function index()
     {

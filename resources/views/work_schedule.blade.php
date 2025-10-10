@@ -2,7 +2,172 @@
 
 @section('content')
 <div class="container">
-    <h2>Edit Work Schedule</h2>
+    <div>
+        <!-- Vacation Modal and Button (added, does not modify existing code) -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">Edit Work Schedule</h2>
+    <button type="button" class="btn btn-success" id="openVacationModal">Add Employee Vacation</button>
+</div>
+<div class="modal fade" id="vacationModal" tabindex="-1" aria-labelledby="vacationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="vacationModalLabel">Edit Employee Vacation Total</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="vacationForm">
+                    <div class="mb-3">
+                        <label for="vacationEmployee" class="form-label">Employee</label>
+                        <select class="form-select" id="vacationEmployee" required>
+                            <option value="">Select Employee</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="yearly_vacations_total" class="form-label">Yearly Vacations Total</label>
+                        <input type="number" class="form-control" id="yearly_vacations_total" name="yearly_vacations_total" required step="0.1" min="0" max="9999999999.99" pattern="^\d{1,10}(\.\d{1,2})?$">
+                    </div>
+                    <div class="mb-3">
+                        <label for="yearly_vacations_used" class="form-label">Yearly Vacations Used</label>
+                        <input type="number" class="form-control" id="yearly_vacations_used" name="yearly_vacations_used" disabled step="0.1" min="0" max="9999999999.99" pattern="^\d{1,10}(\.\d{1,2})?$">
+                    </div>
+                    <div class="mb-3">
+                        <label for="yearly_vacations_left" class="form-label">Yearly Vacations Left</label>
+                        <input type="number" class="form-control" id="yearly_vacations_left" name="yearly_vacations_left" disabled step="0.1" min="0" max="9999999999.99" pattern="^\d{1,10}(\.\d{1,2})?$">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Employees data for dropdown (from blade)
+const employeesData = [
+    @foreach(\App\Models\Employee::all() as $emp)
+    {
+        id: {{ $emp->id }},
+        name: `{{ $emp->first_name }} {{ $emp->mid_name }} {{ $emp->last_name }}`,
+        yearly_vacations_total: {{ $emp->yearly_vacations_total ?? 0 }},
+        yearly_vacations_used: {{ $emp->yearly_vacations_used ?? 0 }},
+        yearly_vacations_left: {{ $emp->yearly_vacations_left ?? 0 }},
+    },
+    @endforeach
+];
+
+document.getElementById('openVacationModal').addEventListener('click', function() {
+    // Populate dropdown
+    const select = document.getElementById('vacationEmployee');
+    select.innerHTML = '<option value="">Select Employee</option>';
+    employeesData.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = emp.name;
+        select.appendChild(opt);
+    });
+    // Reset fields
+    document.getElementById('yearly_vacations_total').value = '';
+    document.getElementById('yearly_vacations_used').value = '';
+    document.getElementById('yearly_vacations_left').value = '';
+    var modal = new bootstrap.Modal(document.getElementById('vacationModal'));
+    modal.show();
+});
+
+document.getElementById('vacationEmployee').addEventListener('change', function() {
+    const emp = employeesData.find(e => e.id == this.value);
+    if (emp) {
+        document.getElementById('yearly_vacations_total').value = emp.yearly_vacations_total;
+        document.getElementById('yearly_vacations_used').value = emp.yearly_vacations_used;
+        document.getElementById('yearly_vacations_left').value = emp.yearly_vacations_left;
+    } else {
+        document.getElementById('yearly_vacations_total').value = '';
+        document.getElementById('yearly_vacations_used').value = '';
+        document.getElementById('yearly_vacations_left').value = '';
+    }
+});
+
+document.getElementById('vacationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const empId = document.getElementById('vacationEmployee').value;
+    const total = document.getElementById('yearly_vacations_total').value;
+    if (!empId || total === '') {
+        alert('Please select employee and enter total.');
+        return;
+    }
+    // Find the selected employee and clone their data
+    const emp = employeesData.find(e => e.id == empId);
+    if (!emp) {
+        alert('Employee not found.');
+        return;
+    }
+    // Prepare payload with all existing data, updating only yearly_vacations_total
+    let first_name = '', mid_name = '', last_name = '';
+    const nameParts = emp.name.split(' ');
+    if (nameParts.length === 2) {
+        [first_name, last_name] = nameParts;
+    } else if (nameParts.length === 3) {
+        [first_name, mid_name, last_name] = nameParts;
+    } else if (nameParts.length > 3) {
+        first_name = nameParts[0];
+        last_name = nameParts[nameParts.length - 1];
+        mid_name = nameParts.slice(1, -1).join(' ');
+    }
+    const payload = {
+        ...emp,
+        yearly_vacations_total: total,
+        first_name,
+        mid_name,
+        last_name,
+        image: emp.image ? emp.image : ''
+    };
+    fetch(`/employees/${empId}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            'X-HTTP-Method-Override': 'PUT'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(async response => {
+        let data, text;
+        try { text = await response.text(); data = JSON.parse(text); } catch { data = null; }
+        if (response.ok && data) {
+            var modal = bootstrap.Modal.getInstance(document.getElementById('vacationModal'));
+            modal.hide();
+            // Show notification (Bootstrap Toast or alert)
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3';
+            toast.role = 'alert';
+            toast.ariaLive = 'assertive';
+            toast.ariaAtomic = 'true';
+            toast.style.zIndex = 9999;
+            toast.innerHTML = `<div class='d-flex'><div class='toast-body'>Vacation total updated successfully.</div><button type='button' class='btn-close btn-close-white me-2 m-auto' data-bs-dismiss='toast' aria-label='Close'></button></div>`;
+            document.body.appendChild(toast);
+            var bsToast = new bootstrap.Toast(toast, { delay: 2500 });
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        } else {
+            let msg = 'An error occurred.';
+            if (data && data.errors) {
+                msg = Object.values(data.errors).flat().join('<br>');
+            } else if (data && data.message) {
+                msg = data.message;
+            } else if (text) {
+                msg = `<pre style=\"white-space:pre-wrap;\">${text}</pre>`;
+            }
+            alert(msg);
+        }
+    })
+    .catch((err) => {
+        alert('An unexpected error occurred. ' + (err && err.message ? err.message : ''));
+    });
+});
+</script>
+    </div>
     <form id="workScheduleForm" method="POST" action="{{ route('work-schedule.update') }}">
         @csrf
         @method('PUT')

@@ -185,7 +185,7 @@ class EmployeeController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
+    {   
         try {
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
@@ -212,14 +212,17 @@ class EmployeeController extends Controller
                 'owner_name' => 'nullable|string|max:255',
                 'owner_mobile_number' => 'nullable|string|max:20',
                 'acc_number' => 'nullable|integer',
+                'yearly_vacations_total' => 'nullable|numeric|between:0,9999999999.99',
             ]);
             $employee = Employee::findOrFail($id);
             $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);
 
-            // Set working day fields
-            $days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-            foreach ($days as $day) {
-                $validated[$day] = in_array($day, $request->working_days ?? []) ? true : false;
+            // Set working day fields only if working_days is present in request
+            if ($request->has('working_days')) {
+                $days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                foreach ($days as $day) {
+                    $validated[$day] = in_array($day, $request->working_days ?? []) ? true : false;
+                }
             }
 
             $employee->update($validated);

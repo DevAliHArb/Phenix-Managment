@@ -106,6 +106,11 @@
                     $vacationType = 'Off';
                     $reason = 'Weekend';
                     $rowClass = 'weekend';
+                } elseif(empty($row['timein']) && empty($row['timeout'])) {
+                    $status = 'Unknown';
+                    $vacationType = null;
+                    $reason = '';
+                    $rowClass = 'unknown';
                 } else {
                     $status = 'Attended';
                     $vacationType = null;
@@ -113,13 +118,13 @@
                     $rowClass = '';
                 }
                 // If dayoff, extra is 0
-                if (!empty($row['dayoff'])) {
+                if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout']))) {
                     $extra = 0;
                 } else {
                     $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
                 }
                 // Format extra as +H:MM or -H:MM, but keep empty for off days
-                if (!empty($row['dayoff'])) {
+                if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout'])) || $rowClass === 'unknown') {
                     $extraFormatted = '';
                 } else {
                     $extraSign = $extra >= 0 ? '+' : '-';
@@ -181,7 +186,19 @@
 
     // $attendanceRequired is now passed from the controller
         $dailyHoursRequired = 9;
-        $attendanceTotal = $timesheet->where('dayoff', false)->count();
+        $attendanceTotal = collect($timesheet)->filter(function($row) use ($vacations, $sickleave, $offdays, $unpaid) {
+            $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
+            if (!$date) return false;
+            if (in_array($date, $vacations ?? [])) return false;
+            if (in_array($date, $sickleave ?? [])) return false;
+            if (in_array($date, $offdays ?? [])) return false;
+            if (in_array($date, $unpaid ?? [])) return false;
+            $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : false;
+            if ($isWeekend) return false;
+            // Exclude Unknown status
+            if (empty($row['timein']) && empty($row['timeout'])) return false;
+            return true;
+        })->count();
         $vacationOffTotal = $timesheet->where('dayoff', true)->filter(function($row){
             // Not weekend (assuming is_weekend is set)
             return empty($row['is_weekend']);
@@ -245,21 +262,24 @@
                     Time logged Total<br>
                 </td>
                 <td style="width:10%; background:#fbe4d5; text-align:center; font-weight:normal; border:none; row-gap: 10px;">
-                    {{-- Attendance Total: count of status Attended --}}
-                    {{ collect($timesheet)->filter(function($row) use ($vacations, $sickleave, $offdays) {
+                    {{-- Attendance Total: count of status Attended (exclude Unknown and Unpaid) --}}
+                    {{ collect($timesheet)->filter(function($row) use ($vacations, $sickleave, $offdays, $unpaid) {
                         $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
                         if (!$date) return false;
                         if (in_array($date, $vacations ?? [])) return false;
                         if (in_array($date, $sickleave ?? [])) return false;
                         if (in_array($date, $offdays ?? [])) return false;
+                        if (in_array($date, $unpaid ?? [])) return false;
                         $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : false;
                         if ($isWeekend) return false;
+                        // Exclude Unknown status
+                        if (empty($row['timein']) && empty($row['timeout'])) return false;
                         return true;
                     })->count() }}<br>
                     {{-- Off Days Total: length of offdays --}}
                     {{ isset($offdays) ? count($offdays) : 0 }}<br>
-                    {{-- Vacations Total: length of vacations --}}
-                    {{ isset($vacations) ? count($vacations) : 0 }}<br>
+                    {{-- Vacations Total: length of vacations + unpaid --}}
+                    {{ (isset($vacations) ? count($vacations) : 0) + (isset($unpaid) ? count($unpaid) : 0) }}<br>
                     {{-- Sick Leaves Total: length of sickleave --}}
                     {{ isset($sickleave) ? count($sickleave) : 0 }}<br>
                     {{ $totalLoggedTimeFormatted }}<br>
