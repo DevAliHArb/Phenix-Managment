@@ -56,7 +56,7 @@
             </div>
             <div class="mb-3">
                 <label for="lookup_type_id" class="form-label">Type</label>
-                <select name="lookup_type_id" class="form-control @error('lookup_type_id') is-invalid @enderror" required>
+                <select name="lookup_type_id" id="lookup_type_id" class="form-control @error('lookup_type_id') is-invalid @enderror" required>
                     <option value="">Select Type</option>
                     @foreach($types as $type)
                         <option value="{{ $type->id }}" {{ old('lookup_type_id', $item->lookup_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
@@ -66,7 +66,7 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-            <div class="mb-3">
+            <div class="mb-3" id="attachment-field" style="display: none;">
                 <label for="attachment" class="form-label">Attachment</label>
                 <input type="file" name="attachment" class="form-control @error('attachment') is-invalid @enderror">
                 @if($item->attachment)
@@ -81,4 +81,29 @@
         <a href="{{ route('employee-vacations.index') }}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('lookup_type_id');
+    const attachmentField = document.getElementById('attachment-field');
+    const attachmentInput = attachmentField.querySelector('input[type="file"]');
+
+    function toggleAttachmentField() {
+        const selectedValue = typeSelect.value;
+        if (selectedValue === '32') {
+            attachmentField.style.display = 'block';
+        } else {
+            attachmentField.style.display = 'none';
+            // Clear the file input when hiding the field (but preserve existing attachment)
+            attachmentInput.value = '';
+        }
+    }
+
+    // Check initial state (for old input or pre-selected values)
+    toggleAttachmentField();
+
+    // Listen for changes
+    typeSelect.addEventListener('change', toggleAttachmentField);
+});
+</script>
 @endsection

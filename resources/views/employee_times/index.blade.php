@@ -433,7 +433,7 @@
                     dataSource: employeeTimesData,
                     columns: [
                         { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
-                        { dataField: "employee", caption: "Employee", allowFiltering: true, headerFilter: { allowSearch: true } },
+                        { dataField: "employee", caption: "Employee", width: 200, allowFiltering: true, headerFilter: { allowSearch: true } },
                         { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true }, sortOrder: "desc" },
                         { dataField: "time_in", caption: "Time In", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_in)); } },
                         { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_out)); } },
@@ -462,6 +462,8 @@
                             allowFiltering: false
                         }
                     ],
+                    allowColumnResizing: true,
+                    columnResizingMode: "widget",
                     showBorders: true,
                     sorting: {
                         mode: "multiple"
