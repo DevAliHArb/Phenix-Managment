@@ -259,7 +259,7 @@ const employeesData = [
             {
                 id: {{ $item->id }},
                 position_name: `{{ optional($item->position)->name }}`,
-                employee_name: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
+                employee_name: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->mid_name }} {{ optional($item->employee)->last_name }}`,
                 start_date: `{{ $item->start_date }}`,
                 end_date: `{{ $item->end_date }}`,
                 status: `{{ $item->is_active ? 'Active' : 'Inactive' }}`,

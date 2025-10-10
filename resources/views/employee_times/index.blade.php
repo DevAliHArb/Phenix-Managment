@@ -69,7 +69,7 @@
                                         <div class="form-check">
                                             <input class="form-check-input employee-checkbox" type="checkbox" value="{{ $emp->id }}" id="emp_{{ $emp->id }}" checked>
                                             <label class="form-check-label" for="emp_{{ $emp->id }}">
-                                                {{ $emp->first_name }} {{ $emp->last_name }}
+                                                {{ $emp->first_name }} {{ $emp->mid_name }} {{ $emp->last_name }}
                                             </label>
                                         </div>
                                     @endforeach
@@ -387,7 +387,7 @@
                 @foreach($employeeTimes as $item)
                 {
                     id: {{ $item->id }},
-                    employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
+                    employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->mid_name }} {{ optional($item->employee)->last_name }}`,
                     date: `{{ $item->date }}`,
                     time_in: `{{ $item->clock_in }}`,
                     time_out: `{{ $item->clock_out }}`,

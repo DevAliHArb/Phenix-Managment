@@ -22,7 +22,7 @@
             @foreach($yearlyVacations as $vacation)
             {
                 id: {{ $vacation->id }},
-                employee: `{{ optional($vacation->employee)->first_name }} {{ optional($vacation->employee)->last_name }}`,
+                employee: `{{ optional($vacation->employee)->first_name }} {{ optional($vacation->employee)->mid_name }} {{ optional($vacation->employee)->last_name }}`,
                 date: `{{ $vacation->date }}`,
                 reason: `{{ $vacation->reason }}`,
                 showUrl: `{{ route('yearly-vacations.show', $vacation->id) }}`,

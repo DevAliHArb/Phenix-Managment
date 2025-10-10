@@ -47,7 +47,7 @@
             {
                 id: {{ $item->id }},
                 position: `{{ optional($item->position)->name }}`,
-                employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
+                employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->mid_name }} {{ optional($item->employee)->last_name }}`,
                 start_date: `{{ $item->start_date }}`,
                 end_date: `{{ $item->end_date }}`,
                 is_active: `{{ $item->is_active ? 'Active' : 'Inactive' }}`,
@@ -190,7 +190,7 @@
                     @foreach($salaryItems as $item)
                     {
                         id: {{ $item->id }},
-                        employee: `{{ optional(optional($item->positionImprovement)->employee)->first_name }} {{ optional(optional($item->positionImprovement)->employee)->last_name }}`,
+                        employee: `{{ optional(optional($item->positionImprovement)->employee)->first_name }} {{ optional(optional($item->positionImprovement)->employee)->mid_name }} {{ optional(optional($item->positionImprovement)->employee)->last_name }}`,
                         position: `{{ optional(optional($item->positionImprovement)->position)->name }}`,
                         salary: `{{ $item->salary }}`,
                         start_date: `{{ $item->start_date }}`,

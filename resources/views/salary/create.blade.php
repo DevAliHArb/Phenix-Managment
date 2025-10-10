@@ -43,7 +43,7 @@
                     @foreach(App\Models\PositionImprovement::where('is_active', true)->get() as $pi)
                         <option value="{{ $pi->id }}" 
                             {{ (old('position_improvement_id') == $pi->id) || (isset($selectedPositionImprovementId) && $selectedPositionImprovementId == $pi->id) ? 'selected' : '' }}>
-                            {{ optional($pi->employee)->first_name }} {{ optional($pi->employee)->last_name }} - {{ optional($pi->position)->name }}
+                            {{ optional($pi->employee)->first_name }} {{ optional($pi->employee)->mid_name }} {{ optional($pi->employee)->last_name }} - {{ optional($pi->position)->name }}
                         </option>
                     @endforeach
                 </select>

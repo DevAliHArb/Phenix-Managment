@@ -1,7 +1,7 @@
 @component('mail::message')
 # Thank you for your order
 
-Hi {{ $order->first_name }} {{ $order->last_name }},
+Hi {{ $order->first_name }} {{ $order->mid_name }} {{ $order->last_name }},
 
 {{ $statusName }}:
 
@@ -71,7 +71,7 @@ Hi {{ $order->first_name }} {{ $order->last_name }},
 <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
     <tbody>
         <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">{{ $order->first_name }} {{ $order->last_name }}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">{{ $order->first_name }} {{ $order->mid_name }} {{ $order->last_name }}</td>
         </tr>
         <tr>
             <td style="border: 1px solid #ddd; padding: 8px;">{{ $order->address }}</td>

@@ -27,7 +27,7 @@
                 <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" required>
                     <option value="">Select Employee</option>
                     @foreach(App\Models\Employee::all() as $employee)
-                        <option value="{{ $employee->id }}" {{ old('employee_id', $item->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                        <option value="{{ $employee->id }}" {{ old('employee_id', $item->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}</option>
                     @endforeach
                 </select>
                 @error('employee_id')

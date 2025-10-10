@@ -28,11 +28,11 @@
                     <option value="">Select Employee</option>
                     @if(isset($employees) && count($employees) > 0)
                         @foreach($employees as $employee)
-                            <option value="{{ $employee->id }}" {{ old('employee_id', $item->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                            <option value="{{ $employee->id }}" {{ old('employee_id', $item->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}</option>
                         @endforeach
                     @else
                         @foreach(App\Models\Employee::all() as $employee)
-                            <option value="{{ $employee->id }}" {{ old('employee_id', $item->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                            <option value="{{ $employee->id }}" {{ old('employee_id', $item->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}</option>
                         @endforeach
                     @endif
                 </select>

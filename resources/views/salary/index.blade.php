@@ -23,7 +23,7 @@
             @foreach($items as $item)
             {
                 id: {{ $item->id }},
-                employee: `{{ optional(optional($item->positionImprovement)->employee)->first_name }} {{ optional(optional($item->positionImprovement)->employee)->last_name }}`,
+                employee: `{{ optional(optional($item->positionImprovement)->employee)->first_name }} {{ optional(optional($item->positionImprovement)->employee)->mid_name }} {{ optional(optional($item->positionImprovement)->employee)->last_name }}`,
                 position: `{{ optional(optional($item->positionImprovement)->position)->name }}`,
                 salary: `{{ $item->salary }}`,
                 status: `{{ $item->status ? 'Active' : 'Inactive' }}`,

@@ -22,7 +22,7 @@
             @foreach($items as $item)
             {
                 id: {{ $item->id }},
-                employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->last_name }}`,
+                employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->mid_name }} {{ optional($item->employee)->last_name }}`,
                 date: `{{ $item->date }}`,
                 reason: `{{ $item->reason }}`,
                 attachment: `{!! $item->attachment ? '<a href="' . asset('attachments/' . $item->attachment) . '" target="_blank">View</a>' : '' !!}`,

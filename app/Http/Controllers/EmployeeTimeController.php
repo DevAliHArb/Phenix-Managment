@@ -87,7 +87,7 @@ class EmployeeTimeController extends Controller
             $data = [
                 'department' => $department,
                 'employee' => (object)[
-                    'name' => $employee->first_name . ' ' . $employee->last_name,
+                    'name' => $employee->first_name . ' ' . $employee->mid_name . ' ' . $employee->last_name,
                 ],
                 'timesheet' => $timesheet,
                 'times' => $times,
@@ -208,7 +208,7 @@ class EmployeeTimeController extends Controller
         $data = [
             'department' => $department,
             'employee' => (object)[
-                'name' => $employee->first_name . ' ' . $employee->last_name,
+                'name' => $employee->first_name . ' ' . $employee->mid_name . ' ' . $employee->last_name,
             ],
             'timesheet' => $timesheet,
             'times' => $times,
