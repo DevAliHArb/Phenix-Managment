@@ -243,10 +243,7 @@ class EmployeeVacationController extends Controller
                 ->where('date', $item->date)
                 ->first();
             if ($employeeTime && $employeeTime->off_day) {
-                $employeeTime->off_day = false;
-                $employeeTime->reason = null;
-                $employeeTime->vacation_type = null;
-                $employeeTime->save();
+                $employeeTime->delete();
             }
 
             // Revert employee vacation counters

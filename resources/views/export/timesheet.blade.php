@@ -17,6 +17,7 @@
         th { background: #f2f2f2; }
     .weekend { background: #fbe4d5; }
     .vacation { background: #daeef3; }
+    .unpaid { background: #bcd6bc !important; }
     .sickleave { background: #ffe6e6; }
     .holiday { background: #e6ffe6; }
     </style>
@@ -74,6 +75,7 @@
                 $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : (in_array($dateObj->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY]));
                 $vacationsArr = isset($vacations) ? $vacations : [];
                 $sickleaveArr = isset($sickleave) ? $sickleave : [];
+                $unpaidArr = isset($unpaid) ? $unpaid : [];
                 $offdaysArr = isset($offdays) ? $offdays : [];
                 $vacationType = null;
                 $reason = '';
@@ -94,6 +96,11 @@
                     $vacationType = 'Holiday';
                     $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['name']) ? $row['name'] : '');
                     $rowClass = 'holiday';
+                } elseif (in_array($dateStr, $unpaidArr)) {
+                    $status = 'Unpaid';
+                    $vacationType = 'Unpaid';
+                    $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
+                    $rowClass = 'unpaid';
                 } elseif ($isWeekend) {
                     $status = 'Off';
                     $vacationType = 'Off';

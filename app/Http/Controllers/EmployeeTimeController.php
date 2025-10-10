@@ -194,6 +194,14 @@ class EmployeeTimeController extends Controller
             ->pluck('date')
             ->toArray();
 
+        // Get employee unpaid (lookup_type_id = 34) for the month
+        $unpaid = $employee->employeeVacations()
+            ->where('lookup_type_id', 34)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->pluck('date')
+            ->toArray();
+
         // Get employee sickleave (lookup_type_id = 32) for the month
         $sickleave = $employee->employeeVacations()
             ->where('lookup_type_id', 32)
@@ -219,6 +227,7 @@ class EmployeeTimeController extends Controller
             'vacations' => $vacations,
             'sickleave' => $sickleave,
             'offdays' => $offDays,
+            'unpaid' => $unpaid,
         ];
 
         $filename = 'timesheet_' . $employee->id . '_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';

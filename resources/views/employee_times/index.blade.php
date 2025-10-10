@@ -7,6 +7,7 @@
         .vacation { background: #daeef3 !important; }
         .sickleave { background: #ffe6e6 !important; }
         .holiday { background: #e6ffe6 !important; }
+        .unpaid { background: #bcd6bc !important; }
     </style>
 @endsection
 
@@ -481,6 +482,8 @@
                                 e.rowElement.addClass('holiday');
                             } else if (vacationType === 'sick leave') {
                                 e.rowElement.addClass('sickleave');
+                            } else if (vacationType === 'unpaid') {
+                                e.rowElement.addClass('unpaid');
                             }
                         }
                     },
