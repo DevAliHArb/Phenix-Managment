@@ -293,7 +293,7 @@ class PositionImprovementController extends Controller
             // Update employee last_salary field
             $employee = \App\Models\Employee::find($previousPosition->employee_id);
             if ($employee) {
-                $employee->last_salary = $latestSalary ? $latestSalary->amount : 0;
+                $employee->last_salary = $latestSalary ? $latestSalary->salary : 0;
                 $employee->save();
             }
         }
