@@ -238,7 +238,7 @@
                     });
                 }
 
-                // Export All logic
+                // Export All logic - Updated to use single PDF with multiple pages
                 // Use jQuery event delegation to ensure handler is attached
                 $(document).on('click', '#confirmExportAllBtn', function() {
                     const exportAllBtn = this;
@@ -259,88 +259,58 @@
                     exportAllBtn.disabled = true;
                     exportAllBtn.textContent = 'Exporting...';
                     
-                    // Export each employee individually
-                    const exportPromises = employeeIds.map(employeeId => {
-                        const employeeName = document.querySelector(`label[for="emp_${employeeId}"]`).textContent.trim().replace(/\s+/g, '_');
-                        const url = `/employee_times/${employeeId}/export?month=${month}&year=${year}`;
-                        
-                        return fetch(url, {
-                            method: 'GET',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            }
-                        })
-                        .then(response => {
-                            if (!response.ok) throw new Error(`Export failed for employee ${employeeName}: ${response.status} ${response.statusText}`);
-                            return response.blob();
-                        })
-                        .then(blob => {
-                            if (blob.size === 0) {
-                                console.warn(`Exported file is empty for employee ${employeeName}`);
-                                return null;
-                            }
-                            const fileName = `timesheet_${employeeName}_${year}_${month.padStart ? month.padStart(2, '0') : ('0'+month).slice(-2)}.pdf`;
-                            return { blob, fileName, employeeName };
-                        })
-                        .catch(error => {
-                            console.error(`Export error for employee ${employeeName}:`, error);
-                            return { error: error.message, employeeName };
-                        });
+                    // Build URL with query parameters for the multiple export request
+                    const params = new URLSearchParams();
+                    params.append('month', month);
+                    params.append('year', year);
+                    
+                    // Add all selected employee IDs
+                    employeeIds.forEach(id => {
+                        params.append('ids[]', id);
                     });
                     
-                    Promise.allSettled(exportPromises)
-                    .then(results => {
-                        let successCount = 0;
-                        let errorCount = 0;
-                        const errors = [];
-                        
-                        results.forEach(result => {
-                            if (result.status === 'fulfilled' && result.value) {
-                                if (result.value.error) {
-                                    errorCount++;
-                                    errors.push(`${result.value.employeeName}: ${result.value.error}`);
-                                } else if (result.value.blob) {
-                                    successCount++;
-                                    // Download the individual PDF
-                                    const url = window.URL.createObjectURL(result.value.blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = result.value.fileName;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    setTimeout(() => {
-                                        window.URL.revokeObjectURL(url);
-                                        document.body.removeChild(a);
-                                    }, 100);
-                                }
-                            } else {
-                                errorCount++;
-                                errors.push('Unknown error occurred');
-                            }
-                        });
-                        
-                        // Show summary message
-                        let message = '';
-                        if (successCount > 0) {
-                            message += `Successfully exported ${successCount} timesheet(s).`;
-                        }
-                        if (errorCount > 0) {
-                            message += ` Failed to export ${errorCount} timesheet(s).`;
-                            if (errors.length > 0) {
-                                message += `\nErrors:\n${errors.join('\n')}`;
-                            }
-                        }
-                        
-                        if (errorCount > 0) {
-                            alert(message);
-                        } else {
-                            console.log(message);
+                    // Use the new exportMultipleTimesheets endpoint
+                    fetch('/employee_times/export-multiple?' + params.toString(), {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
                         }
                     })
-                    .catch((err) => {
-                        console.error('Export error:', err);
-                        alert('Failed to export timesheets. ' + (err && err.message ? err.message : ''));
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Export failed: ${response.status} ${response.statusText}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        if (blob.size === 0) {
+                            throw new Error('Exported file is empty');
+                        }
+                        
+                        // Generate filename based on selection
+                        const employeeCount = employeeIds.length;
+                        const monthPadded = month.padStart ? month.padStart(2, '0') : ('0'+month).slice(-2);
+                        const fileName = `multiple_timesheets_${employeeCount}_employees_${year}_${monthPadded}.pdf`;
+                        
+                        // Download the combined PDF
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        // Clean up
+                        setTimeout(() => {
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                        }, 100);
+                        
+                        console.log(`Successfully exported ${employeeCount} timesheets in one PDF`);
+                    })
+                    .catch((error) => {
+                        console.error('Export error:', error);
+                        alert('Failed to export timesheets. ' + (error && error.message ? error.message : 'Please try again.'));
                     })
                     .finally(() => {
                         exportAllBtn.disabled = false;

@@ -25,7 +25,7 @@ class EmployeeTimeController extends Controller
     }
 
     /**
-     * Export multiple employees' timesheets as individual PDFs in a zip file
+     * Export multiple employees' timesheets as individual pages in a single PDF
      */
     public function exportMultipleTimesheets(Request $request)
     {
@@ -46,6 +46,7 @@ class EmployeeTimeController extends Controller
         foreach ($ids as $employeeId) {
             $employee = Employee::with(['position', 'yearlyVacations', 'employeeVacations'])->find($employeeId);
             if (!$employee) continue;
+            
             $department = $employee->position ? $employee->position->name : '';
             $query = EmployeeTime::where('employee_id', $employeeId)
                 ->whereYear('date', $year)
@@ -105,6 +106,7 @@ class EmployeeTimeController extends Controller
                 $dailyHoursRequired = sprintf('%d:%02d', $h, $m);
             }
 
+            // Get employee vacations for the month
             $vacations = $employee->employeeVacations()
                 ->where('lookup_type_id', 31)
                 ->whereYear('date', $year)
@@ -150,15 +152,18 @@ class EmployeeTimeController extends Controller
             return response()->json(['error' => 'No valid employees found'], 400);
         }
 
-        // Render a single PDF with multiple sheets (pages)
+        // Generate a filename based on the number of employees and date
+        $employeeCount = count($allSheets);
+        $filename = 'multiple_timesheets_' . $employeeCount . '_employees_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
+        
+        // Render a single PDF with multiple sheets (pages) - each employee gets their own page
         $pdf = Pdf::loadView('export.timesheet_multiple', [
             'sheets' => $allSheets,
             'month' => $month,
             'year' => $year,
         ]);
-    $firstName = isset($allSheets[0]['employee']->name) ? str_replace(' ', '_', $allSheets[0]['employee']->name) : 'employees';
-    $filename = $firstName . '_timesheet_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
-    return $pdf->download($filename);
+        
+        return $pdf->download($filename);
     }
     /**
      * Export employee timesheet as PDF
