@@ -549,7 +549,8 @@ function renderEmployeeVacationsGrid(yearlyVacations, sickLeaves, employeeVacati
                                     style: 'color: #0d6efd; text-decoration: underline; cursor: pointer;',
                                     click: function(e) {
                                         e.preventDefault();
-                                        window.open('attachments/' + options.data.attachment, '_blank');
+                                        console.log('Opening attachment:', options.data.attachment);
+                                        // window.open( options.data.attachment, '_blank');
                                     }
                                 });
                                 $(container).append(link);

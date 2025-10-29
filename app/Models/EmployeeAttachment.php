@@ -12,7 +12,7 @@ class EmployeeAttachment extends Model
 
     protected $fillable = [
         'employee_id',
-        'image',
+        'image', // stores base64 string
         'type',
     ];
 

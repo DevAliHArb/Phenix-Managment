@@ -26,7 +26,7 @@
                 date: `{{ $item->date }}`,
                 reason: `{{ $item->reason }}`,
                 type: `{{ $item->type->name ?? '' }}`,
-                attachment: `{!! $item->attachment ? '<a href="' . asset('attachments/' . $item->attachment) . '" target="_blank">View</a>' : '' !!}`,
+                attachment: `{!! $item->attachment ? '<a href="' . $item->attachment . '" target="_blank">View</a>' : '' !!}`,
                 editUrl: `{{ route('employee-vacations.edit', $item->id) }}`,
                 deleteUrl: `{{ route('employee-vacations.destroy', $item->id) }}`
             },

@@ -201,7 +201,11 @@
             @enderror
             <div id="imagePreview" style="margin-top:10px;">
                 @if($employee->image)
-                    <img src="{{ $employee->image }}" alt="Preview" style="max-width:120px;max-height:120px;border-radius:8px;">
+                    @if(Str::startsWith($employee->image, 'data:image'))
+                        <img src="{{ $employee->image }}" alt="Document Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6;">
+                    {{-- @else
+                        <a href="{{ $employee->image }}" target="_blank" class="btn btn-outline-primary btn-sm">View Image</a> --}}
+                    @endif
                 @endif
             </div>
         </div>
@@ -361,17 +365,14 @@
                                 <div class="mb-3">
                                     <label class="form-label">Document File</label>
                                     <div>
-                                        <a href="{{ $attachment->image }}" target="_blank" class="btn btn-outline-primary btn-sm">View File</a>
-                                    </div>
-                                    @php
-                                        $fileExtension = strtolower(pathinfo($attachment->image, PATHINFO_EXTENSION));
-                                        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                                    @endphp
-                                    @if(in_array($fileExtension, $imageExtensions))
-                                        <div class="attachment-preview mt-2">
+                                        @if(Str::startsWith($attachment->image, 'data:image'))
                                             <img src="{{ $attachment->image }}" alt="Document Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6;">
-                                        </div>
-                                    @endif
+                                        @elseif(Str::startsWith($attachment->image, 'data:application/pdf'))
+                                            <embed src="{{ $attachment->image }}" type="application/pdf" width="100%" height="120px" />
+                                        @else
+                                            <a href="{{ $attachment->image }}" target="_blank" class="btn btn-outline-primary btn-sm">View File</a>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="mt-2">
                                     <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF (Max: 10MB)</small>

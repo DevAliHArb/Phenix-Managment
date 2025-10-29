@@ -41,9 +41,7 @@ class SickLeaveController extends Controller
             ]);
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                $filename = uniqid().'.'.$file->getClientOriginalExtension();
-                $file->move(public_path('attachments'), $filename);
-                $validated['attachment'] = $filename;
+                $validated['attachment'] = AttachmentHelper::handleAttachment($file);
             } else {
                 $validated['attachment'] = null;
             }
@@ -112,9 +110,7 @@ class SickLeaveController extends Controller
             $model = \App\Models\SickLeave::findOrFail($id);
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                $filename = uniqid().'.'.$file->getClientOriginalExtension();
-                $file->move(public_path('attachments'), $filename);
-                $validated['attachment'] = $filename;
+                $validated['attachment'] = AttachmentHelper::handleAttachment($file);
             } else {
                 unset($validated['attachment']); // Don't overwrite if not uploading new file
             }

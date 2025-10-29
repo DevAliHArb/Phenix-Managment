@@ -105,7 +105,18 @@ class EmployeeController extends Controller
                 return back()->withInput()->withErrors(['first_name' => $errorMessage]);
             }
 
-            $validated['image'] = AttachmentHelper::handleAttachment($request['image']);
+            // Handle employee image as base64 with prefix (same as attachments)
+            if ($request->hasFile('image')) {
+                $uploadedImage = $request->file('image');
+                $imageContents = file_get_contents($uploadedImage->getRealPath());
+                $imageMimeType = $uploadedImage->getMimeType();
+                $imageBase64 = base64_encode($imageContents);
+                $imageBase64WithPrefix = "data:" . $imageMimeType . ";base64," . $imageBase64;
+                $validated['image'] = $imageBase64WithPrefix;
+            } else if (isset($validated['image']) && !str_starts_with($validated['image'], 'data:')) {
+                // If image is already base64 but missing prefix, default to PNG
+                $validated['image'] = "data:image/png;base64," . $validated['image'];
+            }
 
             // Set working day fields
             $days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -130,34 +141,23 @@ class EmployeeController extends Controller
 
             $employee = Employee::create($validated);
 
-            // Handle attachments
-            if ($request->has('attachments')) {
-                foreach ($request->input('attachments') as $index => $attachment) {
-                    // Check if both file and type are present
-                    if (isset($attachment['type']) && !empty($attachment['type']) && $request->hasFile("attachments.{$index}.file")) {
-                        // Get the uploaded file
-                        $uploadedFile = $request->file("attachments.{$index}.file");
-                        
-                        // Create attachments directory if it doesn't exist
-                        $attachmentsPath = public_path('attachments');
-                        if (!file_exists($attachmentsPath)) {
-                            mkdir($attachmentsPath, 0755, true);
+                // Handle attachments as base64 with prefix
+                if ($request->has('attachments')) {
+                    foreach ($request->input('attachments') as $index => $attachment) {
+                        if (isset($attachment['type']) && !empty($attachment['type']) && $request->hasFile("attachments.{$index}.file")) {
+                            $uploadedFile = $request->file("attachments.{$index}.file");
+                            $fileContents = file_get_contents($uploadedFile->getRealPath());
+                            $mimeType = $uploadedFile->getMimeType();
+                            $base64 = base64_encode($fileContents);
+                            $base64WithPrefix = "data:" . $mimeType . ";base64," . $base64;
+                            EmployeeAttachment::create([
+                                'employee_id' => $employee->id,
+                                'image' => $base64WithPrefix,
+                                'type' => $attachment['type'],
+                            ]);
                         }
-                        
-                        // Move file to attachments directory
-                        $fileName = time() . '_' . $index . '_' . $uploadedFile->getClientOriginalName();
-                        $uploadedFile->move($attachmentsPath, $fileName);
-                        $url = asset('attachments/' . $fileName);
-                        
-                        // Create attachment record
-                        EmployeeAttachment::create([
-                            'employee_id' => $employee->id,
-                            'image' => $url,
-                            'type' => $attachment['type'],
-                        ]);
                     }
                 }
-            }
 
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employees.index')]);
@@ -217,6 +217,20 @@ class EmployeeController extends Controller
             $employee = Employee::findOrFail($id);
             $validated['image'] = AttachmentHelper::handleAttachment($validated['image']);
 
+            
+            // Handle employee image as base64 with prefix (same as attachments)
+            // if ($request->hasFile('image')) {
+            //     $uploadedImage = $request->file('image');
+            //     $imageContents = file_get_contents($uploadedImage->getRealPath());
+            //     $imageMimeType = $uploadedImage->getMimeType();
+            //     $imageBase64 = base64_encode($imageContents);
+            //     $imageBase64WithPrefix = "data:" . $imageMimeType . ";base64," . $imageBase64;
+            //     $validated['image'] = $imageBase64WithPrefix;
+            // } else if (isset($validated['image']) && !str_starts_with($validated['image'], 'data:')) {
+            //     // If image is already base64 but missing prefix, default to PNG
+            //     $validated['image'] = "data:image/png;base64," . $imageBase64
+            // }
+
             // Set working day fields only if working_days is present in request
             if ($request->has('working_days')) {
                 $days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -227,29 +241,18 @@ class EmployeeController extends Controller
 
             $employee->update($validated);
 
-            // Handle attachments
+            // Handle attachments as base64 with prefix
             if ($request->has('attachments')) {
                 foreach ($request->input('attachments') as $index => $attachment) {
-                    // Check if both file and type are present
                     if (isset($attachment['type']) && !empty($attachment['type']) && $request->hasFile("attachments.{$index}.file")) {
-                        // Get the uploaded file
                         $uploadedFile = $request->file("attachments.{$index}.file");
-                        
-                        // Create attachments directory if it doesn't exist
-                        $attachmentsPath = public_path('attachments');
-                        if (!file_exists($attachmentsPath)) {
-                            mkdir($attachmentsPath, 0755, true);
-                        }
-                        
-                        // Move file to attachments directory
-                        $fileName = time() . '_' . $index . '_' . $uploadedFile->getClientOriginalName();
-                        $uploadedFile->move($attachmentsPath, $fileName);
-                        $url = asset('attachments/' . $fileName);
-                        
-                        // Create attachment record
+                        $fileContents = file_get_contents($uploadedFile->getRealPath());
+                        $mimeType = $uploadedFile->getMimeType();
+                        $base64 = base64_encode($fileContents);
+                        $base64WithPrefix = "data:" . $mimeType . ";base64," . $base64;
                         EmployeeAttachment::create([
                             'employee_id' => $employee->id,
-                            'image' => $url,
+                            'image' => $base64WithPrefix,
                             'type' => $attachment['type'],
                         ]);
                     }

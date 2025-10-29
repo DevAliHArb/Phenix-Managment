@@ -43,9 +43,11 @@ class EmployeeVacationController extends Controller
             ]);
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                $filename = uniqid().'.'.$file->getClientOriginalExtension();
-                $file->move(public_path('attachments'), $filename);
-                $validated['attachment'] = $filename;
+                $fileContents = file_get_contents($file->getRealPath());
+                $mimeType = $file->getMimeType();
+                $base64 = base64_encode($fileContents);
+                $base64WithPrefix = "data:" . $mimeType . ";base64," . $base64;
+                $validated['attachment'] = $base64WithPrefix;
             } else {
                 $validated['attachment'] = null;
             }
@@ -169,9 +171,11 @@ class EmployeeVacationController extends Controller
 
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                $filename = uniqid().'.'.$file->getClientOriginalExtension();
-                $file->move(public_path('attachments'), $filename);
-                $validated['attachment'] = $filename;
+                $fileContents = file_get_contents($file->getRealPath());
+                $mimeType = $file->getMimeType();
+                $base64 = base64_encode($fileContents);
+                $base64WithPrefix = "data:" . $mimeType . ";base64," . $base64;
+                $validated['attachment'] = $base64WithPrefix;
             } else {
                 unset($validated['attachment']);
             }

@@ -69,8 +69,15 @@
             <div class="mb-3" id="attachment-field" style="display: none;">
                 <label for="attachment" class="form-label">Attachment</label>
                 <input type="file" name="attachment" class="form-control @error('attachment') is-invalid @enderror">
+            <div id="imagePreview" style="margin-top:10px;">
                 @if($item->attachment)
-                    <a href="{{ asset('attachments/'.$item->attachment) }}" target="_blank">Current Attachment</a>
+                    @if(Str::startsWith($item->attachment, 'data:image'))
+                        <img src="{{ $item->attachment }}" alt="Document Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid #dee2e6;">
+                    @endif
+                @endif
+            </div>
+                @if($item->attachment)
+                    <a href="{{ $item->attachment }}" target="_blank">Current Attachment</a>
                 @endif
                 @error('attachment')
                     <div class="invalid-feedback">{{ $message }}</div>
