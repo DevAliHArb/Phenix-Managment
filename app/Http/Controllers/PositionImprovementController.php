@@ -166,11 +166,11 @@ class PositionImprovementController extends Controller
             ]);
             
             // Convert empty end_date to null
-            $endDateDeleted = false;
-            if (empty($validated['end_date'])) {
-                $validated['end_date'] = null;
-                $endDateDeleted = true;
-            }
+                $endDateDeleted = false;
+                if (empty($validated['end_date'])) {
+                    $validated['end_date'] = null;
+                    $endDateDeleted = true;
+                }
             
             $positionImprovement = PositionImprovement::findOrFail($id);
             
@@ -179,56 +179,51 @@ class PositionImprovementController extends Controller
             if (isset($validated['employee_id'])) {
                 $employee = Employee::find($validated['employee_id']);
             }
-            $salary = Salary::where('position_improvement_id', $positionImprovement->id)->first();
+                $salary = Salary::where('position_improvement_id', $positionImprovement->id)->first();
 
-            if ($endDateDeleted) {
-                // If end_date is deleted (set to null), make this record active
-                $validated['is_active'] = true;
+                if ($endDateDeleted) {
+                    // If end_date is deleted (set to null), make this record active
+                    $validated['is_active'] = true;
 
-                // Find any other active position improvement for the same employee (excluding current record)
-                $otherActiveRecord = PositionImprovement::where('employee_id', $validated['employee_id'])
-                    ->where('id', '!=', $id)
-                    ->where('is_active', true)
-                    ->first();
+                    // Find any other active position improvement for the same employee (excluding current record)
+                    $otherActiveRecord = PositionImprovement::where('employee_id', $validated['employee_id'])
+                        ->where('id', '!=', $id)
+                        ->where('is_active', true)
+                        ->first();
 
-                if ($otherActiveRecord) {
-                    // Make the other record inactive and set its end_date to this record's start_date
-                    $otherActiveRecord->is_active = false;
-                    $otherActiveRecord->end_date = $validated['start_date'];
-                    $otherActiveRecord->save();
-                }
+                    if ($otherActiveRecord) {
+                        // Make the other record inactive and set its end_date to this record's start_date
+                        $otherActiveRecord->is_active = false;
+                        $otherActiveRecord->end_date = $validated['start_date'];
+                        $otherActiveRecord->save();
+                    }
 
-                // If there is no other active position for this employee, set employee status to active and clear end_date
-                $activeCount = PositionImprovement::where('employee_id', $validated['employee_id'])->where('is_active', true)->count();
-                if ($employee && $activeCount === 0) {
-                    $employee->status = 'active';
-                    $employee->end_date = null;
-                    $employee->save();
-                }
-                // Set salary status to true and clear end_date
-                if ($salary) {
-                    $salary->status = true;
-                    $salary->end_date = null;
-                    $salary->save();
-                }
-            } else {
-                // If end_date is provided, make this record inactive
-                $validated['is_active'] = false;
-
-                // If this was previously active and we're adding an end_date, set employee status to inactive and set end_date
-                if ($positionImprovement->is_active && $validated['end_date']) {
-                    if ($employee) {
-                        $employee->status = 'inactive';
-                        $employee->end_date = $validated['end_date'];
+                    // If there is no other active position for this employee, set employee status to active and clear end_date
+                    $activeCount = PositionImprovement::where('employee_id', $validated['employee_id'])->where('is_active', true)->count();
+                    if ($employee && $activeCount === 0) {
+                        $employee->status = 'active';
+                        $employee->end_date = null;
                         $employee->save();
                     }
-                    if ($salary) {
-                        $salary->status = false;
-                        $salary->end_date = $validated['end_date'];
-                        $salary->save();
+                    // Do NOT update salary if end_date is not present
+                } else {
+                    // If end_date is provided, make this record inactive
+                    $validated['is_active'] = false;
+
+                    // If this was previously active and we're adding an end_date, set employee status to inactive and set end_date
+                    if ($positionImprovement->is_active && $validated['end_date']) {
+                        if ($employee) {
+                            $employee->status = 'inactive';
+                            $employee->end_date = $validated['end_date'];
+                            $employee->save();
+                        }
+                        if ($salary) {
+                            $salary->status = false;
+                            $salary->end_date = $validated['end_date'];
+                            $salary->save();
+                        }
                     }
                 }
-            }
             
             // Check for same or earlier date validation (excluding current record)
             $lastPositionImprovement = PositionImprovement::where('employee_id', $validated['employee_id'])

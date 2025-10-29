@@ -47,37 +47,40 @@ class VacationDateController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'name' => 'required|string|max:255',
-        ]);
-        VacationDate::create($validated);
+            $validated = $request->validate([
+                'date' => 'required|date',
+                'name' => 'required|string|max:255',
+            ]);
+            $addToPunchTime = $request->has('add_to_punch_time');
+            $vacationDate = VacationDate::create($validated + ['add_to_punch_time' => $addToPunchTime]);
 
-        // For all employees, set off_day and reason in employee_times for this date, create if not exist
-        $employees = \App\Models\Employee::all();
-        foreach ($employees as $employee) {
-            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $employee->id)
-                ->where('date', $validated['date'])
-                ->first();
-            if ($employeeTime) {
-                if (!$employeeTime->off_day) {
-                    $employeeTime->off_day = true;
-                    $employeeTime->reason = $validated['name'];
-                    $employeeTime->vacation_type = 'Holiday';
-                    $employeeTime->save();
+            if ($addToPunchTime) {
+                // For all employees, set off_day and reason in employee_times for this date, create if not exist
+                $employees = \App\Models\Employee::all();
+                foreach ($employees as $employee) {
+                    $employeeTime = \App\Models\EmployeeTime::where('employee_id', $employee->id)
+                        ->where('date', $validated['date'])
+                        ->first();
+                    if ($employeeTime) {
+                        if (!$employeeTime->off_day) {
+                            $employeeTime->off_day = true;
+                            $employeeTime->reason = $validated['name'];
+                            $employeeTime->vacation_type = 'Holiday';
+                            $employeeTime->save();
+                        }
+                    } else {
+                        // Create a new EmployeeTime row for this employee and date
+                        \App\Models\EmployeeTime::create([
+                            'employee_id' => $employee->id,
+                            'date' => $validated['date'],
+                            'off_day' => true,
+                            'reason' => $validated['name'],
+                            'vacation_type' => 'Holiday',
+                        ]);
+                    }
                 }
-            } else {
-                // Create a new EmployeeTime row for this employee and date
-                \App\Models\EmployeeTime::create([
-                    'employee_id' => $employee->id,
-                    'date' => $validated['date'],
-                    'off_day' => true,
-                    'reason' => $validated['name'],
-                    'vacation_type' => 'Holiday',
-                ]);
             }
-        }
-        return redirect()->route('vacation-dates.index')->with('success', 'Vacation date added.');
+            return redirect()->route('vacation-dates.index')->with('success', 'Vacation date added.');
     }
 
     public function edit(VacationDate $vacation_date)
@@ -87,52 +90,55 @@ class VacationDateController extends Controller
 
     public function update(Request $request, VacationDate $vacation_date)
     {
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'name' => 'required|string|max:255',
-        ]);
+            $validated = $request->validate([
+                'date' => 'required|date',
+                'name' => 'required|string|max:255',
+            ]);
+            $addToPunchTime = $request->has('add_to_punch_time');
 
-        // Revert old date: set off_day = false and reason = null for all employees
-        $employees = \App\Models\Employee::all();
-        foreach ($employees as $employee) {
-            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $employee->id)
-                ->where('date', $vacation_date->date)
-                ->first();
-            if ($employeeTime && $employeeTime->off_day) {
-                $employeeTime->off_day = false;
-                $employeeTime->reason = null;
-                $employeeTime->vacation_type = null;
-                $employeeTime->save();
-            }
-        }
-
-        $vacation_date->update($validated);
-
-        // For all employees, set off_day and reason in employee_times for new date
-        foreach ($employees as $employee) {
-            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $employee->id)
-                ->where('date', $validated['date'])
-                ->first();
-            if ($employeeTime) {
-                if (!$employeeTime->off_day) {
-                    $employeeTime->off_day = true;
-                    $employeeTime->reason = $validated['name'];
-                    $employeeTime->vacation_type = 'Holiday';
+            // Revert old date: set off_day = false and reason = null for all employees
+            $employees = \App\Models\Employee::all();
+            foreach ($employees as $employee) {
+                $employeeTime = \App\Models\EmployeeTime::where('employee_id', $employee->id)
+                    ->where('date', $vacation_date->date)
+                    ->first();
+                if ($employeeTime && $employeeTime->off_day) {
+                    $employeeTime->off_day = false;
+                    $employeeTime->reason = null;
+                    $employeeTime->vacation_type = null;
                     $employeeTime->save();
                 }
-            } else {
-                // Create a new EmployeeTime row for this employee and date
-                \App\Models\EmployeeTime::create([
-                    'employee_id' => $employee->id,
-                    'date' => $validated['date'],
-                    'off_day' => true,
-                    'reason' => $validated['name'],
-                    'vacation_type' => 'Holiday',
-                ]);
             }
-        }
 
-        return redirect()->route('vacation-dates.index')->with('success', 'Vacation date updated.');
+            $vacation_date->update($validated + ['add_to_punch_time' => $addToPunchTime]);
+
+            if ($addToPunchTime) {
+                // For all employees, set off_day and reason in employee_times for new date
+                foreach ($employees as $employee) {
+                    $employeeTime = \App\Models\EmployeeTime::where('employee_id', $employee->id)
+                        ->where('date', $validated['date'])
+                        ->first();
+                    if ($employeeTime) {
+                        if (!$employeeTime->off_day) {
+                            $employeeTime->off_day = true;
+                            $employeeTime->reason = $validated['name'];
+                            $employeeTime->vacation_type = 'Holiday';
+                            $employeeTime->save();
+                        }
+                    } else {
+                        // Create a new EmployeeTime row for this employee and date
+                        \App\Models\EmployeeTime::create([
+                            'employee_id' => $employee->id,
+                            'date' => $validated['date'],
+                            'off_day' => true,
+                            'reason' => $validated['name'],
+                            'vacation_type' => 'Holiday',
+                        ]);
+                    }
+                }
+            }
+
+            return redirect()->route('vacation-dates.index')->with('success', 'Vacation date updated.');
     }
 
     public function destroy(VacationDate $vacation_date)
