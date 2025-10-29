@@ -96,7 +96,7 @@ class SalaryController extends Controller
                 }
             }
             
-            $returnUrl = $request->get('return_url', route('salary.index'));
+            $returnUrl = $request->get('return_url', route('position-improvements.index'));
             
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => $returnUrl]);
@@ -153,9 +153,9 @@ class SalaryController extends Controller
                 }
             }
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'redirect' => route('salary.index')]);
+                return response()->json(['success' => true, 'redirect' => route('position-improvements.index')]);
             }
-            return redirect()->route('salary.index')->with('success', 'Salary updated successfully');
+            return redirect()->route('position-improvements.index')->with('success', 'Salary updated successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->validator->errors()->all()], 422);
