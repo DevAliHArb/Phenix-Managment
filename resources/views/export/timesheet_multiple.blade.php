@@ -136,7 +136,7 @@
                         } else {
                             $status = 'Attended';
                             $vacationType = null;
-                            $reason = '';
+                    $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                             $rowClass = '';
                         }
                         // If dayoff, extra is 0
