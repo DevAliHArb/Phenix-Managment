@@ -116,6 +116,10 @@ class EmployeeTimeImport implements ToCollection
                             $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : 'Attended');
                         }
                     }
+                    // Skip if employee not found
+                    if (!$employeeId) {
+                        continue;
+                    }
                     EmployeeTime::create([
                         'employee_id' => $employeeId,
                         'acc_number'  => $acNo,
@@ -357,6 +361,10 @@ class EmployeeTimeImport implements ToCollection
 
                 // Skip if already exists
                 if ($employeeId && $date && EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->exists()) {
+                    continue;
+                }
+                // Skip if employee not found
+                if (!$employeeId) {
                     continue;
                 }
 

@@ -213,28 +213,34 @@
         <div class="form-group mb-3">
             <label for="working_days"><strong>Working Days</strong></label>
             <div id="working_days">
+                @php
+                    $workSchedule = isset($workSchedule) ? $workSchedule : (\App\Models\WorkSchedule::first() ?? null);
+                @endphp
                 <div class="row mb-2">
                     <div class="col-md-4 col-6">
                         <div class="form-check">
+                            @php $mondayEnabled = $workSchedule ? (bool)$workSchedule->monday : true; @endphp
                             <input class="form-check-input" type="checkbox" name="working_days[]" id="day-monday" value="monday"
                                 {{ (is_array(old('working_days')) ? in_array('monday', old('working_days', [])) : ($employee->monday ?? false)) ? 'checked' : '' }}
-                                {{ (!is_array(old('working_days')) && !$employee->monday) ? 'disabled' : '' }}>
+                                {{ !$mondayEnabled ? 'disabled' : '' }}>
                             <label class="form-check-label" for="day-monday">Monday</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-6">
                         <div class="form-check">
+                            @php $tuesdayEnabled = $workSchedule ? (bool)$workSchedule->tuesday : true; @endphp
                             <input class="form-check-input" type="checkbox" name="working_days[]" id="day-tuesday" value="tuesday"
                                 {{ (is_array(old('working_days')) ? in_array('tuesday', old('working_days', [])) : ($employee->tuesday ?? false)) ? 'checked' : '' }}
-                                {{ (!is_array(old('working_days')) && !$employee->tuesday) ? 'disabled' : '' }}>
+                                {{ !$tuesdayEnabled ? 'disabled' : '' }}>
                             <label class="form-check-label" for="day-tuesday">Tuesday</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-6">
                         <div class="form-check">
+                            @php $wednesdayEnabled = $workSchedule ? (bool)$workSchedule->wednesday : true; @endphp
                             <input class="form-check-input" type="checkbox" name="working_days[]" id="day-wednesday" value="wednesday"
                                 {{ (is_array(old('working_days')) ? in_array('wednesday', old('working_days', [])) : ($employee->wednesday ?? false)) ? 'checked' : '' }}
-                                {{ (!is_array(old('working_days')) && !$employee->wednesday) ? 'disabled' : '' }}>
+                                {{ !$wednesdayEnabled ? 'disabled' : '' }}>
                             <label class="form-check-label" for="day-wednesday">Wednesday</label>
                         </div>
                     </div>
@@ -242,25 +248,28 @@
                 <div class="row mb-2">
                     <div class="col-md-4 col-6">
                         <div class="form-check">
+                            @php $thursdayEnabled = $workSchedule ? (bool)$workSchedule->thursday : true; @endphp
                             <input class="form-check-input" type="checkbox" name="working_days[]" id="day-thursday" value="thursday"
                                 {{ (is_array(old('working_days')) ? in_array('thursday', old('working_days', [])) : ($employee->thursday ?? false)) ? 'checked' : '' }}
-                                {{ (!is_array(old('working_days')) && !$employee->thursday) ? 'disabled' : '' }}>
+                                {{ !$thursdayEnabled ? 'disabled' : '' }}>
                             <label class="form-check-label" for="day-thursday">Thursday</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-6">
                         <div class="form-check">
+                            @php $fridayEnabled = $workSchedule ? (bool)$workSchedule->friday : true; @endphp
                             <input class="form-check-input" type="checkbox" name="working_days[]" id="day-friday" value="friday"
                                 {{ (is_array(old('working_days')) ? in_array('friday', old('working_days', [])) : ($employee->friday ?? false)) ? 'checked' : '' }}
-                                {{ (!is_array(old('working_days')) && !$employee->friday) ? 'disabled' : '' }}>
+                                {{ !$fridayEnabled ? 'disabled' : '' }}>
                             <label class="form-check-label" for="day-friday">Friday</label>
                         </div>
                     </div>
                     <div class="col-md-4 col-6">
                         <div class="form-check">
+                            @php $saturdayEnabled = $workSchedule ? (bool)$workSchedule->saturday : true; @endphp
                             <input class="form-check-input" type="checkbox" name="working_days[]" id="day-saturday" value="saturday"
                                 {{ (is_array(old('working_days')) ? in_array('saturday', old('working_days', [])) : ($employee->saturday ?? false)) ? 'checked' : '' }}
-                                {{ (!is_array(old('working_days')) && !$employee->saturday) ? 'disabled' : '' }}>
+                                {{ !$saturdayEnabled ? 'disabled' : '' }}>
                             <label class="form-check-label" for="day-saturday">Saturday</label>
                         </div>
                     </div>
@@ -268,9 +277,10 @@
                 <div class="row">
                     <div class="col-md-4 col-6">
                         <div class="form-check">
+                            @php $sundayEnabled = $workSchedule ? (bool)$workSchedule->sunday : true; @endphp
                             <input class="form-check-input" type="checkbox" name="working_days[]" id="day-sunday" value="sunday"
                                 {{ (is_array(old('working_days')) ? in_array('sunday', old('working_days', [])) : ($employee->sunday ?? false)) ? 'checked' : '' }}
-                                {{ (!is_array(old('working_days')) && !$employee->sunday) ? 'disabled' : '' }}>
+                                {{ !$sundayEnabled ? 'disabled' : '' }}>
                             <label class="form-check-label" for="day-sunday">Sunday</label>
                         </div>
                     </div>
