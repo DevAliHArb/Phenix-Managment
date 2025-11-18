@@ -64,6 +64,8 @@ class EmployeeVacationController extends Controller
                 $vacationType = 'Holiday';
             } elseif ($validated['lookup_type_id'] == 34) {
                 $vacationType = 'Unpaid';
+            } elseif ($validated['lookup_type_id'] == 35) {
+                $vacationType = 'Half day vacation';
             }
 
             // Update employee vacation counters
@@ -165,6 +167,9 @@ class EmployeeVacationController extends Controller
                     $oldEmployee->yearly_vacations_left = ($oldEmployee->yearly_vacations_left ?? 0) + 1;
                 } elseif ($model->lookup_type_id == 32) {
                     $oldEmployee->sick_leave_used = max(0, ($oldEmployee->sick_leave_used ?? 0) - 1);
+                } elseif ($model->lookup_type_id == 35) {
+                    $oldEmployee->yearly_vacations_used = max(0, ($oldEmployee->yearly_vacations_used ?? 0) - 0.5);
+                    $oldEmployee->yearly_vacations_left = ($oldEmployee->yearly_vacations_left ?? 0) + 0.5;
                 }
                 $oldEmployee->save();
             }
@@ -187,6 +192,8 @@ class EmployeeVacationController extends Controller
                 $vacationType = 'Vacation';
             } elseif ($validated['lookup_type_id'] == 32) {
                 $vacationType = 'Sick Leave';
+            } elseif ($validated['lookup_type_id'] == 35) {
+                $vacationType = 'Half day vacation';
             }
 
             // Update employee vacation counters for new type
@@ -258,6 +265,9 @@ class EmployeeVacationController extends Controller
                     $employee->yearly_vacations_left = ($employee->yearly_vacations_left ?? 0) + 1;
                 } elseif ($item->lookup_type_id == 32) {
                     $employee->sick_leave_used = max(0, ($employee->sick_leave_used ?? 0) - 1);
+                } elseif ($item->lookup_type_id == 35) {
+                    $employee->yearly_vacations_used = max(0, ($employee->yearly_vacations_used ?? 0) - 0.5);
+                    $employee->yearly_vacations_left = ($employee->yearly_vacations_left ?? 0) + 0.5;
                 }
                 $employee->save();
             }

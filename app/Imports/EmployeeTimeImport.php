@@ -160,49 +160,70 @@ class EmployeeTimeImport implements ToCollection
                     }
                 }
 
-                // Handle Clock In from column 5
+                // Handle multiple Clock In/Out pairs (columns 5/6, 7/8, 9/10, ...)
+                $clockPairs = [];
+                for ($i = 5; $i < count($row); $i += 2) {
+                    $in = !empty($row[$i]) ? (is_numeric($row[$i])
+                        ? Date::excelToDateTimeObject($row[$i])->format('H:i:s')
+                        : date('H:i:s', strtotime($row[$i]))) : null;
+                    $out = (!empty($row[$i+1])) ? (is_numeric($row[$i+1])
+                        ? Date::excelToDateTimeObject($row[$i+1])->format('H:i:s')
+                        : date('H:i:s', strtotime($row[$i+1]))) : null;
+                    if ($in || $out) {
+                        $clockPairs[] = [$in, $out];
+                    }
+                }
+
+                // New logic: clockIn = first in, clockOut = last out, totalTime = (last out - first in) - sum of all gaps
                 $clockIn = null;
-                if (!empty($row[5])) {
-                    $clockIn = is_numeric($row[5])
-                        ? Date::excelToDateTimeObject($row[5])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[5]));
-                }else if (!empty($row[7])) {
-                    $clockIn = is_numeric($row[7])
-                        ? Date::excelToDateTimeObject($row[7])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[7]));
-                }else if (!empty($row[9])) {
-                    $clockIn = is_numeric($row[9])
-                        ? Date::excelToDateTimeObject($row[9])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[9]));
-                }
-
-                // Handle Clock Out from column 6
                 $clockOut = null;
-                if (!empty($row[10])) {
-                    $clockOut = is_numeric($row[10])
-                        ? Date::excelToDateTimeObject($row[10])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[10]));
-                }else if (!empty($row[8])) {
-                    $clockOut = is_numeric($row[8])
-                        ? Date::excelToDateTimeObject($row[8])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[8]));
-                }else if (!empty($row[6])) {
-                    $clockOut = is_numeric($row[6])
-                        ? Date::excelToDateTimeObject($row[6])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[6]));
+                $numPairs = count($clockPairs);
+                // Find first clock in
+                for ($i = 0; $i < $numPairs; $i++) {
+                    if ($clockPairs[$i][0]) {
+                        $clockIn = $clockPairs[$i][0];
+                        break;
+                    }
                 }
-
-                // Calculate total time in seconds
+                // Calculate total time and set clock_out as clock_in + total_time
                 $totalTime = null;
-                if ($clockIn && $clockOut) {
-                    $clockInSeconds = strtotime($clockIn);
-                    $clockOutSeconds = strtotime($clockOut);
-                    if ($clockOutSeconds !== false && $clockInSeconds !== false) {
-                        $diffSeconds = $clockOutSeconds - $clockInSeconds;
-                        $hours = floor($diffSeconds / 3600);
-                        $minutes = floor(($diffSeconds % 3600) / 60);
-                        $seconds = $diffSeconds % 60;
-                        $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                $clockOut = null;
+                if ($clockIn) {
+                    // Find last clock out for gap calculation only
+                    $lastOut = null;
+                    for ($i = $numPairs - 1; $i >= 0; $i--) {
+                        if ($clockPairs[$i][1]) {
+                            $lastOut = $clockPairs[$i][1];
+                            break;
+                        }
+                    }
+                    if ($lastOut) {
+                        $inSec = strtotime($clockIn);
+                        $outSec = strtotime($lastOut);
+                        if ($inSec !== false && $outSec !== false && $outSec > $inSec) {
+                            $grossSeconds = $outSec - $inSec;
+                            // Calculate total gap seconds
+                            $gapSeconds = 0;
+                            for ($i = 0; $i < $numPairs - 1; $i++) {
+                                $out1 = $clockPairs[$i][1];
+                                $in2 = $clockPairs[$i+1][0];
+                                if ($out1 && $in2) {
+                                    $gap = strtotime($in2) - strtotime($out1);
+                                    if ($gap > 0) {
+                                        $gapSeconds += $gap;
+                                    }
+                                }
+                            }
+                            $netSeconds = $grossSeconds - $gapSeconds;
+                            if ($netSeconds < 0) $netSeconds = 0;
+                            $hours = floor($netSeconds / 3600);
+                            $minutes = floor(($netSeconds % 3600) / 60);
+                            $seconds = $netSeconds % 60;
+                            $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                            // Set clock_out as clock_in + total_time
+                            $clockOutSec = $inSec + $netSeconds;
+                            $clockOut = date('H:i:s', $clockOutSec);
+                        }
                     }
                 }
 
