@@ -30,137 +30,162 @@ class EmployeeTimeController extends Controller
     public function exportMultipleTimesheets(Request $request)
     {
         $ids = $request->input('ids', []);
-        $month = $request->input('month');
-        $year = $request->input('year');
-        if (!$month || !$year) {
-            $now = Carbon::now();
-            $month = $month ?: $now->month;
-            $year = $year ?: $now->year;
+        $months = $request->input('months', []);
+        $years = $request->input('years', []);
+        $year = $request->input('year'); // For backward compatibility
+        
+        // Handle backward compatibility - if 'month' is provided instead of 'months'
+        if (empty($months) && $request->has('month')) {
+            $months = [$request->input('month')];
+        }
+        
+        // Handle backward compatibility - if 'year' is provided instead of 'years'
+        if (empty($years) && $year) {
+            $years = [$year];
+        }
+        
+        if (empty($years)) {
+            $years = [Carbon::now()->year];
         }
 
         if (!is_array($ids) || empty($ids)) {
             return response()->json(['error' => 'No employee IDs provided'], 400);
         }
+        
+        if (!is_array($months) || empty($months)) {
+            return response()->json(['error' => 'No months provided'], 400);
+        }
 
         $allSheets = [];
-        foreach ($ids as $employeeId) {
-            $employee = Employee::with(['position', 'yearlyVacations', 'employeeVacations'])->find($employeeId);
-            if (!$employee) continue;
-            
-            $department = $employee->position ? $employee->position->name : '';
-            $query = EmployeeTime::where('employee_id', $employeeId)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $month);
-            $times = $query->orderBy('date')->get();
+        
+        // Loop through years first, then employees, then months to organize the data properly
+        foreach ($years as $currentYear) {
+            foreach ($ids as $employeeId) {
+                $employee = Employee::with(['position', 'yearlyVacations', 'employeeVacations'])->find($employeeId);
+                if (!$employee) continue;
+                
+                $department = $employee->position ? $employee->position->name : '';
+                
+                foreach ($months as $month) {
+                    $query = EmployeeTime::where('employee_id', $employeeId)
+                        ->whereYear('date', $currentYear)
+                        ->whereMonth('date', $month);
+                    $times = $query->orderBy('date')->get();
 
-            $timesheet = $times->map(function ($row) {
-                $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
-                $isVacation = $row->off_day && $row->reason === 'vacation';
-                $status = $row->off_day ? 'Off' : 'Attended';
-                $totalHourscalc = 0;
-                if ($row->total_time) {
-                    $parts = explode(':', $row->total_time);
-                    $h = isset($parts[0]) ? (int)$parts[0] : 0;
-                    $m = isset($parts[1]) ? (int)$parts[1] : 0;
-                    $s = isset($parts[2]) ? (int)$parts[2] : 0;
-                    $totalHourscalc = round($h + ($m / 60) + ($s / 3600), 2);
-                }
-                $totalHours = $row->total_time ? $row->total_time : 0;
-                $extra = $totalHourscalc - 9;
-                $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
-                $notes = $row->off_day ? ($row->reason ?: 'Off') : ($row->reason ?: '');
-                return [
-                    'date' => $row->date,
-                    'timein' => $row->clock_in,
-                    'timeout' => $row->clock_out,
-                    'totalhours' => $totalHours,
-                    'totalhourscalc' => $totalHourscalc,
-                    'status' => $status,
-                    'extra' => $extraFormatted,
-                    'notes' => $notes,
-                    'is_weekend' => $isWeekend,
-                    'vacation' => $isVacation,
-                    'dayoff' => $row->off_day,
-                ];
-            });
+                    $timesheet = $times->map(function ($row) {
+                        $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
+                        $isVacation = $row->off_day && $row->reason === 'vacation';
+                        $status = $row->off_day ? 'Off' : 'Attended';
+                        $totalHourscalc = 0;
+                        if ($row->total_time) {
+                            $parts = explode(':', $row->total_time);
+                            $h = isset($parts[0]) ? (int)$parts[0] : 0;
+                            $m = isset($parts[1]) ? (int)$parts[1] : 0;
+                            $s = isset($parts[2]) ? (int)$parts[2] : 0;
+                            $totalHourscalc = round($h + ($m / 60) + ($s / 3600), 2);
+                        }
+                        $totalHours = $row->total_time ? $row->total_time : 0;
+                        $extra = $totalHourscalc - 9;
+                        $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
+                        $notes = $row->off_day ? ($row->reason ?: 'Off') : ($row->reason ?: '');
+                        return [
+                            'date' => $row->date,
+                            'timein' => $row->clock_in,
+                            'timeout' => $row->clock_out,
+                            'totalhours' => $totalHours,
+                            'totalhourscalc' => $totalHourscalc,
+                            'status' => $status,
+                            'extra' => $extraFormatted,
+                            'notes' => $notes,
+                            'is_weekend' => $isWeekend,
+                            'vacation' => $isVacation,
+                            'dayoff' => $row->off_day,
+                        ];
+                    });
 
-            // Calculate attendanceRequired for this employee/month/year
-            $workSchedule = \App\Models\WorkSchedule::first();
-            $vacationDates = \App\Models\VacationDate::whereYear('date', $year)->whereMonth('date', $month)->pluck('date')->toArray();
-            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-            $attendanceRequiredCount = 0;
-            for ($day = 1; $day <= $daysInMonth; $day++) {
-                $date = sprintf('%04d-%02d-%02d', $year, $month, $day);
-                $carbon = \Carbon\Carbon::parse($date);
-                $weekday = strtolower($carbon->format('l'));
-                if ($workSchedule && $workSchedule->$weekday) {
-                    $attendanceRequiredCount++;
+                    // Calculate attendanceRequired for this employee/month/year
+                    $workSchedule = \App\Models\WorkSchedule::first();
+                    $vacationDates = \App\Models\VacationDate::whereYear('date', $currentYear)->whereMonth('date', $month)->pluck('date')->toArray();
+                    $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $currentYear);
+                    $attendanceRequiredCount = 0;
+                    for ($day = 1; $day <= $daysInMonth; $day++) {
+                        $date = sprintf('%04d-%02d-%02d', $currentYear, $month, $day);
+                        $carbon = \Carbon\Carbon::parse($date);
+                        $weekday = strtolower($carbon->format('l'));
+                        if ($workSchedule && $workSchedule->$weekday) {
+                            $attendanceRequiredCount++;
+                        }
+                    }
+
+                    $dailyHoursRequired = null;
+                    if ($workSchedule && $workSchedule->total_hours_per_day) {
+                        $parts = explode(':', $workSchedule->total_hours_per_day);
+                        $h = isset($parts[0]) ? (int)$parts[0] : 0;
+                        $m = isset($parts[1]) ? (int)$parts[1] : 0;
+                        $dailyHoursRequired = sprintf('%d:%02d', $h, $m);
+                    }
+
+                    // Get employee vacations for the month
+                    $vacations = $employee->employeeVacations()
+                        ->where('lookup_type_id', 31)
+                        ->whereYear('date', $currentYear)
+                        ->whereMonth('date', $month)
+                        ->pluck('date')
+                        ->toArray();
+
+                    $unpaid = $employee->employeeVacations()
+                        ->where('lookup_type_id', 34)
+                        ->whereYear('date', $currentYear)
+                        ->whereMonth('date', $month)
+                        ->pluck('date')
+                        ->toArray();
+
+                    $sickleave = $employee->employeeVacations()
+                        ->where('lookup_type_id', 32)
+                        ->whereYear('date', $currentYear)
+                        ->whereMonth('date', $month)
+                        ->pluck('date')
+                        ->toArray();
+
+                    $offDays = $vacationDates;
+
+                    $allSheets[] = [
+                        'department' => $department,
+                        'employee' => (object)[
+                            'name' => $employee->first_name . ' ' . $employee->mid_name . ' ' . $employee->last_name,
+                        ],
+                        'timesheet' => $timesheet,
+                        'times' => $times,
+                        'month' => $month,
+                        'year' => $currentYear,
+                        'attendanceRequired' => $attendanceRequiredCount,
+                        'dailyhoursrequired' => $dailyHoursRequired,
+                        'vacations' => $vacations,
+                        'sickleave' => $sickleave,
+                        'offdays' => $offDays,
+                        'unpaid' => $unpaid,
+                    ];
                 }
             }
-
-            $dailyHoursRequired = null;
-            if ($workSchedule && $workSchedule->total_hours_per_day) {
-                $parts = explode(':', $workSchedule->total_hours_per_day);
-                $h = isset($parts[0]) ? (int)$parts[0] : 0;
-                $m = isset($parts[1]) ? (int)$parts[1] : 0;
-                $dailyHoursRequired = sprintf('%d:%02d', $h, $m);
-            }
-
-            // Get employee vacations for the month
-            $vacations = $employee->employeeVacations()
-                ->where('lookup_type_id', 31)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->pluck('date')
-                ->toArray();
-
-            $unpaid = $employee->employeeVacations()
-                ->where('lookup_type_id', 34)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->pluck('date')
-                ->toArray();
-
-            $sickleave = $employee->employeeVacations()
-                ->where('lookup_type_id', 32)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->pluck('date')
-                ->toArray();
-
-            $offDays = $vacationDates;
-
-            $allSheets[] = [
-                'department' => $department,
-                'employee' => (object)[
-                    'name' => $employee->first_name . ' ' . $employee->mid_name . ' ' . $employee->last_name,
-                ],
-                'timesheet' => $timesheet,
-                'times' => $times,
-                'month' => $month,
-                'year' => $year,
-                'attendanceRequired' => $attendanceRequiredCount,
-                'dailyhoursrequired' => $dailyHoursRequired,
-                'vacations' => $vacations,
-                'sickleave' => $sickleave,
-                'offdays' => $offDays,
-                'unpaid' => $unpaid,
-            ];
         }
 
         if (empty($allSheets)) {
             return response()->json(['error' => 'No valid employees found'], 400);
         }
 
-        // Generate a filename based on the number of employees and date
-        $employeeCount = count($allSheets);
-        $filename = 'multiple_timesheets_' . $employeeCount . '_employees_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf';
+        // Generate a filename based on the number of employees, months and years
+        $employeeCount = count($ids);
+        $monthCount = count($months);
+        $yearCount = count($years);
+        $monthsText = $monthCount === 12 ? 'all_months' : implode('_', $months);
+        $yearsText = $yearCount === 1 ? $years[0] : implode('_', $years);
+        $filename = 'multiple_timesheets_' . $employeeCount . '_employees_' . $monthsText . '_' . $yearsText . '.pdf';
         
-        // Render a single PDF with multiple sheets (pages) - each employee gets their own page
+        // Render a single PDF with multiple sheets (pages) - each employee+month+year gets their own page
         $pdf = Pdf::loadView('export.timesheet_multiple', [
             'sheets' => $allSheets,
-            'month' => $month,
-            'year' => $year,
+            'months' => $months,
+            'years' => $years,
         ]);
         
         return $pdf->download($filename);

@@ -28,7 +28,7 @@
 
         <!-- Export All Modal -->
         <div class="modal fade" id="exportAllModal" tabindex="-1" aria-labelledby="exportAllModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="exportAllModalLabel">Export Employees Timesheets</h5>
@@ -36,27 +36,112 @@
                     </div>
                     <div class="modal-body">
                         <form id="exportAllForm">
-                            <div class="mb-3">
-                                <label for="exportAllMonth" class="form-label">Month</label>
-                                <select class="form-select" id="exportAllMonth" name="month" required>
-                                    <option value="">Select Month</option>
-                                    <option value="1">January</option>
-                                    <option value="2">February</option>
-                                    <option value="3">March</option>
-                                    <option value="4">April</option>
-                                    <option value="5">May</option>
-                                    <option value="6">June</option>
-                                    <option value="7">July</option>
-                                    <option value="8">August</option>
-                                    <option value="9">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
+                            <div class="row">
+                                <!-- Year Selection - Left Column -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Years</label>
+                                        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 10px;">
+                                            <div class="mb-2">
+                                                <input type="checkbox" id="selectAllYears" checked>
+                                                <label for="selectAllYears" style="font-weight: bold;">Select All</label>
+                                            </div>
+                                            <hr style="margin: 8px 0;">
+                                            @php
+                                                $currentYear = now()->year;
+                                                $startYear = 2023;
+                                                $endYear = $currentYear + 1;
+                                            @endphp
+                                            @for($year = $startYear; $year <= $endYear; $year++)
+                                                <div class="form-check">
+                                                    <input class="form-check-input year-checkbox" type="checkbox" value="{{ $year }}" id="year_{{ $year }}" {{ $year == $currentYear ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="year_{{ $year }}">{{ $year }}</label>
+                                                </div>
+                                            @endfor
+                                        </div>
+                                        <small class="form-text text-muted">Select years to export. Current year is selected by default.</small>
+                                    </div>
+                                </div>
+                                <!-- Month Selection - Right Column -->
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Months</label>
+                                        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 10px;">
+                                            <div class="mb-2">
+                                                <input type="checkbox" id="selectAllMonths" checked>
+                                                <label for="selectAllMonths" style="font-weight: bold;">Select All</label>
+                                            </div>
+                                            <hr style="margin: 8px 0;">
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="1" id="month_1" checked>
+                                                <label class="form-check-label" for="month_1">January</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="2" id="month_2" checked>
+                                                <label class="form-check-label" for="month_2">February</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="3" id="month_3" checked>
+                                                <label class="form-check-label" for="month_3">March</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="4" id="month_4" checked>
+                                                <label class="form-check-label" for="month_4">April</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="5" id="month_5" checked>
+                                                <label class="form-check-label" for="month_5">May</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="6" id="month_6" checked>
+                                                <label class="form-check-label" for="month_6">June</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="7" id="month_7" checked>
+                                                <label class="form-check-label" for="month_7">July</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="8" id="month_8" checked>
+                                                <label class="form-check-label" for="month_8">August</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="9" id="month_9" checked>
+                                                <label class="form-check-label" for="month_9">September</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="10" id="month_10" checked>
+                                                <label class="form-check-label" for="month_10">October</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="11" id="month_11" checked>
+                                                <label class="form-check-label" for="month_11">November</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input month-checkbox" type="checkbox" value="12" id="month_12" checked>
+                                                <label class="form-check-label" for="month_12">December</label>
+                                            </div>
+                                        </div>
+                                        <small class="form-text text-muted">Select months to export. Current month is selected by default.</small>
+                                    </div>
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="exportAllYear" class="form-label">Year</label>
-                                <input type="number" class="form-control" id="exportAllYear" name="year" min="2000" max="2100" value="{{ now()->year }}" required>
+                                <label class="form-label">Export Type</label>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="exportType" id="exportTypeSingle" value="single" checked>
+                                        <label class="form-check-label" for="exportTypeSingle">
+                                            <strong>One PDF</strong> - All employees in one combined PDF file
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="exportType" id="exportTypeSeparate" value="separate">
+                                        <label class="form-check-label" for="exportTypeSeparate">
+                                            <strong>Separate PDFs</strong> - Each employee in their own PDF file
+                                        </label>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">Choose whether to export all employees in one PDF or create separate PDF files for each employee.</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Employees</label>
@@ -238,17 +323,20 @@
                     });
                 }
 
-                // Export All logic - Updated to use single PDF with multiple pages
+                // Export All logic - Updated to handle both single and separate PDF exports
                 // Use jQuery event delegation to ensure handler is attached
                 $(document).on('click', '#confirmExportAllBtn', function() {
                     const exportAllBtn = this;
-                    const month = document.getElementById('exportAllMonth').value;
-                    const year = document.getElementById('exportAllYear').value;
+                    const checkedMonths = document.querySelectorAll('.month-checkbox:checked');
+                    const months = Array.from(checkedMonths).map(checkbox => checkbox.value);
+                    const checkedYears = document.querySelectorAll('.year-checkbox:checked');
+                    const years = Array.from(checkedYears).map(checkbox => checkbox.value);
                     const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
                     let employeeIds = Array.from(checkedEmployees).map(checkbox => checkbox.value);
+                    const exportType = document.querySelector('input[name="exportType"]:checked').value;
                     
-                    if (!month || !year) {
-                        alert('Please select both month and year.');
+                    if (months.length === 0 || years.length === 0) {
+                        alert('Please select at least one month and one year.');
                         return;
                     }
                     if (employeeIds.length === 0) {
@@ -259,17 +347,32 @@
                     exportAllBtn.disabled = true;
                     exportAllBtn.textContent = 'Exporting...';
                     
+                    if (exportType === 'separate') {
+                        // Export each employee as a separate PDF
+                        exportSeparatePDFs(employeeIds, months, years, exportAllBtn);
+                    } else {
+                        // Export all employees in one PDF
+                        exportSinglePDF(employeeIds, months, years, exportAllBtn);
+                    }
+                });
+                
+                // Function to export all employees in one combined PDF
+                function exportSinglePDF(employeeIds, months, years, exportAllBtn) {
                     // Build URL with query parameters for the multiple export request
                     const params = new URLSearchParams();
-                    params.append('month', month);
-                    params.append('year', year);
+                    months.forEach(month => {
+                        params.append('months[]', month);
+                    });
+                    years.forEach(year => {
+                        params.append('years[]', year);
+                    });
                     
                     // Add all selected employee IDs
                     employeeIds.forEach(id => {
                         params.append('ids[]', id);
                     });
                     
-                    // Use the new exportMultipleTimesheets endpoint
+                    // Use the existing exportMultipleTimesheets endpoint
                     fetch('/employee_times/export-multiple?' + params.toString(), {
                         method: 'GET',
                         headers: {
@@ -289,8 +392,11 @@
                         
                         // Generate filename based on selection
                         const employeeCount = employeeIds.length;
-                        const monthPadded = month.padStart ? month.padStart(2, '0') : ('0'+month).slice(-2);
-                        const fileName = `multiple_timesheets_${employeeCount}_employees_${year}_${monthPadded}.pdf`;
+                        const monthCount = months.length;
+                        const yearCount = years.length;
+                        const monthsText = monthCount === 12 ? 'all_months' : months.join('_');
+                        const yearsText = yearCount === 1 ? years[0] : years.join('_');
+                        const fileName = `combined_timesheets_${employeeCount}_employees_${monthsText}_${yearsText}.pdf`;
                         
                         // Download the combined PDF
                         const url = window.URL.createObjectURL(blob);
@@ -306,7 +412,8 @@
                             document.body.removeChild(a);
                         }, 100);
                         
-                        console.log(`Successfully exported ${employeeCount} timesheets in one PDF`);
+                        console.log(`Successfully exported ${employeeCount} employees for ${monthCount} months and ${yearCount} years in one PDF`);
+                        
                     })
                     .catch((error) => {
                         console.error('Export error:', error);
@@ -318,14 +425,192 @@
                         const modal = bootstrap.Modal.getInstance(document.getElementById('exportAllModal'));
                         if(modal) modal.hide();
                     });
-                });
+                }
+                
+                // Function to export each employee as a separate PDF
+                function exportSeparatePDFs(employeeIds, months, years, exportAllBtn) {
+                    let completedDownloads = 0;
+                    let totalDownloads = employeeIds.length;
+                    let hasErrors = false;
+                    
+                    // Update button to show progress
+                    exportAllBtn.textContent = `Exporting... (0/${totalDownloads})`;
+                    
+                    // Create downloads sequentially to avoid overwhelming the server
+                    async function downloadEmployeePDF(employeeId, index) {
+                        try {
+                            // Build URL for single employee export with ALL selected months and years
+                            const params = new URLSearchParams();
+                            months.forEach(month => {
+                                params.append('months[]', month);
+                            });
+                            years.forEach(year => {
+                                params.append('years[]', year);
+                            });
+                            params.append('ids[]', employeeId);
+                            
+                            const response = await fetch('/employee_times/export-multiple?' + params.toString(), {
+                                method: 'GET',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`Export failed: ${response.status} ${response.statusText}`);
+                            }
+                            
+                            const blob = await response.blob();
+                            
+                            if (blob.size === 0) {
+                                throw new Error('Exported file is empty');
+                            }
+                            
+                            // Get employee name for filename
+                            const employeeCheckbox = document.getElementById(`emp_${employeeId}`);
+                            const employeeName = employeeCheckbox ? 
+                                employeeCheckbox.nextElementSibling.textContent.trim().replace(/\s+/g, '_') : 
+                                `Employee_${employeeId}`;
+                            
+                            const monthCount = months.length;
+                            const yearCount = years.length;
+                            const monthsText = monthCount === 12 ? 'all_months' : months.join('_');
+                            const yearsText = yearCount === 1 ? years[0] : years.join('_');
+                            const fileName = `${employeeName}_timesheet_${monthsText}_${yearsText}.pdf`;
+                            
+                            // Download the PDF
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            
+                            // Clean up
+                            setTimeout(() => {
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                            }, 100);
+                            
+                            completedDownloads++;
+                            exportAllBtn.textContent = `Exporting... (${completedDownloads}/${totalDownloads})`;
+                            
+                            console.log(`Successfully exported timesheet for ${employeeName} covering ${yearCount} years and ${monthCount} months`);
+                            
+                        } catch (error) {
+                            hasErrors = true;
+                            console.error(`Error exporting employee ${employeeId}:`, error);
+                        }
+                    }
+                    
+                    // Create promises for each employee (one PDF per employee with all their selected months/years)
+                    let downloadPromises = [];
+                    
+                    employeeIds.forEach((employeeId, index) => {
+                        downloadPromises.push(
+                            new Promise(resolve => 
+                                setTimeout(() => resolve(downloadEmployeePDF(employeeId, index)), index * 500)
+                            )
+                        );
+                    });
+                    
+                    // Download all employee PDFs with staggered timing
+                    Promise.all(downloadPromises).then(() => {
+                        if (hasErrors) {
+                            alert(`Export completed with some errors. ${completedDownloads} of ${totalDownloads} files were downloaded successfully.`);
+                        } else {
+                            console.log(`Successfully exported ${completedDownloads} separate PDF files (one per employee)`);
+                        }
+                    }).finally(() => {
+                        exportAllBtn.disabled = false;
+                        exportAllBtn.textContent = 'Export';
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('exportAllModal'));
+                        if(modal) modal.hide();
+                    });
+                }
                 
                 // Set default month/year when modal is shown
                 $(document).on('show.bs.modal', '#exportAllModal', function() {
                     const now = new Date();
-                    document.getElementById('exportAllMonth').value = (now.getMonth() + 1).toString();
-                    document.getElementById('exportAllYear').value = now.getFullYear();
+                    
+                    // Set current month as checked, uncheck all others
+                    document.querySelectorAll('.month-checkbox').forEach(checkbox => {
+                        checkbox.checked = false;
+                    });
+                    document.getElementById('month_' + (now.getMonth() + 1)).checked = true;
+                    
+                    // Set current year as checked, uncheck all others
+                    document.querySelectorAll('.year-checkbox').forEach(checkbox => {
+                        checkbox.checked = false;
+                    });
+                    document.getElementById('year_' + now.getFullYear()).checked = true;
+                    
+                    // Update Select All checkboxes state
+                    updateSelectAllMonthsState();
+                    updateSelectAllYearsState();
                 });
+                
+                // Handle Select All checkbox for years
+                $(document).on('change', '#selectAllYears', function() {
+                    const isChecked = this.checked;
+                    document.querySelectorAll('.year-checkbox').forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                });
+                
+                // Handle individual year checkboxes
+                $(document).on('change', '.year-checkbox', function() {
+                    updateSelectAllYearsState();
+                });
+                
+                // Function to update Select All years state
+                function updateSelectAllYearsState() {
+                    const allYearCheckboxes = document.querySelectorAll('.year-checkbox');
+                    const checkedYearCheckboxes = document.querySelectorAll('.year-checkbox:checked');
+                    const selectAllYearsCheckbox = document.getElementById('selectAllYears');
+                    
+                    if (checkedYearCheckboxes.length === allYearCheckboxes.length) {
+                        selectAllYearsCheckbox.checked = true;
+                        selectAllYearsCheckbox.indeterminate = false;
+                    } else if (checkedYearCheckboxes.length === 0) {
+                        selectAllYearsCheckbox.checked = false;
+                        selectAllYearsCheckbox.indeterminate = false;
+                    } else {
+                        selectAllYearsCheckbox.checked = false;
+                        selectAllYearsCheckbox.indeterminate = true;
+                    }
+                }
+                
+                // Handle Select All checkbox for months
+                $(document).on('change', '#selectAllMonths', function() {
+                    const isChecked = this.checked;
+                    document.querySelectorAll('.month-checkbox').forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                });
+                
+                // Handle individual month checkboxes
+                $(document).on('change', '.month-checkbox', function() {
+                    updateSelectAllMonthsState();
+                });
+                
+                // Function to update Select All months state
+                function updateSelectAllMonthsState() {
+                    const allMonthCheckboxes = document.querySelectorAll('.month-checkbox');
+                    const checkedMonthCheckboxes = document.querySelectorAll('.month-checkbox:checked');
+                    const selectAllMonthsCheckbox = document.getElementById('selectAllMonths');
+                    
+                    if (checkedMonthCheckboxes.length === allMonthCheckboxes.length) {
+                        selectAllMonthsCheckbox.checked = true;
+                        selectAllMonthsCheckbox.indeterminate = false;
+                    } else if (checkedMonthCheckboxes.length === 0) {
+                        selectAllMonthsCheckbox.checked = false;
+                        selectAllMonthsCheckbox.indeterminate = false;
+                    } else {
+                        selectAllMonthsCheckbox.checked = false;
+                        selectAllMonthsCheckbox.indeterminate = true;
+                    }
+                }
                 
                 // Handle Select All checkbox
                 $(document).on('change', '#selectAllEmployees', function() {
