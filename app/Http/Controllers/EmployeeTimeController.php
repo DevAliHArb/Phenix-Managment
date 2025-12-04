@@ -147,6 +147,14 @@ class EmployeeTimeController extends Controller
                         ->pluck('date')
                         ->toArray();
 
+                        
+                    $halfday = $employee->employeeVacations()
+                        ->where('lookup_type_id', 35)
+                        ->whereYear('date', $currentYear)
+                        ->whereMonth('date', $month)
+                        ->pluck('date')
+                        ->toArray();
+
                     $offDays = $vacationDates;
 
                     $allSheets[] = [
@@ -164,6 +172,7 @@ class EmployeeTimeController extends Controller
                         'sickleave' => $sickleave,
                         'offdays' => $offDays,
                         'unpaid' => $unpaid,
+                        'halfday' => $halfday,
                     ];
                 }
             }
@@ -299,6 +308,12 @@ class EmployeeTimeController extends Controller
             ->pluck('date')
             ->toArray();
 
+        $halfday = $employee->employeeVacations()
+            ->where('lookup_type_id', 35)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->pluck('date')
+            ->toArray();
         // Off days (vacation dates for the month)
         $offDays = $vacationDates;
 
@@ -317,6 +332,7 @@ class EmployeeTimeController extends Controller
             'sickleave' => $sickleave,
             'offdays' => $offDays,
             'unpaid' => $unpaid,
+            'halfday' => $halfday,
         ];
 
     $empName = str_replace(' ', '_', $employee->first_name . ' ' . $employee->mid_name . ' ' . $employee->last_name);
@@ -500,5 +516,118 @@ class EmployeeTimeController extends Controller
             $results[$employee->id] = $attendanceRequired;
         }
         return response()->json($results);
+    }
+
+    /**
+     * Bulk update employee time records
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:employee_times,id',
+        ]);
+
+        $ids = $request->input('ids');
+        
+        // Check if clock_in or clock_out is being updated
+        $updatingTimes = $request->filled('clock_in') || $request->filled('clock_out');
+        
+        try {
+            if ($updatingTimes) {
+                // If updating clock times, we need to update each record individually to recalculate total_time
+                $records = EmployeeTime::whereIn('id', $ids)->get();
+                
+                foreach ($records as $record) {
+                    $clockIn = $request->filled('clock_in') ? $request->input('clock_in') : $record->clock_in;
+                    $clockOut = $request->filled('clock_out') ? $request->input('clock_out') : $record->clock_out;
+                    
+                    // Calculate total_time if both clock_in and clock_out are present
+                    $totalTime = null;
+                    if ($clockIn && $clockOut) {
+                        try {
+                            $startTime = Carbon::parse($clockIn);
+                            $endTime = Carbon::parse($clockOut);
+                            
+                            // If end time is before start time, assume it's next day
+                            if ($endTime->lt($startTime)) {
+                                $endTime->addDay();
+                            }
+                            
+                            $diffInSeconds = $endTime->diffInSeconds($startTime);
+                            $hours = floor($diffInSeconds / 3600);
+                            $minutes = floor(($diffInSeconds % 3600) / 60);
+                            $seconds = $diffInSeconds % 60;
+                            
+                            $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                        } catch (\Exception $e) {
+                            // If time parsing fails, keep the existing total_time
+                            $totalTime = $record->total_time;
+                        }
+                    }
+                    
+                    // Update the record
+                    $updateData = [];
+                    if ($request->filled('clock_in')) {
+                        $updateData['clock_in'] = $clockIn;
+                    }
+                    if ($request->filled('clock_out')) {
+                        $updateData['clock_out'] = $clockOut;
+                    }
+                    if ($totalTime !== null) {
+                        $updateData['total_time'] = $totalTime;
+                    }
+                    if ($request->filled('vacation_type')) {
+                        $updateData['vacation_type'] = $request->input('vacation_type');
+                        if ($request->input('vacation_type') !== 'Attended') {
+                            $updateData['off_day'] = true;
+                        } else {
+                            $updateData['off_day'] = false;
+                        }
+                    }
+                    if ($request->filled('reason')) {
+                        $updateData['reason'] = $request->input('reason');
+                    }
+                    
+                    if (!empty($updateData)) {
+                        $record->update($updateData);
+                    }
+                }
+            } else {
+                // No time updates, use bulk update for efficiency
+                $updateData = [];
+                
+                if ($request->filled('total_time')) {
+                    $updateData['total_time'] = $request->input('total_time');
+                }
+                if ($request->filled('vacation_type')) {
+                    $updateData['vacation_type'] = $request->input('vacation_type');
+                    if ($request->input('vacation_type') !== 'Attended') {
+                        $updateData['off_day'] = true;
+                    } else {
+                        $updateData['off_day'] = false;
+                    }
+                }
+                if ($request->filled('reason')) {
+                    $updateData['reason'] = $request->input('reason');
+                }
+
+                if (empty($updateData)) {
+                    return response()->json([
+                        'message' => 'No fields to update'
+                    ], 400);
+                }
+                
+                EmployeeTime::whereIn('id', $ids)->update($updateData);
+            }
+
+            return response()->json([
+                'message' => count($ids) . ' record(s) updated successfully!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update records: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

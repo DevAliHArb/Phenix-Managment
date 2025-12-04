@@ -61,6 +61,94 @@ class EmployeeTimeImport implements ToCollection
 
             $start = $dates->first();
             $end = $dates->last();
+            
+            // Check if we need to add missing days from the start of the month
+            $firstDate = new \DateTime($start);
+            $monthStart = new \DateTime($firstDate->format('Y-m-01'));
+            
+            // If the first date is not the 1st of the month, check for missing weekends/off days
+            if ($firstDate->format('d') != '01') {
+                $checkPeriod = new \DatePeriod(
+                    $monthStart,
+                    new \DateInterval('P1D'),
+                    $firstDate
+                );
+                
+                foreach ($checkPeriod as $dateObj) {
+                    $dateStr = $dateObj->format('Y-m-d');
+                    $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
+                    $employeeId = $employee ? $employee->id : null;
+                    
+                    if (!$employeeId) continue;
+                    
+                    // Skip if already exists
+                    if (EmployeeTime::where('employee_id', $employeeId)->where('date', $dateStr)->exists()) {
+                        continue;
+                    }
+                    
+                    // Check if this date should be added (weekend, holiday, or vacation)
+                    $offDay = false;
+                    $reason = null;
+                    $vacationType = null;
+                    
+                    // Check if it's a weekend based on employee working days
+                    $dayName = strtolower($dateObj->format('l'));
+                    if ($employee) {
+                        $isWorking = (bool) ($employee->{$dayName} ?? true);
+                        if (!$isWorking) {
+                            $offDay = true;
+                            $reason = 'Weekend';
+                            $vacationType = 'Off';
+                        }
+                    } else {
+                        $dayOfWeek = $dateObj->format('N');
+                        if ($dayOfWeek == 6 || $dayOfWeek == 7) {
+                            $offDay = true;
+                            $reason = 'Weekend';
+                            $vacationType = 'Off';
+                        }
+                    }
+                    
+                    // Check for holidays
+                    $vacationDate = \App\Models\VacationDate::where('date', $dateStr)->first();
+                    if ($vacationDate) {
+                        $offDay = true;
+                        $reason = $vacationDate->name ?? 'vacationdate';
+                        $vacationType = 'Holiday';
+                    } else if ($employeeId) {
+                        $employeeVacation = \App\Models\EmployeeVacation::where('employee_id', $employeeId)
+                            ->where('date', $dateStr)
+                            ->first();
+                        if ($employeeVacation) {
+                            $offDay = true;
+                            $reason = $employeeVacation->reason ?? 'Employee Vacation';
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day' : 'Attended'));
+                        }
+                    }
+                    
+                    // Only add if it's an off day (weekend, holiday, or vacation)
+                    if ($offDay) {
+                        EmployeeTime::create([
+                            'employee_id' => $employeeId,
+                            'acc_number'  => $acNo,
+                            'date'        => $dateStr,
+                            'clock_in'    => null,
+                            'clock_out'   => null,
+                            'total_time'  => null,
+                            'off_day'     => $offDay,
+                            'reason'      => $reason,
+                            'vacation_type' => $vacationType,
+                        ]);
+                        
+                        $processed++;
+                        if ($this->progressKey && $total > 0) {
+                            $percent = intval(($processed / $total) * 100);
+                            \Cache::put($this->progressKey, $percent, 600);
+                        }
+                    }
+                }
+            }
+            
             $period = new \DatePeriod(
                 new \DateTime($start),
                 new \DateInterval('P1D'),
@@ -113,7 +201,7 @@ class EmployeeTimeImport implements ToCollection
                         if ($employeeVacation) {
                             $offDay = true;
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : 'Attended');
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day' : 'Attended'));
                         }
                     }
                     // Skip if employee not found
@@ -332,7 +420,7 @@ class EmployeeTimeImport implements ToCollection
                         if ($employeeVacation) {
                             $offDay = true;
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : 'Attended');
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day' : 'Attended'));
                         }
                     }
                 }

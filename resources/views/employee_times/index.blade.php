@@ -208,6 +208,58 @@
             </div>
         </div>
     
+        <!-- Bulk Edit Modal -->
+        <div class="modal fade" id="bulkEditModal" tabindex="-1" aria-labelledby="bulkEditModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="bulkEditModalLabel">Bulk Edit Selected Records</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="bulkEditForm">
+                        @csrf
+                        <div class="modal-body">
+                            <p class="text-muted">Selected records: <strong><span id="selectedCount">0</span></strong></p>
+                            <div class="mb-3">
+                                <label class="form-label">Time In</label>
+                                <input type="time" class="form-control" id="bulk_clock_in" name="clock_in">
+                                <small class="form-text text-muted">Leave empty to keep current values</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Time Out</label>
+                                <input type="time" class="form-control" id="bulk_clock_out" name="clock_out">
+                                <small class="form-text text-muted">Leave empty to keep current values. Total Time will be auto-calculated.</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Status (Vacation Type)</label>
+                                <select class="form-control" id="bulk_vacation_type" name="vacation_type">
+                                    <option value="">-- Keep Current --</option>
+                                    <option value="Attended">Attended</option>
+                                    <option value="Off">Off</option>
+                                    <option value="Vacation">Vacation</option>
+                                    <option value="Sick Leave">Sick Leave</option>
+                                    <option value="Holiday">Holiday</option>
+                                    <option value="Unpaid">Unpaid</option>
+                                    <option value="Half Day">Half Day</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Reason</label>
+                                <input type="text" class="form-control" id="bulk_reason" name="reason">
+                                <small class="form-text text-muted">Leave empty to keep current values</small>
+                            </div>
+                            <div id="bulk-edit-errors" class="alert alert-danger d-none"></div>
+                            <div id="bulk-edit-success" class="alert alert-success d-none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" id="bulkEditSubmitBtn" class="btn btn-primary">Apply Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div id="employeeTimesGrid"></div>
         @push('scripts')
         <script>
@@ -685,12 +737,26 @@
             }
 
             $(function() {
-                $("#employeeTimesGrid").dxDataGrid({
+                const dataGridInstance = $("#employeeTimesGrid").dxDataGrid({
                     dataSource: employeeTimesData,
+                    selection: {
+                        mode: 'multiple',
+                        showCheckBoxesMode: 'always'
+                    },
                     columns: [
                         { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
                         { dataField: "employee", caption: "Employee", width: 200, allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { dataField: "date", caption: "Date", allowFiltering: true, headerFilter: { allowSearch: true }, sortOrder: "desc" },
+                        { 
+                            dataField: "date", 
+                            caption: "Date", 
+                            dataType: "date",
+                            allowFiltering: true, 
+                            headerFilter: { allowSearch: true }, 
+                            sortOrder: "desc",
+                            format: "dd/MM/yyyy",
+                            filterOperations: ['between', '=', '<>', '<', '<=', '>', '>='],
+                            selectedFilterOperation: 'between'
+                        },
                         { dataField: "time_in", caption: "Time In", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_in)); } },
                         { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_out)); } },
                         { dataField: "total_time", caption: "Total Time", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTotalTime(options.data.total_time)); } },
@@ -768,6 +834,46 @@
                         title: 'Column Chooser',
                         emptyPanelText: 'Drag a column here to hide it'
                     },
+                    toolbar: {
+                        items: [
+                            {
+                                location: 'after',
+                                widget: 'dxButton',
+                                options: {
+                                    icon: 'edit',
+                                    text: 'Bulk Edit',
+                                    hint: 'Edit selected records',
+                                    disabled: true,
+                                    elementAttr: {
+                                        id: 'bulkEditBtn'
+                                    },
+                                    onClick: function() {
+                                        const selectedRows = dataGridInstance.getSelectedRowsData();
+                                        if (selectedRows.length > 0) {
+                                            $('#selectedCount').text(selectedRows.length);
+                                            $('#bulkEditModal').modal('show');
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                location: 'after',
+                                widget: 'dxButton',
+                                options: {
+                                    icon: 'clearformat',
+                                    text: 'Reset Filters',
+                                    hint: 'Clear all filters and sorting',
+                                    onClick: function() {
+                                        dataGridInstance.clearFilter();
+                                        dataGridInstance.clearSorting();
+                                        dataGridInstance.searchByText('');
+                                    }
+                                }
+                            },
+                            'columnChooserButton',
+                            'searchPanel'
+                        ]
+                    },
                     allowColumnReordering: true,
                     summary: {
                         totalItems: [
@@ -784,7 +890,83 @@
                             }
                         ]
                     },
-                    noDataText: 'No Punch Time found.'
+                    noDataText: 'No Punch Time found.',
+                    onSelectionChanged: function(selectedItems) {
+                        const selectedKeys = selectedItems.selectedRowKeys;
+                        
+                        // Use setTimeout to ensure button is rendered
+                        setTimeout(function() {
+                            const bulkEditBtnElement = $('#bulkEditBtn');
+                            if (bulkEditBtnElement.length > 0) {
+                                const bulkEditBtn = bulkEditBtnElement.dxButton('instance');
+                                
+                                if (selectedKeys.length > 0) {
+                                    bulkEditBtn.option('disabled', false);
+                                    bulkEditBtn.option('text', `Bulk Edit (${selectedKeys.length})`);
+                                } else {
+                                    bulkEditBtn.option('disabled', true);
+                                    bulkEditBtn.option('text', 'Bulk Edit');
+                                }
+                            }
+                        }, 0);
+                    }
+                }).dxDataGrid('instance');
+                
+                // Bulk Edit form submission
+                $('#bulkEditForm').on('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const selectedRows = dataGridInstance.getSelectedRowsData();
+                    const selectedIds = selectedRows.map(row => row.id);
+                    
+                    const formData = {
+                        ids: selectedIds,
+                        clock_in: $('#bulk_clock_in').val(),
+                        clock_out: $('#bulk_clock_out').val(),
+                        vacation_type: $('#bulk_vacation_type').val(),
+                        reason: $('#bulk_reason').val(),
+                        _token: '{{ csrf_token() }}'
+                    };
+                    
+                    const errorsDiv = $('#bulk-edit-errors');
+                    const successDiv = $('#bulk-edit-success');
+                    const submitBtn = $('#bulkEditSubmitBtn');
+                    
+                    errorsDiv.addClass('d-none');
+                    successDiv.addClass('d-none');
+                    submitBtn.prop('disabled', true).text('Saving...');
+                    
+                    $.ajax({
+                        url: '{{ route('employee_times.bulk-update') }}',
+                        method: 'POST',
+                        data: formData,
+                        success: function(response) {
+                            successDiv.text(response.message || 'Records updated successfully!');
+                            successDiv.removeClass('d-none');
+                            
+                            setTimeout(function() {
+                                $('#bulkEditModal').modal('hide');
+                                window.location.reload();
+                            }, 1500);
+                        },
+                        error: function(xhr) {
+                            let errorMsg = 'Failed to update records.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            errorsDiv.text(errorMsg);
+                            errorsDiv.removeClass('d-none');
+                            submitBtn.prop('disabled', false).text('Apply Changes');
+                        }
+                    });
+                });
+                
+                // Reset form when modal is closed
+                $('#bulkEditModal').on('hidden.bs.modal', function() {
+                    $('#bulkEditForm')[0].reset();
+                    $('#bulk-edit-errors').addClass('d-none');
+                    $('#bulk-edit-success').addClass('d-none');
+                    $('#bulkEditSubmitBtn').prop('disabled', false).text('Apply Changes');
                 });
             });
         </script>

@@ -98,6 +98,7 @@
                         $vacationsArr = isset($sheet['vacations']) ? $sheet['vacations'] : [];
                         $sickleaveArr = isset($sheet['sickleave']) ? $sheet['sickleave'] : [];
                         $unpaidArr = isset($sheet['unpaid']) ? $sheet['unpaid'] : [];
+                        $halfdayArr = isset($sheet['halfday']) ? $sheet['halfday'] : [];
                         $offdaysArr = isset($sheet['offdays']) ? $sheet['offdays'] : [];
                         $vacationType = null;
                         $reason = '';
@@ -123,6 +124,11 @@
                             $vacationType = 'Unpaid';
                             $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                             $rowClass = 'unpaid';
+                        } elseif (in_array($dateStr, $halfdayArr)) {
+                            $status = 'Half Day';
+                            $vacationType = 'Half Day';
+                            $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
+                            $rowClass = 'halfday';
                         } elseif ($isWeekend) {
                             $status = 'Off';
                             $vacationType = 'Off';
@@ -192,19 +198,23 @@
 
                 // $attendanceRequired is now passed from the controller
                 $dailyHoursRequired = 9;
-                $attendanceTotal = collect($sheet['timesheet'])->filter(function($row) use ($sheet) {
+                $attendanceTotal = collect($sheet['timesheet'])->reduce(function($carry, $row) use ($sheet) {
                     $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
-                    if (!$date) return false;
-                    if (in_array($date, $sheet['vacations'] ?? [])) return false;
-                    if (in_array($date, $sheet['sickleave'] ?? [])) return false;
-                    if (in_array($date, $sheet['offdays'] ?? [])) return false;
-                    if (in_array($date, $sheet['unpaid'] ?? [])) return false;
+                    if (!$date) return $carry;
+                    if (in_array($date, $sheet['vacations'] ?? [])) return $carry;
+                    if (in_array($date, $sheet['sickleave'] ?? [])) return $carry;
+                    if (in_array($date, $sheet['offdays'] ?? [])) return $carry;
+                    if (in_array($date, $sheet['unpaid'] ?? [])) return $carry;
                     $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : false;
-                    if ($isWeekend) return false;
+                    if ($isWeekend) return $carry;
                     // Exclude Unknown status
-                    if (empty($row['timein']) && empty($row['timeout'])) return false;
-                    return true;
-                })->count();
+                    if (empty($row['timein']) && empty($row['timeout'])) return $carry;
+                    // Check if it's a half day - add 0.5, otherwise add 1
+                    if (in_array($date, $sheet['halfday'] ?? [])) {
+                        return $carry + 0.5;
+                    }
+                    return $carry + 1;
+                }, 0);
                 $vacationOffTotal = collect($sheet['timesheet'])->where('dayoff', true)->filter(function($row){
                     // Not weekend (assuming is_weekend is set)
                     return empty($row['is_weekend']);
@@ -268,24 +278,28 @@
                             Time logged Total<br>
                         </td>
                         <td style="width:10%; background:#fbe4d5; text-align:center; font-weight:normal; border:none; row-gap: 10px;">
-                            {{-- Attendance Total: count of status Attended (exclude Unknown and Unpaid) --}}
-                            {{ collect($sheet['timesheet'])->filter(function($row) use ($sheet) {
+                            {{-- Attendance Total: count of status Attended (exclude Unknown and Unpaid), half-day = 0.5 --}}
+                            {{ collect($sheet['timesheet'])->reduce(function($carry, $row) use ($sheet) {
                                 $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
-                                if (!$date) return false;
-                                if (in_array($date, $sheet['vacations'] ?? [])) return false;
-                                if (in_array($date, $sheet['sickleave'] ?? [])) return false;
-                                if (in_array($date, $sheet['offdays'] ?? [])) return false;
-                                if (in_array($date, $sheet['unpaid'] ?? [])) return false;
+                                if (!$date) return $carry;
+                                if (in_array($date, $sheet['vacations'] ?? [])) return $carry;
+                                if (in_array($date, $sheet['sickleave'] ?? [])) return $carry;
+                                if (in_array($date, $sheet['offdays'] ?? [])) return $carry;
+                                if (in_array($date, $sheet['unpaid'] ?? [])) return $carry;
                                 $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : false;
-                                if ($isWeekend) return false;
+                                if ($isWeekend) return $carry;
                                 // Exclude Unknown status
-                                if (empty($row['timein']) && empty($row['timeout'])) return false;
-                                return true;
-                            })->count() }}<br>
+                                if (empty($row['timein']) && empty($row['timeout'])) return $carry;
+                                // Check if it's a half day - add 0.5, otherwise add 1
+                                if (in_array($date, $sheet['halfday'] ?? [])) {
+                                    return $carry + 0.5;
+                                }
+                                return $carry + 1;
+                            }, 0) }}<br>
                             {{-- Off Days Total: length of offdays --}}
                             {{ isset($sheet['offdays']) ? count($sheet['offdays']) : 0 }}<br>
-                            {{-- Vacations Total: length of vacations + unpaid --}}
-                            {{ (isset($sheet['vacations']) ? count($sheet['vacations']) : 0) + (isset($sheet['unpaid']) ? count($sheet['unpaid']) : 0) }}<br>
+                            {{-- Vacations Total: length of vacations + unpaid + 0.5 for half-day --}}
+                            {{ (isset($sheet['vacations']) ? count($sheet['vacations']) : 0) + (isset($sheet['unpaid']) ? count($sheet['unpaid']) : 0) + (isset($sheet['halfday']) ? count($sheet['halfday']) * 0.5 : 0) }}<br>
                             {{-- Sick Leaves Total: length of sickleave --}}
                             {{ isset($sheet['sickleave']) ? count($sheet['sickleave']) : 0 }}<br>
                             {{ $totalLoggedTimeFormatted }}<br>

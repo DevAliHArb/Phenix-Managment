@@ -32,6 +32,7 @@ Route::resource('employees', EmployeeController::class);
 Route::get('employee_times/export-multiple', [EmployeeTimeController::class, 'exportMultipleTimesheets'])->name('employee_times.export-multiple');
 Route::get('employee_times/import/progress', [EmployeeTimeController::class, 'importProgress'])->name('employee_times.import.progress');
 Route::post('employee_times/import', [EmployeeTimeController::class, 'importExcel'])->name('employee_times.import');
+Route::post('employee_times/bulk-update', [EmployeeTimeController::class, 'bulkUpdate'])->name('employee_times.bulk-update');
 Route::get('employee_times/{employee}/export', [EmployeeTimeController::class, 'exportTimesheet'])->name('employee_times.export');
 // Resource route (must be after custom routes)
 Route::resource('employee_times', EmployeeTimeController::class);
