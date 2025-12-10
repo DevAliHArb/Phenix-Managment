@@ -23,7 +23,7 @@
                         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
                         <!-- Export All Button triggers modal -->
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportAllModal">Export All</button>
-                        <a href="{{ route('employee_times.create') }}" class="btn btn-primary">Add Punch Time</a>
+                        <a href="{{ route('employee_times.create') }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Add Punch Time</a>
                 </div>
 
         <!-- Export All Modal -->
@@ -240,13 +240,17 @@
                                     <option value="Sick Leave">Sick Leave</option>
                                     <option value="Holiday">Holiday</option>
                                     <option value="Unpaid">Unpaid</option>
-                                    <option value="Half Day">Half Day</option>
+                                    <option value="Half Day Vacation">Half Day Vacation</option>
                                 </select>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Reason</label>
                                 <input type="text" class="form-control" id="bulk_reason" name="reason">
-                                <small class="form-text text-muted">Leave empty to keep current values</small>
+                                <small class="form-text text-muted">Leave empty to keep current values, or tick below to clear.</small>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="bulk_clear_reason" name="clear_reason" value="1">
+                                    <label class="form-check-label" for="bulk_clear_reason">Set reason to empty</label>
+                                </div>
                             </div>
                             <div id="bulk-edit-errors" class="alert alert-danger d-none"></div>
                             <div id="bulk-edit-success" class="alert alert-success d-none"></div>
@@ -766,7 +770,7 @@
                             allowFiltering: true, 
                             headerFilter: { allowSearch: true },
                             cellTemplate: function(container, options) {
-                                const extraMinusTime = calculateExtraMinus(options.data.total_time);
+                                const extraMinusTime = calculateExtraMinus(options.data.total_time, options.data.vacation_type);
                                 $(container).text(extraMinusTime);
                             }
                         },
@@ -776,7 +780,7 @@
                         {
                             caption: "Actions",
                             cellTemplate: function(container, options) {
-                                const editLink = `<a href="${options.data.editUrl}" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
+                                const editLink = `<a href="${options.data.editUrl}" target="_blank" rel="noopener noreferrer" style="color: #0d6efd; text-decoration: underline; margin-right: 10px;">Edit</a>`;
                                 const deleteLink = `<a href="#" style="color: #dc3545; text-decoration: underline;" onclick="deleteItem('${options.data.deleteUrl}', '{{ csrf_token() }}')">Delete</a>`;
                                 $(container).append(editLink + deleteLink);
                             },
@@ -805,7 +809,7 @@
                                 e.rowElement.addClass('sickleave');
                             } else if (vacationType === 'unpaid') {
                                 e.rowElement.addClass('unpaid');
-                            }
+                            } 
                         }
                     },
                     paging: { pageSize: 30 },
@@ -925,6 +929,7 @@
                         clock_out: $('#bulk_clock_out').val(),
                         vacation_type: $('#bulk_vacation_type').val(),
                         reason: $('#bulk_reason').val(),
+                        clear_reason: $('#bulk_clear_reason').is(':checked') ? 1 : 0,
                         _token: '{{ csrf_token() }}'
                     };
                     
@@ -1005,8 +1010,8 @@ function formatTotalTime(timeString) {
     
     return timeString;
 }
-// Function to calculate extra/minus time compared to 9 hours
-function calculateExtraMinus(totalTimeString) {
+// Function to calculate extra/minus time compared to 9 hours (or 4.5 for half-day)
+function calculateExtraMinus(totalTimeString, vacationType) {
     if (!totalTimeString || totalTimeString === '') return '';
     
     // Parse total time string (format: "hh:mm:ss" or "hh:mm")
@@ -1020,8 +1025,11 @@ function calculateExtraMinus(totalTimeString) {
     // Convert total time to minutes
     const totalMinutes = (hours * 60) + minutes + (seconds / 60);
     
-    // 9 hours in minutes
-    const standardMinutes = 9 * 60;
+    // Determine standard minutes based on vacation type
+    let standardMinutes = 9 * 60; // Default 9 hours
+    if (vacationType && vacationType.toLowerCase() === 'half day vacation') {
+        standardMinutes = 4.5 * 60; // 4.5 hours for half-day
+    }
     
     // Calculate difference
     const diffMinutes = totalMinutes - standardMinutes;

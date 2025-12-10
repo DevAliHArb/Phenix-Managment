@@ -100,6 +100,7 @@
                         $unpaidArr = isset($sheet['unpaid']) ? $sheet['unpaid'] : [];
                         $halfdayArr = isset($sheet['halfday']) ? $sheet['halfday'] : [];
                         $offdaysArr = isset($sheet['offdays']) ? $sheet['offdays'] : [];
+                        $isHalfDay = in_array($dateStr, $halfdayArr);
                         $vacationType = null;
                         $reason = '';
                         $rowClass = '';
@@ -125,8 +126,8 @@
                             $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                             $rowClass = 'unpaid';
                         } elseif (in_array($dateStr, $halfdayArr)) {
-                            $status = 'Half Day';
-                            $vacationType = 'Half Day';
+                            $status = 'Half Day Vacation';
+                            $vacationType = 'Half Day Vacation';
                             $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                             $rowClass = 'halfday';
                         } elseif ($isWeekend) {
@@ -146,13 +147,14 @@
                             $rowClass = '';
                         }
                         // If dayoff, extra is 0
-                        if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout']))) {
+                        $expectedHours = $isHalfDay ? 4.5 : 9;
+                        if ((!empty($row['dayoff']) && !$isHalfDay) || (empty($row['timein']) && empty($row['timeout']))) {
                             $extra = 0;
                         } else {
-                            $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
+                            $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;
                         }
-                        // Format extra as +H:MM or -H:MM, but keep empty for off days
-                        if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout'])) || $rowClass === 'unknown') {
+                        // Format extra as +H:MM or -H:MM, but keep empty for off days (except half-day)
+                        if ((!empty($row['dayoff']) && !$isHalfDay) || (empty($row['timein']) && empty($row['timeout'])) || $rowClass === 'unknown') {
                             $extraFormatted = '';
                         } else {
                             $extraSign = $extra >= 0 ? '+' : '-';
@@ -220,7 +222,10 @@
                     return empty($row['is_weekend']);
                 })->count();
                 $leaveDays = $vacationOffTotal; // If you want to separate leave/vacation, adjust here
-                $timeRequired = $attendanceTotal * $dailyHoursRequired;
+                $timeRequiredHours = $attendanceTotal * $dailyHoursRequired;
+                $timeRequiredHoursInt = floor($timeRequiredHours);
+                $timeRequiredMinutes = round(($timeRequiredHours - $timeRequiredHoursInt) * 60);
+                $timeRequiredFormatted = sprintf('%d:%02d', $timeRequiredHoursInt, $timeRequiredMinutes);
 
                 $extraTimeFormatted = 0;
                 $totalLoggedTime = sumTimes(collect($sheet['timesheet'])->pluck('totalhours_raw') ?? []);
@@ -235,10 +240,13 @@
                 // Calculate total extra-minus time (sum of all daily $extra values)
                 $totalExtraMinutes = 0;
                 foreach ($sheet['timesheet'] as $row) {
-                    if (!empty($row['dayoff'])) {
+                    $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
+                    $isHalfDay = $date && in_array($date, $sheet['halfday'] ?? []);
+                    $expectedHours = $isHalfDay ? 4.5 : 9;
+                    if (!empty($row['dayoff']) && !$isHalfDay) {
                         $extra = 0;
                     } else {
-                        $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
+                        $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;
                     }
                     $totalExtraMinutes += (int)round($extra * 60);
                 }
@@ -268,7 +276,7 @@
                             {{ $sheet['attendanceRequired'] }}<br>
                             {{ $dailyHoursRequired }}<br>
                             {{ $extraTimeFormatted }}<br>
-                            {{ sprintf('%d:00', $timeRequired) }}<br>
+                            {{ $timeRequiredFormatted }}<br>
                         </td>
                         <td style="width:20%; text-align:left; font-weight:bold; border:none;row-gap: 10px;">
                             Attendance Total<br>

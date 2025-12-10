@@ -30,14 +30,20 @@
         @csrf
         <div class="formContainer">
             <div class="mb-3">
-                <label for="employee_id" class="form-label">Employee</label>
-                <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" required>
-                    <option value="">Select Employee</option>
+                <label for="employee_ids" class="form-label">Employees (multi-select)</label>
+                @php
+                    $selectedEmployees = old('employee_ids', []);
+                    if (!is_array($selectedEmployees)) {
+                        $selectedEmployees = [$selectedEmployees];
+                    }
+                @endphp
+                <select name="employee_ids[]" id="employee_ids" multiple class="form-control @error('employee_ids') is-invalid @enderror" required>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}</option>
+                        <option value="{{ $employee->id }}" {{ in_array($employee->id, $selectedEmployees) ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}</option>
                     @endforeach
                 </select>
-                @error('employee_id')
+                <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select more than one.</small>
+                @error('employee_ids')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
@@ -80,6 +86,7 @@
                     <option value="Holiday" {{ old('vacation_type') == 'Holiday' ? 'selected' : '' }}>Holiday</option>
                     <option value="Sick Leave" {{ old('vacation_type') == 'Sick Leave' ? 'selected' : '' }}>Sick Leave</option>
                     <option value="Unpaid" {{ old('vacation_type') == 'Unpaid' ? 'selected' : '' }}>Unpaid</option>
+                    <option value="Half Day Vacation" {{ old('vacation_type') == 'Half Day Vacation' ? 'selected' : '' }}>Half Day Vacation</option>
                 </select>
                 @error('vacation_type')
                     <div class="invalid-feedback">{{ $message }}</div>

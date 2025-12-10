@@ -122,7 +122,7 @@ class EmployeeTimeImport implements ToCollection
                         if ($employeeVacation) {
                             $offDay = true;
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day' : 'Attended'));
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }
                     }
                     
@@ -201,7 +201,7 @@ class EmployeeTimeImport implements ToCollection
                         if ($employeeVacation) {
                             $offDay = true;
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day' : 'Attended'));
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }
                     }
                     // Skip if employee not found
@@ -420,7 +420,7 @@ class EmployeeTimeImport implements ToCollection
                         if ($employeeVacation) {
                             $offDay = true;
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day' : 'Attended'));
+                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }
                     }
                 }

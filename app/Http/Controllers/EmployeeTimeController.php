@@ -363,24 +363,42 @@ class EmployeeTimeController extends Controller
     {
         try {
             $validated = $request->validate([
-                'employee_id' => 'required|exists:employees,id',
+                'employee_ids' => 'required_without:employee_id|array|min:1',
+                'employee_ids.*' => 'exists:employees,id',
+                'employee_id' => 'required_without:employee_ids|exists:employees,id',
                 'date' => 'required|date',
                 'clock_in' => 'nullable',
                 'clock_out' => 'nullable',
                 'total_time' => 'nullable',
                 'off_day' => 'nullable|boolean',
                 'reason' => 'nullable|string',
+                'reason_select' => 'nullable|string',
                 'vacation_type' => 'nullable|string',
             ]);
 
+            // Normalize to an array so we can create one record per employee when multiple are selected
+            $employeeIds = $validated['employee_ids'] ?? [$validated['employee_id']];
+
+            // Build the shared payload once (reason_select overrides the free-text reason when present)
+            $reason = $validated['reason_select'] ?? ($validated['reason'] ?? null);
+            $baseData = [
+                'date' => $validated['date'],
+                'clock_in' => $validated['clock_in'] ?? null,
+                'clock_out' => $validated['clock_out'] ?? null,
+                'total_time' => $validated['total_time'] ?? null,
+                'vacation_type' => $validated['vacation_type'] ?? null,
+                'reason' => $reason,
+            ];
+
             // Set off_day to true if vacation_type is Off, Vacation, Holiday, or Sick Leave
             $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave'];
-            if (in_array($validated['vacation_type'] ?? null, $offDayTypes)) {
-                $validated['off_day'] = true;
-            } else {
-                $validated['off_day'] = $request->has('off_day');
+            $baseData['off_day'] = in_array($baseData['vacation_type'], $offDayTypes)
+                ? true
+                : $request->boolean('off_day');
+
+            foreach ($employeeIds as $employeeId) {
+                EmployeeTime::create($baseData + ['employee_id' => $employeeId]);
             }
-            EmployeeTime::create($validated);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => route('employee_times.index')]);
             }
@@ -585,7 +603,9 @@ class EmployeeTimeController extends Controller
                             $updateData['off_day'] = false;
                         }
                     }
-                    if ($request->filled('reason')) {
+                    if ($request->boolean('clear_reason')) {
+                        $updateData['reason'] = '';
+                    } elseif ($request->filled('reason')) {
                         $updateData['reason'] = $request->input('reason');
                     }
                     
@@ -608,7 +628,9 @@ class EmployeeTimeController extends Controller
                         $updateData['off_day'] = false;
                     }
                 }
-                if ($request->filled('reason')) {
+                if ($request->boolean('clear_reason')) {
+                    $updateData['reason'] = '';
+                } elseif ($request->filled('reason')) {
                     $updateData['reason'] = $request->input('reason');
                 }
 

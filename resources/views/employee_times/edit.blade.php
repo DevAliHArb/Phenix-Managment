@@ -79,6 +79,7 @@
                     <option value="Holiday" {{ $employeeTime->vacation_type == 'Holiday' ? 'selected' : '' }}>Holiday</option>
                     <option value="Sick Leave" {{ $employeeTime->vacation_type == 'Sick Leave' ? 'selected' : '' }}>Sick Leave</option>
                     <option value="Unpaid" {{ $employeeTime->vacation_type == 'Unpaid' ? 'selected' : '' }}>Unpaid</option>
+                    <option value="Half Day Vacation" {{ $employeeTime->vacation_type == 'Half Day Vacation' ? 'selected' : '' }}>Half Day Vacation</option>
                 </select>
                 @error('vacation_type')
                     <div class="invalid-feedback">{{ $message }}</div>
