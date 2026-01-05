@@ -48,7 +48,7 @@
                             </option>
                         @endforeach
                     @else
-                        @foreach(App\Models\Employee::all() as $employee)
+                        @foreach(App\Models\Employee::where('status', 'active')->get() as $employee)
                             <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}</option>
                         @endforeach
                     @endif

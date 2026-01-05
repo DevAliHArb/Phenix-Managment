@@ -20,7 +20,7 @@ class EmployeeVacationController extends Controller
      */
     public function create(Request $request)
     {
-        $employees = \App\Models\Employee::all();
+        $employees = \App\Models\Employee::where('status', 'active')->get();
         $types = \App\Models\Lookup::where('parent_id', 30)->get();
         $selectedEmployeeId = $request->get('employee_id');
         $lockEmployee = $request->get('lock_employee', false);
@@ -41,6 +41,19 @@ class EmployeeVacationController extends Controller
                 'lookup_type_id' => 'required|exists:lookup,id',
                 'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png',
             ]);
+
+            // Prevent duplicate vacation on the same date for the same employee
+            $duplicate = \App\Models\EmployeeVacation::where('employee_id', $validated['employee_id'])
+                ->whereDate('date', $validated['date'])
+                ->first();
+
+            if ($duplicate) {
+                $message = 'A vacation already exists for this employee on the selected date.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'errors' => [$message]], 422);
+                }
+                return back()->withInput()->withErrors(['date' => $message]);
+            }
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
                 $fileContents = file_get_contents($file->getRealPath());
@@ -148,6 +161,20 @@ class EmployeeVacationController extends Controller
                 'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png',
             ]);
             $model = \App\Models\EmployeeVacation::findOrFail($id);
+
+            // Prevent duplicate vacation on the same date for the same employee (exclude current record)
+            $duplicate = \App\Models\EmployeeVacation::where('employee_id', $validated['employee_id'])
+                ->whereDate('date', $validated['date'])
+                ->where('id', '!=', $model->id)
+                ->first();
+
+            if ($duplicate) {
+                $message = 'A vacation already exists for this employee on the selected date.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'errors' => [$message]], 422);
+                }
+                return back()->withInput()->withErrors(['date' => $message]);
+            }
             // Revert old date: set off_day = false, reason = null, vacation_type = null
             $oldEmployeeTime = \App\Models\EmployeeTime::where('employee_id', $model->employee_id)
                 ->where('date', $model->date)

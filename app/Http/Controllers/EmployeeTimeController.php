@@ -343,7 +343,7 @@ class EmployeeTimeController extends Controller
     public function index()
     {
         $employeeTimes = EmployeeTime::with('employee')->get();
-        $employees = Employee::all();
+        $employees = Employee::where('status', 'active')->get();
         return view('employee_times.index', compact('employeeTimes', 'employees'));
     }
 
@@ -355,7 +355,7 @@ class EmployeeTimeController extends Controller
 
     public function create()
     {
-        $employees = Employee::all();
+        $employees = Employee::where('status', 'active')->get();
         $vacationDates = VacationDate::orderBy('date')->get();
         return view('employee_times.create', compact('employees', 'vacationDates'));
     }

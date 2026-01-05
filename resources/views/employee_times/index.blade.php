@@ -9,6 +9,19 @@
         .holiday { background: #e6ffe6 !important; }
         .unpaid { background: #bcd6bc !important; }
         .halfday { background: #fff4cc !important; }
+        
+        #pdfPreviewContainer {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: #525659;
+        }
+        
+        #pdfPreviewContainer canvas {
+            display: block;
+            margin: 10px auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
     </style>
 @endsection
 
@@ -152,7 +165,7 @@
                                         <label for="selectAllEmployees" style="font-weight: bold;">Select All</label>
                                     </div>
                                     <hr style="margin: 8px 0;">
-                                    @foreach(\App\Models\Employee::all() as $emp)
+                                    @foreach($employees as $emp)
                                         <div class="form-check">
                                             <input class="form-check-input employee-checkbox" type="checkbox" value="{{ $emp->id }}" id="emp_{{ $emp->id }}" checked>
                                             <label class="form-check-label" for="emp_{{ $emp->id }}">
@@ -168,6 +181,35 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" id="confirmExportAllBtn" class="btn btn-success">Export</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Preview Modal -->
+        <div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-labelledby="pdfPreviewModalLabel" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="pdfPreviewModalLabel">PDF Preview</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: 0; height: calc(100vh - 120px); overflow: hidden;">
+                        <div id="pdfPreviewLoading" style="display: flex; justify-content: center; align-items: center; height: 100%; background: #525659;">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-3 text-white">Loading preview...</p>
+                            </div>
+                        </div>
+                        <div id="pdfPreviewContainer" style="display: none;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" id="downloadPdfBtn" class="btn btn-success">
+                            <i class="fas fa-download"></i> Download
+                        </button>
                     </div>
                 </div>
             </div>
@@ -336,6 +378,14 @@
         </div>
 
         <div id="employeeTimesGrid"></div>
+        
+        <!-- Load PDF.js library -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <script>
+            // Configure PDF.js worker
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        </script>
+        
         @push('scripts')
         <script>
             // Import form logic
@@ -525,21 +575,10 @@
                         const yearsText = yearCount === 1 ? years[0] : years.join('_');
                         const fileName = `combined_timesheets_${employeeCount}_employees_${monthsText}_${yearsText}.pdf`;
                         
-                        // Download the combined PDF
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
+                        // Show preview modal
+                        showPdfPreview(blob, fileName);
                         
-                        // Clean up
-                        setTimeout(() => {
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-                        }, 100);
-                        
-                        console.log(`Successfully exported ${employeeCount} employees for ${monthCount} months and ${yearCount} years in one PDF`);
+                        console.log(`Successfully loaded preview for ${employeeCount} employees for ${monthCount} months and ${yearCount} years`);
                         
                     })
                     .catch((error) => {
@@ -552,6 +591,83 @@
                         const modal = bootstrap.Modal.getInstance(document.getElementById('exportAllModal'));
                         if(modal) modal.hide();
                     });
+                }
+                
+                // Function to show PDF preview in modal
+                async function showPdfPreview(blob, fileName) {
+                    const url = window.URL.createObjectURL(blob);
+                    const container = document.getElementById('pdfPreviewContainer');
+                    const loadingDiv = document.getElementById('pdfPreviewLoading');
+                    const downloadBtn = document.getElementById('downloadPdfBtn');
+                    
+                    // Clear previous content
+                    container.innerHTML = '';
+                    
+                    // Show preview modal
+                    const previewModal = new bootstrap.Modal(document.getElementById('pdfPreviewModal'));
+                    previewModal.show();
+                    
+                    // Show loading
+                    loadingDiv.style.display = 'flex';
+                    container.style.display = 'none';
+                    
+                    try {
+                        // Load PDF document
+                        const pdf = await pdfjsLib.getDocument(url).promise;
+                        
+                        // Render all pages
+                        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                            const page = await pdf.getPage(pageNum);
+                            
+                            // Calculate scale to fit width
+                            const viewport = page.getViewport({ scale: 1 });
+                            const containerWidth = container.clientWidth || 800;
+                            const scale = (containerWidth * 0.95) / viewport.width;
+                            const scaledViewport = page.getViewport({ scale: scale });
+                            
+                            // Create canvas for this page
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.height = scaledViewport.height;
+                            canvas.width = scaledViewport.width;
+                            
+                            // Render page
+                            await page.render({
+                                canvasContext: context,
+                                viewport: scaledViewport
+                            }).promise;
+                            
+                            // Add canvas to container
+                            container.appendChild(canvas);
+                        }
+                        
+                        // Hide loading, show container
+                        loadingDiv.style.display = 'none';
+                        container.style.display = 'block';
+                        
+                    } catch (error) {
+                        console.error('Error loading PDF:', error);
+                        loadingDiv.innerHTML = '<div class="text-center text-white"><p>Error loading PDF preview</p><p class="small">' + error.message + '</p></div>';
+                    }
+                    
+                    // Setup download button
+                    downloadBtn.onclick = function() {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    
+                    // Clean up when modal closes
+                    document.getElementById('pdfPreviewModal').addEventListener('hidden.bs.modal', function() {
+                        window.URL.revokeObjectURL(url);
+                        container.innerHTML = '';
+                        loadingDiv.style.display = 'flex';
+                        loadingDiv.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"><span class="visually-hidden">Loading...</span></div><p class="mt-3 text-white">Loading preview...</p></div>';
+                        container.style.display = 'none';
+                    }, { once: true });
                 }
                 
                 // Function to export each employee as a separate PDF
