@@ -282,4 +282,72 @@ class EmployeeController extends Controller
         $employee->delete();
         return redirect()->route('employees.index')->with('success', 'Employee deleted successfully');
     }
+
+    /**
+     * Sync vacations for all employees based on their start date
+     * Adds 1.25 days to total and left vacations for each month elapsed
+     * Only applies if employee has been working for at least 3 months
+     */
+    public function syncVacations(Request $request)
+    {
+        try {
+            $employees = Employee::all();
+            $syncCount = 0;
+            $now = \Carbon\Carbon::now();
+
+            foreach ($employees as $employee) {
+                // Skip if no start date
+                if (!$employee->start_date) {
+                    continue;
+                }
+
+                $startDate = \Carbon\Carbon::parse($employee->start_date);
+                $lastSyncDate = $employee->last_synced_date 
+                    ? \Carbon\Carbon::parse($employee->last_synced_date) 
+                    : $startDate;
+
+                // Calculate months employed (from start_date to today)
+                $monthsEmployed = $startDate->diffInMonths($now);
+
+                // Only process if employee has been employed for at least 3 months
+                if ($monthsEmployed < 3) {
+                    continue;
+                }
+
+                // Count the number of first days of the month between last sync and now
+                $currentMonth = $lastSyncDate->copy()->startOfMonth()->addMonth();
+                $monthsSinceSync = 0;
+                
+                while ($currentMonth <= $now) {
+                    $monthsSinceSync++;
+                    $currentMonth->addMonth();
+                }
+                
+                logger()->info("Employee ID {$employee->id}: Months since last sync: {$monthsSinceSync}");
+                // Update vacation days based on months since last sync
+                if ($monthsSinceSync > 0) {
+                    $daysToAdd = $monthsSinceSync * 1.25;
+                    $employee->yearly_vacations_total += $daysToAdd;
+                    $employee->yearly_vacations_left += $daysToAdd;
+                    $employee->last_synced_date = $now;
+                    $employee->save();
+                    $syncCount++;
+                }
+            }
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Vacation sync completed for {$syncCount} employee(s)"
+                ]);
+            }
+
+            return redirect()->route('employees.index')->with('success', "Vacation sync completed for {$syncCount} employee(s)");
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
 }

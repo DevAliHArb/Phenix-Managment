@@ -78,40 +78,32 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const endDateInput = document.querySelector('input[name="end_date"]');
+    const updateBtn = document.getElementById('updatePositionImprovementBtn');
+    const form = document.querySelector('form');
     
-    if (endDateInput) {
+    if (endDateInput && updateBtn && form) {
         let originalEndDate = endDateInput.value;
         
-        // Handle when the end date is changed
-        endDateInput.addEventListener('change', function() {
-            // If the field is empty, ensure it's truly empty (not just whitespace)
-            if (this.value.trim() === '') {
-                this.value = '';
-                
-                // Show a confirmation if the user is clearing an existing end date
-                if (originalEndDate && originalEndDate.trim() !== '') {
-                    if (!confirm('Clearing the end date will make this position improvement active and may affect other active records for this employee. Continue?')) {
-                        this.value = originalEndDate; // Restore original value
-                        return;
-                    }
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            const currentEndDate = endDateInput.value.trim();
+            
+            // Check if end date was cleared
+            if (originalEndDate && originalEndDate.trim() !== '' && currentEndDate === '') {
+                e.preventDefault();
+                if (confirm('Clearing the end date will make this position improvement active and may affect other active records for this employee. Continue?')) {
+                    form.submit();
                 }
-            } else {
-                // User is adding an end date
-                if (!originalEndDate || originalEndDate.trim() === '') {
-                    // Show confirmation when adding end date to what might be an active record
-                    if (!confirm('Adding an end date will make this position improvement inactive. Continue?')) {
-                        this.value = originalEndDate; // Restore original value (which is empty)
-                        return;
-                    }
-                }
+                return;
             }
-            originalEndDate = this.value; // Update the tracked original value
-        });
-        
-        // Also handle input events for real-time clearing
-        endDateInput.addEventListener('input', function() {
-            if (this.value.trim() === '') {
-                this.value = '';
+            
+            // Check if end date was added
+            if ((!originalEndDate || originalEndDate.trim() === '') && currentEndDate !== '') {
+                e.preventDefault();
+                if (confirm('Adding an end date will make this position improvement inactive. Continue?')) {
+                    form.submit();
+                }
+                return;
             }
         });
     }

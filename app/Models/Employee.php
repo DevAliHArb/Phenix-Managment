@@ -45,9 +45,10 @@ class Employee extends Model
         'housing_type',
         'owner_name',
         'owner_mobile_number',
+        'last_synced_date',
     ];
 
-    protected $dates = ['birthdate', 'start_date', 'end_date', 'deleted_at'];
+    protected $dates = ['birthdate', 'start_date', 'end_date', 'deleted_at', 'last_synced_date'];
 
     public function position()
     {

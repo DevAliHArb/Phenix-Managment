@@ -38,6 +38,7 @@
         .unpaid { background: #bcd6bc !important; }
         .sickleave { background: #ffe6e6; }
         .holiday { background: #e6ffe6; }
+        .halfday { background: #fff4cc; }
         .page-break { page-break-before: always; }
         .sheet-container { margin-bottom: 30px; }
     </style>

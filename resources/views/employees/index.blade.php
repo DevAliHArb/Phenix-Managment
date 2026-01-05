@@ -16,6 +16,7 @@
         .sickleave { background: #ffe6e6 !important; }
         .holiday { background: #e6ffe6 !important; }
         .unpaid { background: #bcd6bc !important; }
+        .halfday { background: #fff4cc !important; }
     </style>
 @endsection
 
@@ -26,7 +27,8 @@
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 18px;">
+        <button id="sync-vacations-btn" class="btn btn-success">Sync Vacations</button>
         <a href="{{ route('employees.create') }}" class="btn btn-primary">Add Employee</a>
     </div>
 
@@ -1228,6 +1230,33 @@ $(function() {
                 detailsSection.style.display = '';
             }
         }
+    });
+
+    // Sync vacations button handler
+    $("#sync-vacations-btn").on("click", function() {
+        const $btn = $(this);
+        const originalText = $btn.text();
+        
+        $btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm me-2"></span>Syncing...');
+        
+        $.ajax({
+            url: "{{ route('employees.syncVacations') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                $btn.prop("disabled", false).text(originalText);
+                alert(response.message || "Vacation sync completed successfully!");
+                // Optionally reload the page or grid
+                location.reload();
+            },
+            error: function(xhr) {
+                $btn.prop("disabled", false).text(originalText);
+                const errorMsg = xhr.responseJSON?.error || "An error occurred while syncing vacations.";
+                alert("Error: " + errorMsg);
+            }
+        });
     });
 });
 </script>

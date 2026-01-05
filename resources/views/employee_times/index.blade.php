@@ -8,6 +8,7 @@
         .sickleave { background: #ffe6e6 !important; }
         .holiday { background: #e6ffe6 !important; }
         .unpaid { background: #bcd6bc !important; }
+        .halfday { background: #fff4cc !important; }
     </style>
 @endsection
 
@@ -258,6 +259,76 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" id="bulkEditSubmitBtn" class="btn btn-primary">Apply Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Add Modal -->
+        <div class="modal fade" id="bulkAddModal" tabindex="-1" aria-labelledby="bulkAddModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="bulkAddModalLabel">Bulk Add Punch Time</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="bulkAddForm">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Employees (Required)</label>
+                                <div style="max-height: 250px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 10px;">
+                                    <div class="mb-2">
+                                        <input type="checkbox" id="selectAllBulkAddEmployees">
+                                        <label for="selectAllBulkAddEmployees" style="font-weight: bold;">Select All</label>
+                                    </div>
+                                    <hr style="margin: 8px 0;">
+                                    @foreach($employees as $emp)
+                                        <div class="form-check">
+                                            <input class="form-check-input bulk-add-employee-checkbox" type="checkbox" name="employee_ids[]" value="{{ $emp->id }}" id="bulk_add_emp_{{ $emp->id }}">
+                                            <label class="form-check-label" for="bulk_add_emp_{{ $emp->id }}">{{ $emp->first_name }} {{ $emp->mid_name }} {{ $emp->last_name }}</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <small class="form-text text-muted">Select one or more employees</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Date (Required)</label>
+                                <input type="date" class="form-control" id="bulk_add_date" name="date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Time In</label>
+                                <input type="time" class="form-control" id="bulk_add_clock_in" name="clock_in">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Time Out</label>
+                                <input type="time" class="form-control" id="bulk_add_clock_out" name="clock_out">
+                                <small class="form-text text-muted">Total Time will be auto-calculated.</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Status (Vacation Type)</label>
+                                <select class="form-control" id="bulk_add_vacation_type" name="vacation_type">
+                                    <option value="">-- Select Status --</option>
+                                    <option value="Attended">Attended</option>
+                                    <option value="Off">Off</option>
+                                    <option value="Vacation">Vacation</option>
+                                    <option value="Sick Leave">Sick Leave</option>
+                                    <option value="Holiday">Holiday</option>
+                                    <option value="Unpaid">Unpaid</option>
+                                    <option value="Half Day Vacation">Half Day Vacation</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Reason</label>
+                                <input type="text" class="form-control" id="bulk_add_reason" name="reason">
+                            </div>
+                            <div id="bulk-add-errors" class="alert alert-danger d-none"></div>
+                            <div id="bulk-add-success" class="alert alert-success d-none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" id="bulkAddSubmitBtn" class="btn btn-primary">Add Records</button>
                         </div>
                     </form>
                 </div>
@@ -809,6 +880,8 @@
                                 e.rowElement.addClass('sickleave');
                             } else if (vacationType === 'unpaid') {
                                 e.rowElement.addClass('unpaid');
+                            } else if (vacationType === 'half day vacation') {
+                                e.rowElement.addClass('halfday');
                             } 
                         }
                     },
@@ -840,6 +913,18 @@
                     },
                     toolbar: {
                         items: [
+                            {
+                                location: 'after',
+                                widget: 'dxButton',
+                                options: {
+                                    icon: 'add',
+                                    text: 'Bulk Add',
+                                    hint: 'Add punch time for multiple employees',
+                                    onClick: function() {
+                                        $('#bulkAddModal').modal('show');
+                                    }
+                                }
+                            },
                             {
                                 location: 'after',
                                 widget: 'dxButton',
@@ -972,6 +1057,105 @@
                     $('#bulk-edit-errors').addClass('d-none');
                     $('#bulk-edit-success').addClass('d-none');
                     $('#bulkEditSubmitBtn').prop('disabled', false).text('Apply Changes');
+                });
+
+                // Bulk Add form submission
+                $('#bulkAddForm').on('submit', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const submitBtn = $('#bulkAddSubmitBtn');
+                    
+                    // Prevent double submission
+                    if (submitBtn.prop('disabled')) {
+                        return false;
+                    }
+                    
+                    // Collect selected employee IDs from checkboxes
+                    const selectedEmployeeIds = [];
+                    $('.bulk-add-employee-checkbox:checked').each(function() {
+                        selectedEmployeeIds.push($(this).val());
+                    });
+                    
+                    // Validate at least one employee is selected
+                    if (selectedEmployeeIds.length === 0) {
+                        const errorsDiv = $('#bulk-add-errors');
+                        errorsDiv.text('Please select at least one employee.');
+                        errorsDiv.removeClass('d-none');
+                        return false;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('date', $('#bulk_add_date').val());
+                    formData.append('clock_in', $('#bulk_add_clock_in').val());
+                    formData.append('clock_out', $('#bulk_add_clock_out').val());
+                    formData.append('vacation_type', $('#bulk_add_vacation_type').val());
+                    formData.append('reason', $('#bulk_add_reason').val());
+                    
+                    // Add each selected employee ID
+                    selectedEmployeeIds.forEach(function(id) {
+                        formData.append('employee_ids[]', id);
+                    });
+                    
+                    const errorsDiv = $('#bulk-add-errors');
+                    const successDiv = $('#bulk-add-success');
+                    
+                    errorsDiv.addClass('d-none');
+                    successDiv.addClass('d-none');
+                    submitBtn.prop('disabled', true).text('Adding...');
+                    
+                    $.ajax({
+                        url: '{{ route('employee_times.bulk-add') }}',
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            successDiv.text(response.message || 'Records added successfully!');
+                            successDiv.removeClass('d-none');
+                            
+                            setTimeout(function() {
+                                $('#bulkAddModal').modal('hide');
+                                window.location.reload();
+                            }, 1500);
+                        },
+                        error: function(xhr) {
+                            let errorMsg = 'Failed to add records.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                errorMsg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                            }
+                            errorsDiv.text(errorMsg);
+                            errorsDiv.removeClass('d-none');
+                            submitBtn.prop('disabled', false).text('Add Records');
+                        }
+                    });
+                    
+                    return false;
+                });
+
+                // Select all employees checkbox handler for bulk add
+                $('#selectAllBulkAddEmployees').on('change', function() {
+                    $('.bulk-add-employee-checkbox').prop('checked', $(this).prop('checked'));
+                });
+
+                // Update select all checkbox based on individual checkboxes for bulk add
+                $('.bulk-add-employee-checkbox').on('change', function() {
+                    const totalCheckboxes = $('.bulk-add-employee-checkbox').length;
+                    const checkedCheckboxes = $('.bulk-add-employee-checkbox:checked').length;
+                    $('#selectAllBulkAddEmployees').prop('checked', totalCheckboxes === checkedCheckboxes);
+                });
+                
+                // Reset form when bulk add modal is closed
+                $('#bulkAddModal').on('hidden.bs.modal', function() {
+                    $('#bulkAddForm')[0].reset();
+                    $('.bulk-add-employee-checkbox').prop('checked', false);
+                    $('#selectAllBulkAddEmployees').prop('checked', false);
+                    $('#bulk-add-errors').addClass('d-none');
+                    $('#bulk-add-success').addClass('d-none');
+                    $('#bulkAddSubmitBtn').prop('disabled', false).text('Add Records');
                 });
             });
         </script>

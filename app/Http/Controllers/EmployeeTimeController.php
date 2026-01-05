@@ -343,7 +343,8 @@ class EmployeeTimeController extends Controller
     public function index()
     {
         $employeeTimes = EmployeeTime::with('employee')->get();
-        return view('employee_times.index', compact('employeeTimes'));
+        $employees = Employee::all();
+        return view('employee_times.index', compact('employeeTimes', 'employees'));
     }
 
     public function show($id)
@@ -652,4 +653,92 @@ class EmployeeTimeController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Bulk add employee time records for multiple employees
+     */
+    public function bulkAdd(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_ids' => 'required|array|min:1',
+            'employee_ids.*' => 'exists:employees,id',
+            'date' => 'required|date',
+            'clock_in' => 'nullable',
+            'clock_out' => 'nullable',
+            'vacation_type' => 'nullable|string',
+            'reason' => 'nullable|string',
+        ]);
+
+        try {
+            $employeeIds = $validated['employee_ids'];
+            $recordsCreated = 0;
+
+            // Build the shared data
+            $clockIn = $validated['clock_in'] ?? null;
+            $clockOut = $validated['clock_out'] ?? null;
+            
+            // Calculate total_time if both times are present
+            $totalTime = null;
+            if ($clockIn && $clockOut) {
+                try {
+                    $startTime = Carbon::parse($clockIn);
+                    $endTime = Carbon::parse($clockOut);
+                    
+                    // If end time is before start time, assume it's next day
+                    if ($endTime->lt($startTime)) {
+                        $endTime->addDay();
+                    }
+                    
+                    $diffInSeconds = $endTime->diffInSeconds($startTime);
+                    $hours = floor($diffInSeconds / 3600);
+                    $minutes = floor(($diffInSeconds % 3600) / 60);
+                    $seconds = $diffInSeconds % 60;
+                    
+                    $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                } catch (\Exception $e) {
+                    // If time parsing fails, leave total_time as null
+                }
+            }
+
+            // Determine off_day based on vacation_type
+            $offDay = false;
+            $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave', 'Unpaid', 'Half Day Vacation'];
+            if (isset($validated['vacation_type']) && in_array($validated['vacation_type'], $offDayTypes)) {
+                $offDay = true;
+            }
+            // Create a record for each employee
+            foreach ($employeeIds as $employeeId) {
+                // Check if a record already exists for this employee and date
+                $existingRecord = EmployeeTime::where('employee_id', $employeeId)
+                    ->where('date', $validated['date'])
+                    ->first();
+                
+                if ($existingRecord) {
+                    // Skip this employee if record already exists
+                    continue;
+                }
+                
+                EmployeeTime::create([
+                    'employee_id' => $employeeId,
+                    'date' => $validated['date'],
+                    'clock_in' => $clockIn,
+                    'clock_out' => $clockOut,
+                    'total_time' => $totalTime,
+                    'vacation_type' => $validated['vacation_type'] ?? null,
+                    'reason' => $validated['reason'] ?? null,
+                    'off_day' => $offDay,
+                ]);
+                $recordsCreated++;
+            }
+
+            return response()->json([
+                'message' => $recordsCreated . ' record(s) added successfully for ' . count($employeeIds) . ' employee(s)!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to add records: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
+
