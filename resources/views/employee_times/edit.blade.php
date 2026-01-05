@@ -71,7 +71,7 @@
             </div>
             <div class="mb-3">
                 <label for="vacation_type" class="form-label">Status</label>
-                <select name="vacation_type" class="form-control @error('vacation_type') is-invalid @enderror">
+                <select name="vacation_type" id="vacation_type" class="form-control @error('vacation_type') is-invalid @enderror" {{ $employeeTime->off_day ? '' : 'disabled' }}>
                     <option value="">Select Status</option>
                     <option value="Attended" {{ $employeeTime->vacation_type == 'Attended' ? 'selected' : '' }}>Attended</option>
                     <option value="Off" {{ $employeeTime->vacation_type == 'Off' ? 'selected' : '' }}>Off</option>
@@ -81,6 +81,9 @@
                     <option value="Unpaid" {{ $employeeTime->vacation_type == 'Unpaid' ? 'selected' : '' }}>Unpaid</option>
                     <option value="Half Day Vacation" {{ $employeeTime->vacation_type == 'Half Day Vacation' ? 'selected' : '' }}>Half Day Vacation</option>
                 </select>
+                @if(!$employeeTime->off_day)
+                    <small class="text-muted">Status can only be changed when this is an off day</small>
+                @endif
                 @error('vacation_type')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
