@@ -56,6 +56,9 @@ class EmployeeTimeController extends Controller
             return response()->json(['error' => 'No months provided'], 400);
         }
 
+            // Sort employee IDs in ascending order
+            sort($ids);
+
         $allSheets = [];
         
         // Loop through years first, then employees, then months to organize the data properly

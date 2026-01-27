@@ -120,7 +120,10 @@ class EmployeeTimeImport implements ToCollection
                             ->where('date', $dateStr)
                             ->first();
                         if ($employeeVacation) {
-                            $offDay = true;
+                            // For half-day vacation, don't set offDay to true (keep clock times)
+                            if ($employeeVacation->lookup_type_id !== 35) {
+                                $offDay = true;
+                            }
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
                             $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }
@@ -199,7 +202,10 @@ class EmployeeTimeImport implements ToCollection
                             ->where('date', $dateStr)
                             ->first();
                         if ($employeeVacation) {
-                            $offDay = true;
+                            // For half-day vacation, don't set offDay to true (keep clock times)
+                            if ($employeeVacation->lookup_type_id !== 35) {
+                                $offDay = true;
+                            }
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
                             $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }
@@ -418,7 +424,10 @@ class EmployeeTimeImport implements ToCollection
                             ->where('date', $checkDate)
                             ->first();
                         if ($employeeVacation) {
-                            $offDay = true;
+                            // For half-day vacation, don't set offDay to true (keep clock times)
+                            if ($employeeVacation->lookup_type_id !== 35) {
+                                $offDay = true;
+                            }
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
                             $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }

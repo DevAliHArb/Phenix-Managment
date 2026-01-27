@@ -55,19 +55,18 @@ class VacationDateController extends Controller
             $vacationDate = VacationDate::create($validated + ['add_to_punch_time' => $addToPunchTime]);
 
             if ($addToPunchTime) {
-                // For all employees, set off_day and reason in employee_times for this date, create if not exist
+                // For all employees, create or update EmployeeTime for this date
                 $employees = \App\Models\Employee::all();
                 foreach ($employees as $employee) {
                     $employeeTime = \App\Models\EmployeeTime::where('employee_id', $employee->id)
                         ->where('date', $validated['date'])
                         ->first();
                     if ($employeeTime) {
-                        if (!$employeeTime->off_day) {
-                            $employeeTime->off_day = true;
-                            $employeeTime->reason = $validated['name'];
-                            $employeeTime->vacation_type = 'Holiday';
-                            $employeeTime->save();
-                        }
+                        // Update existing record
+                        $employeeTime->off_day = true;
+                        $employeeTime->reason = $validated['name'];
+                        $employeeTime->vacation_type = 'Holiday';
+                        $employeeTime->save();
                     } else {
                         // Create a new EmployeeTime row for this employee and date
                         \App\Models\EmployeeTime::create([
