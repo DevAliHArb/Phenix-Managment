@@ -210,8 +210,8 @@ class EmployeeTimeImport implements ToCollection
                             $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }
                     }
-                    // Skip if employee not found
-                    if (!$employeeId) {
+                    // Skip if employee not found or if it's a half-day vacation (will be handled with actual clock times)
+                    if (!$employeeId || (isset($employeeVacation) && $employeeVacation && $employeeVacation->lookup_type_id === 35)) {
                         continue;
                     }
                     EmployeeTime::create([
@@ -419,17 +419,24 @@ class EmployeeTimeImport implements ToCollection
                         $offDay = true;
                         $reason = $vacationDate->name ?? 'vacationdate';
                         $vacationType = 'Holiday';
+                        // Set clock times to null for holidays
+                        $clockIn = null;
+                        $clockOut = null;
+                        $totalTime = null;
                     } else if ($employeeId) {
                         $employeeVacation = \App\Models\EmployeeVacation::where('employee_id', $employeeId)
                             ->where('date', $checkDate)
                             ->first();
                         if ($employeeVacation) {
-                            // For half-day vacation, don't set offDay to true (keep clock times)
-                            if ($employeeVacation->lookup_type_id !== 35) {
-                                $offDay = true;
-                            }
                             $reason = $employeeVacation->reason ?? 'Employee Vacation';
                             $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
+                            // For half-day vacation, keep the clock times; for others, set to null
+                            if ($employeeVacation->lookup_type_id !== 35) {
+                                $offDay = true;
+                                $clockIn = null;
+                                $clockOut = null;
+                                $totalTime = null;
+                            }
                         }
                     }
                 }

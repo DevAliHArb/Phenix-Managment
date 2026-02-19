@@ -179,7 +179,9 @@ class PositionImprovementController extends Controller
             if (isset($validated['employee_id'])) {
                 $employee = Employee::find($validated['employee_id']);
             }
-                $salary = Salary::where('position_improvement_id', $positionImprovement->id)->first();
+                $salary = Salary::where('position_improvement_id', $positionImprovement->id)
+                    ->where('status', true)
+                    ->first();
 
                 if ($endDateDeleted) {
                     // If end_date is deleted (set to null), make this record active
