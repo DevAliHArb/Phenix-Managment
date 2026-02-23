@@ -484,12 +484,24 @@ class EmployeeTimeImport implements ToCollection
                     }
                 }
 
-                // Skip if already exists
-                if ($employeeId && $date && EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->exists()) {
-                    continue;
-                }
                 // Skip if employee not found
                 if (!$employeeId) {
+                    continue;
+                }
+
+                // Check if record already exists
+                $existingRecord = EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->first();
+                
+                if ($existingRecord) {
+                    // If it's a vacation type record, update it with new clock in/out values
+                    if ($existingRecord->vacation_type && in_array($existingRecord->vacation_type, ['Half day vacation'])) {
+                        $existingRecord->update([
+                            'clock_in' => $clockIn,
+                            'clock_out' => $clockOut,
+                            'total_time' => $totalTime,
+                        ]);
+                    }
+                    // Skip if not a vacation record (keep existing data)
                     continue;
                 }
 
