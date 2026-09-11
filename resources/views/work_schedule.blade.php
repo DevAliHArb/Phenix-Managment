@@ -34,7 +34,7 @@
                     <div class="mb-3">
                         <label for="yearly_vacations_left" class="form-label">Yearly Vacations Left</label>
                         <input type="number" class="form-control" id="yearly_vacations_left" name="yearly_vacations_left" disabled step="0.1" min="0" max="9999999999.99" pattern="^\d{1,10}(\.\d{1,2})?$">
-                    </div>
+                    </div>  
                     <button type="submit" class="btn btn-primary">Save</button>
                 </form>
             </div>
@@ -238,6 +238,12 @@ document.getElementById('vacationForm').addEventListener('submit', function(e) {
             <label for="vacation_days_per_month" class="col-sm-2 col-form-label">Vacation Days/Month</label>
             <div class="col-sm-10">
                 <input type="number" step="0.01" min="0" class="form-control" id="vacation_days_per_month" name="vacation_days_per_month" value="{{ old('vacation_days_per_month', isset($schedule) ? number_format($schedule->vacation_days_per_month ?? 0, 2, '.', '') : '0.00') }}">
+            </div>
+        </div>
+        <div class="row mb-3">
+            <label for="break_duration" class="col-sm-2 col-form-label">Break Duration (min)</label>
+            <div class="col-sm-10">
+                <input type="number" step="1" min="0" max="180" class="form-control" id="break_duration" name="break_duration" value="{{ old('break_duration', isset($schedule) ? $schedule->break_duration : 60) }}">
             </div>
         </div>
                 <button type="submit" class="btn btn-primary">Update</button>

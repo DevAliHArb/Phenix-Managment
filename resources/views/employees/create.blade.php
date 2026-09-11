@@ -269,14 +269,14 @@
         </div> --}}
         <div class="mb-3">
             <label for="working_hours_from" class="form-label">Working Hours From</label>
-            <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from', isset($workSchedule) ? $workSchedule->start_time : null) }}" required>
+            <input type="time" name="working_hours_from" class="form-control @error('working_hours_from') is-invalid @enderror" value="{{ old('working_hours_from', isset($workSchedule) ? \Carbon\Carbon::parse($workSchedule->start_time)->format("H:i") : null) }}" required>
             @error('working_hours_from')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
             <label for="working_hours_to" class="form-label">Working Hours To</label>
-            <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to', isset($workSchedule) ? $workSchedule->end_time : null) }}" required>
+            <input type="time" name="working_hours_to" class="form-control @error('working_hours_to') is-invalid @enderror" value="{{ old('working_hours_to', isset($workSchedule) ? \Carbon\Carbon::parse($workSchedule->end_time)->format("H:i") : null) }}" required>
             @error('working_hours_to')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror

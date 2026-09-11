@@ -25,6 +25,7 @@ class WorkScheduleController extends Controller
                 'late_arrival' => 'required|integer',
                 'early_leave' => 'required|integer',
                 'vacation_days_per_month' => 'nullable|numeric|min:0',
+                'break_duration' => 'integer|min:0|max:180'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

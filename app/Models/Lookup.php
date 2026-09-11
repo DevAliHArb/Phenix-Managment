@@ -13,6 +13,7 @@ class Lookup extends Model
     protected $fillable = [
         'name',
         'parent_id',
+        'code',
     ];
 
     public function employees()

@@ -26,6 +26,11 @@
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
+    @error('old_salary')
+    <div class="alert alert-danger">
+        {{ $message }}
+    </div>
+    @enderror
     <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
         <a href="{{ route('position-improvements.create') }}?return_url={{ urlencode(request()->fullUrl()) }}" class="btn btn-primary">Add Position Improvement</a>
     </div>
@@ -262,12 +267,28 @@
                             alignByColumn: true
                         },
                         {
-                            column: 'salary',
-                            summaryType: 'sum',
-                            displayFormat: 'Total Salaries: {0}',
+                            name: "activeTotalSalary",
+                            summaryType: 'custom',
+                            displayFormat: 'Total Active Salaries: {0}',
+                            showInColumn: 'salary',
                             valueFormat: 'currency'
                         }
-                    ]
+                    ],
+                    calculateCustomSummary: function(options){
+                        if (options.name === "activeTotalSalary") {
+
+                            if (options.summaryProcess === "start") {
+                                options.totalValue = 0;
+                            }
+
+                            if (options.summaryProcess === "calculate") {
+                                
+                                if (options.value.status === "Active") {
+                                    options.totalValue += Number(options.value.salary);
+                                }
+                            }
+                        }
+                    }
                 },
                 noDataText: 'No position salary records found.'
             });
