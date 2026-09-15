@@ -100,10 +100,13 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{{ route('vacation-dates.index') }}"><i class="bi bi-calendar-event"></i> <span>Vacation Dates</span></a>
                     </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{{ route('settings.index') }}"><i class="bi bi-gear-fill"></i> <span>Settings</span></a>
+                    </li>
                 </ul>
             </div>
         </nav>
-        <main id="mainContent" class="px-md-4">
+        <main id="mainContent" class="px-md-4 bg-light">
             <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 mt-2 rounded shadow-sm">
                 <div class="container-fluid">
                     <a class="navbar-brand" href="/">Phenix HR Management</a>

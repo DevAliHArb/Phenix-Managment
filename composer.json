@@ -19,6 +19,7 @@
         "laravel/telescope": "^4.17",
         "laravel/tinker": "^2.8",
         "maatwebsite/excel": "^3.1",
+        "rats/zkteco": "^002.0",
         "stripe/stripe-php": "^14.1"
     },
     "require-dev": {

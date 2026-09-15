@@ -112,14 +112,53 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-        </div>
+
+         <div class="mb-3">
+    <label class="form-label">Flagged</label>
+    <input type="hidden" name="flagged" value="0">
+    <div>
+        <input type="checkbox" name="flagged" id="flagged" value="1" {{ old('flagged') ? 'checked' : '' }} style="width: 25px; height: 25px;">
+    </div>
+    @error('flagged')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+</div>
+
+         <div class="mb-3">
+    <label for="total_leave_diff" class="form-label">Total Leave Diff</label>
+   <input type="text" name="total_leave_diff" class="form-control @error('total_leave_diff') is-invalid @enderror" value="{{ old('total_leave_diff', '00:00:00') }}">
+    @error('total_leave_diff')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+             <div class="mb-3">
+                <label for="total_break_diff" class="form-label">Total Break Diff</label>
+                <input type="text" name="total_break_diff" class="form-control @error('total_break_diff') is-invalid @enderror" value="{{ old('total_break_diff', '00:00:00') }}">
+                @error('total_break_diff')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label for="break_flag" class="form-label">Break Flag </label>
+                <select name="break_flag" id="break_flag" class="form-control @error('break_flag') is-invalid @enderror">
+                    <option value="" disabled>select Break Flag</option>
+
+                    <option value="Only In" {{ old('break_flag') == 'Only In' ? 'selected' : '' }}>Only In</option>
+                    <option value="Only Out" {{ old('break_flag') == 'Only Out' ? 'selected' : '' }}>Only Out</option>
+                    <option value="pass" {{ old('break_flag', 'pass') == 'pass' ? 'selected' : '' }}>Pass</option>
+                    <option value="No Break" {{ old('break_flag') == 'No Break' ? 'selected' : '' }}>No Break</option>
+                </select>
+                @error('break_flag')
+                <div class="invalid_feedback">{{$message }}</div>
+                @enderror
+            </div>
         <div class="formContainer" style="margin-top:30px;">
             <a href="{{ route('employee_times.index') }}" class="btn btn-secondary" style="margin-left:10px;">Back</a>
             <button type="submit" class="btn btn-primary">Add</button>
         </div>
     </form>
 </div>
-
+ </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.querySelector('input[name="date"]');
@@ -127,49 +166,70 @@ document.addEventListener('DOMContentLoaded', function() {
     const clockInInput = document.querySelector('input[name="clock_in"]');
     const clockOutInput = document.querySelector('input[name="clock_out"]');
     const totalTimeInput = document.querySelector('input[name="total_time"]');
-    
+
     // Store initial values to use as fallback
     let initialClockIn = '';
     let initialClockOut = '';
-    
+
     if (clockInInput) {
         initialClockIn = clockInInput.value || clockInInput.defaultValue || clockInInput.getAttribute('value') || '';
     }
     if (clockOutInput) {
         initialClockOut = clockOutInput.value || clockOutInput.defaultValue || clockOutInput.getAttribute('value') || '';
     }
-    
-    // Function to calculate time difference in HH:MM:SS format
+
+    // Allowed break duration in seconds (from work schedule, only when break_flag is 'pass')
+    const allowedBreakMinutes = {{ isset($workSchedule) && $workSchedule->break_duration ? (int) $workSchedule->break_duration : 60 }};
+
+    // Convert HH:MM or HH:MM:SS duration to seconds
+    function hmsToSeconds(value) {
+        if (!value) return 0;
+        const parts = String(value).trim().split(':');
+        const h = parseInt(parts[0], 10) || 0;
+        const m = parseInt(parts[1], 10) || 0;
+        const s = parseInt(parts[2], 10) || 0;
+        return h * 3600 + m * 60 + s;
+    }
+
+    // Function to calculate total time in HH:MM:SS format
     function calculateTotalTime() {
         // Get current values - use current input value first, then fall back to initial values
         let clockInValue = clockInInput.value || initialClockIn;
         let clockOutValue = clockOutInput.value || initialClockOut;
-        
+
         if (clockInValue && clockOutValue) {
             const clockIn = new Date('1970-01-01T' + clockInValue + ':00');
             const clockOut = new Date('1970-01-01T' + clockOutValue + ':00');
-            
+
             // Handle case where clock out is next day (past midnight)
             if (clockOut < clockIn) {
                 clockOut.setDate(clockOut.getDate() + 1);
             }
-            
-            const diffInMs = clockOut - clockIn;
-            const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-            
-            if (diffInMinutes >= 0) {
-                const hours = Math.floor(diffInMinutes / 60);
-                const minutes = diffInMinutes % 60;
-                const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-                totalTimeInput.value = formattedTime;
-            } else {
-                totalTimeInput.value = '00:00';
+
+            let grossSeconds = Math.floor((clockOut - clockIn) / 1000);
+
+            // Allowed break deducted only when break_flag is 'pass'
+            let allowedBreakSeconds = 0;
+            const breakFlag = document.querySelector('select[name="break_flag"]');
+            if (breakFlag && breakFlag.value === 'pass') {
+                allowedBreakSeconds = allowedBreakMinutes * 60;
             }
+
+            const breakDiffSec = hmsToSeconds(document.querySelector('input[name="total_break_diff"]')?.value);
+            const leaveDiffSec = hmsToSeconds(document.querySelector('input[name="total_leave_diff"]')?.value);
+
+            const totalSeconds = Math.max(0, grossSeconds - allowedBreakSeconds - breakDiffSec - leaveDiffSec);
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            totalTimeInput.value = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
         } else {
             totalTimeInput.value = '';
         }
     }
-    
+
     // Add event listeners for time calculation
     if (clockInInput && clockOutInput && totalTimeInput) {
         // Add multiple event listeners to ensure calculation triggers
@@ -177,22 +237,72 @@ document.addEventListener('DOMContentLoaded', function() {
         clockInInput.addEventListener('input', calculateTotalTime);
         clockOutInput.addEventListener('change', calculateTotalTime);
         clockOutInput.addEventListener('input', calculateTotalTime);
-        
+
+        // Recalculate when break/leave diff changes or break_flag changes
+        document.querySelectorAll('input[name="total_break_diff"], input[name="total_leave_diff"]').forEach(function (input) {
+            input.addEventListener('input', calculateTotalTime);
+            input.addEventListener('change', calculateTotalTime);
+            input.addEventListener('blur', calculateTotalTime);
+        });
+        const breakFlagSelect = document.querySelector('select[name="break_flag"]');
+        if (breakFlagSelect) {
+            breakFlagSelect.addEventListener('change', calculateTotalTime);
+        }
+
         // Use setTimeout to ensure DOM values are properly set
         setTimeout(function() {
-            // Calculate initial value if both times are present
             calculateTotalTime();
         }, 100);
     }
-    
+
+    // Normalize a diff value to HH:MM:SS: plain numbers become hours (3 -> 03:00:00),
+    // H:MM/H:MM:SS get zero-padded, existing HH:MM:SS stays as is.
+    function normalizeDiff(value) {
+        if (!value) return value;
+        value = value.trim();
+        if (/^\d{2}:\d{2}:\d{2}$/.test(value)) return value;
+        const parts = String(value).split(':');
+        const pad = (n) => (isNaN(n) ? '00' : String(n).padStart(2, '0'));
+        return `${pad(parseInt(parts[0], 10))}:${pad(parseInt(parts[1], 10))}:${pad(parseInt(parts[2], 10))}`;
+    }
+
+    // Ensure total_break_diff and total_leave_diff never submit empty - fall back to 00:00:00
+    const diffInputs = document.querySelectorAll('input[name="total_break_diff"], input[name="total_leave_diff"]');
+    diffInputs.forEach(function (input) {
+// Do NOT auto-format while typing - editing stays free. Only normalize when leaving the field.
+        input.addEventListener('blur', function () {
+            input.value = input.value.trim() ? normalizeDiff(input.value) : '00:00:00';
+            calculateTotalTime();
+        });
+        input.addEventListener('change', function () {
+            input.value = input.value.trim() ? normalizeDiff(input.value) : '00:00:00';
+            calculateTotalTime();
+        });
+        // On leaving the field, pad each part to 2 digits and never allow empty.
+        input.addEventListener('blur', function () {
+            input.value = input.value.trim() ? normalizeDiff(input.value) : '00:00:00';
+            calculateTotalTime();
+        });
+    });
+    const createForm = document.querySelector('form');
+    if (createForm) {
+        createForm.addEventListener('submit', function () {
+            diffInputs.forEach(function (input) {
+                if (!input.value.trim()) {
+                    input.value = '00:00:00';
+                }
+            });
+        });
+    }
+
     // Reason field handling
     const reasonInput = document.getElementById('reason-input');
     const reasonSelect = document.getElementById('reason-select');
-    
+
     function handleVacationTypeChange() {
         const selectedType = vacationTypeSelect.value;
         const currentReason = reasonInput.value;
-        
+
         if (selectedType === 'Off') {
             // Show text input, make it readonly with value "Weekend"
             reasonInput.style.display = 'block';
@@ -212,7 +322,22 @@ document.addEventListener('DOMContentLoaded', function() {
             reasonInput.name = 'reason_temp'; // Change input name so it doesn't submit
             reasonSelect.setAttribute('required', 'required');
             reasonInput.removeAttribute('required');
-        } else {
+
+        }
+        else if (selectedType ==='Attended'){
+        // Show text input, make it readonly with value "Weekend"
+            reasonInput.style.display = 'block';
+            reasonSelect.style.display = 'none';
+            reasonInput.value = '';
+            reasonInput.readOnly = true;
+            reasonInput.classList.add('form-control[readonly]');
+            reasonInput.name = 'reason'; // Ensure input name is correct
+            reasonSelect.name = 'reason_select'; // Change dropdown name so it doesn't submit
+            reasonSelect.removeAttribute('required');
+            reasonInput.removeAttribute('required');
+
+        }
+        else {
             // Show normal text input
             reasonInput.style.display = 'block';
             reasonSelect.style.display = 'none';
@@ -222,21 +347,21 @@ document.addEventListener('DOMContentLoaded', function() {
             reasonSelect.name = 'reason_select'; // Change dropdown name so it doesn't submit
             reasonSelect.removeAttribute('required');
             reasonInput.removeAttribute('required');
-            
+
             // Reset reason if it was "Weekend" and we're changing from "Off" to another type
             if (currentReason === 'Weekend') {
                 reasonInput.value = '';
             }
         }
     }
-    
+
     // Add event listener for vacation type changes
     if (vacationTypeSelect) {
         vacationTypeSelect.addEventListener('change', handleVacationTypeChange);
         // Initialize on page load
         handleVacationTypeChange();
     }
-    
+
     // Handle dropdown selection for holidays
     if (reasonSelect) {
         reasonSelect.addEventListener('change', function() {
@@ -249,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dateInput.addEventListener('change', function() {
             const selectedDate = new Date(this.value);
             const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
-            
+
             // If it's Saturday (6) or Sunday (0), set vacation type to "Off"
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 vacationTypeSelect.value = 'Off';

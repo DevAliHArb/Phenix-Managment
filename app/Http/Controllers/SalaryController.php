@@ -7,9 +7,24 @@ use Illuminate\Http\Request;
 
 class SalaryController extends Controller
 {
-    public function edit($id)
+    public function edit(Request $request , $id)
     {
-        $item = Salary::findOrFail($id);
+        $item = Salary::with('positionImprovement.employee')->findOrFail($id);
+        if($item){
+            $employee = $item->positionImprovement->employee;
+            $latestSalary = Salary::whereHas('positionImprovement', function ($query) use ($employee) {
+                                            $query->where('employee_id', $employee->id);
+                                            })->orderBy('start_date','desc')->first();
+            
+            if($latestSalary->id != $id){
+                
+               $errorMessage = 'Old Salaries are not modifiable.';
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'errors' => [$errorMessage]], 422); 
+                    }
+                    return back()->withErrors(['old_salary' => $errorMessage]);
+            }
+        }
         return view('salary.edit', compact('item'));
     }
     public function create(Request $request)
@@ -122,6 +137,25 @@ class SalaryController extends Controller
             
             $model = Salary::findOrFail($id);
             
+
+            //todo continue this
+            if($model){
+                $employee = $model->positionImprovement->employee;
+                $latestSalary = Salary::whereHas('positionImprovement', function ($query) use ($employee) {
+                                                $query->where('employee_id', $employee->id);
+                                                })->orderBy('start_date','desc')->first();
+                                                
+                //todo
+                if($latestSalary->id != $id){
+                    
+                $errorMessage = 'Old Salaries are not modifiable.';
+                        if ($request->ajax()) {
+                            return response()->json(['success' => false, 'errors' => [$errorMessage]], 422); //check the code, maybe incompatible
+                        }
+                        return back()->withErrors(['old_salary' => $errorMessage]);
+                }
+            }
+
             // Check for same or earlier date validation (excluding current record)
             $lastSalary = Salary::where('position_improvement_id', $validated['position_improvement_id'])
                 ->where('id', '!=', $id) // Exclude current record

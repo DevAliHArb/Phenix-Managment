@@ -116,3 +116,12 @@ img[alt="Image"] {
     grid-template-columns: 48% 48%;
     justify-content: space-between;
 }
+
+.arrow-box .arrow { 
+    transition: transform 0.3s ease; 
+}
+
+
+.arrow-box[aria-expanded="true"] .arrow{
+    transform: rotate(180deg);
+}

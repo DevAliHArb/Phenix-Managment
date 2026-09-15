@@ -110,6 +110,9 @@ class PositionImprovementController extends Controller
             if ($employee) {
                 $employee->status = 'active';
                 $employee->end_date = null;
+                $employee->position_id = $validated['position_id'];
+                if(!$employee->start_date)
+                    $employee->start_date = $validated['start_date'];
                 $employee->save();
             }
 

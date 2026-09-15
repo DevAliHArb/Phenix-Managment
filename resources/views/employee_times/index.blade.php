@@ -9,7 +9,8 @@
         .holiday { background: #e6ffe6 !important; }
         .unpaid { background: #bcd6bc !important; }
         .halfday { background: #fff4cc !important; }
-        
+        .flagged { background: #ff9d9d !important; }
+        .calc-card-resolved { background-color: rgba(25, 135, 84, 0.15) !important; }
         #pdfPreviewContainer {
             width: 100%;
             height: 100%;
@@ -33,13 +34,18 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 18px; gap: 10px;">
+                        <!-- Sync Button -->
+                        <button type="button" class="btn btn-primary" id="syncBtn">Sync</button>
+                        <!-- Sync Button -->
+                        <button type="button" class="btn btn-primary" id="calculateBtn">Calculate</button>
                         <!-- Import Button triggers modal -->
                         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
                         <!-- Export All Button triggers modal -->
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportAllModal">Export All</button>
+                        
                         <a href="{{ route('employee_times.create') }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Add Punch Time</a>
                 </div>
-
+    </div>
         <!-- Export All Modal -->
         <div class="modal fade" id="exportAllModal" tabindex="-1" aria-labelledby="exportAllModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
@@ -214,7 +220,6 @@
                 </div>
             </div>
         </div>
-        </div>
         <!-- Import Modal -->
         <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -377,6 +382,73 @@
             </div>
         </div>
 
+        <!-- Sync Modal -->
+        <div class="modal fade" id="syncModal" tabindex="-1" aria-labelledby="syncModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" id="syncModalDialog">
+                <div class="modal-content">
+                    <div class="modal-header justify-content-between">
+                        <h5 class="modal-title" id="bulkAddModalLabel">Sync Machine Records</h5>
+                        <div class="d-flex justify-content-between gap-2 align-items-center">
+                            <div id="syncModalHeaderMessage"></div>
+                            <button type="button" id="syncModalCloseBtn" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <div id="syncModalMessage"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="SyncModalPrimaryButton" class="btn btn-primary">Yes</button>
+                        <button type="button" id="SyncModalSecondaryButton" class="btn btn-secondary">No</button>
+                        <button type="button" id="SyncModalTertiaryButton" class="btn btn-secondary">No</button>                    
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculate Modal -->
+        <div class="modal fade" id="calculateModal" tabindex="-1" aria-labelledby="calculateModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" id="calculateModalDialog">
+                <div class="modal-content">
+                    <div class="modal-header justify-content-between">
+                        <h5 class="modal-title" id="bulkAddModalLabel">Calculate Attendance</h5>
+                        <button type="button" id="calculateModalCloseBtn" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> 
+                    </div>
+                        <div class="modal-body">
+                            <div class="calculateModalPage" id="calculateModalSuccess">
+                                <div class="calculateModalMessage"></div>
+                            </div>
+                            <div class="calculateModalPage" id="calculateModalFlagged">
+                                <div class="calculateModalMessage"></div>
+                            </div>
+                            <div class="calculateModalPage" id="calculateModalConfirm">
+                                <div class="calculateModalMessage"></div>
+                            </div>
+                            <div class="calculateModalPage" id="calculateModalError">
+        
+                            </div>
+                            <div class="calculateModalPage d-none" id="calculateModalProgress">
+                                <div class="d-flex gap-2 flex-column mb-2">
+                                    <label for="calc-import-log">Logs:</label>
+                                    <textarea class="w-100 rounded border border-secondary-subtle" id="calc-import-log" name="calc-import-log" style="height: 300px; font-size: 0.8rem;">
+                                    </textarea>
+                                </div>
+                                <label for="calc-import-progress">Import progress:</label><br>
+                                <div class="d-flex w-100  align-items-center">
+                                    <progress class="progress-bar bg-info flex-grow-1" id="calc-import-progress" value="0" max="100"></progress>
+                                    <span class="m-2" id="calc-import-progress-label">0%</span>
+                                </div>
+                            </div>
+
+                        </div>
+                            <div class="modal-footer">
+                                <button type="button" id="calculateModalPrimaryButton" class="btn btn-primary">Yes</button>
+                                <button type="button" id="calculateModalSecondaryButton" class="btn btn-secondary">No</button>
+                                <button type="button" id="calculateModalTertiaryButton" class="btn btn-secondary">No</button>                    
+                            </div>
+                </div>
+            </div>
+        </div>
+
         <div id="employeeTimesGrid"></div>
         
         <!-- Load PDF.js library -->
@@ -390,6 +462,10 @@
         <script>
             // Import form logic
             document.addEventListener('DOMContentLoaded', function() {
+                const syncModalElement = document.getElementById('syncModal');
+                const syncModal = new bootstrap.Modal(syncModalElement);
+                const calculateModalElement = document.getElementById('calculateModal');
+                const calculateModal = new bootstrap.Modal(calculateModalElement);
                 const importForm = document.getElementById('importForm');
                 if(importForm) {
                     importForm.addEventListener('submit', function(e) {
@@ -410,9 +486,9 @@
                         importBtnSpinner.classList.remove('d-none');
                         importBtnText.textContent = 'Importing...';
                         importSubmitBtn.disabled = true;
-
+                    
                         let progressKey = null;
-                        let pollInterval = null;
+                        let pollInterval = null;          
 
                         // Use XMLHttpRequest for progress
                         const xhr = new XMLHttpRequest();
@@ -836,7 +912,1256 @@
                 $(document).on('change', '.month-checkbox', function() {
                     updateSelectAllMonthsState();
                 });
+
+                $('#syncModal').on('hide.bs.modal', function () {
+                        if (this.contains(document.activeElement)) {
+                            document.activeElement.blur();
+                        }
+                    });
+                var syncModalData = {
+                    page : null,
+                    flaggedRecords : [],
+                    invalidRecords : null,
+                    recordsAdded : null,
+                    message : null,
+                    recordsModified : null,
+                    totalRows : null,
+                    headerMessage : null,
+                    progress : null,
+                    progressMessage : null,
+                    nextPage : null,
+                    progressComplete : false
+                    };
+                var showSyncModalPage = (page) => {
+                    syncModalData.page = page;
+                    const message = $('#syncModalMessage');
+                    const primaryBtn = $('#SyncModalPrimaryButton');
+                    const secondaryBtn = $('#SyncModalSecondaryButton');
+                    const tertiaryBtn = $('#SyncModalTertiaryButton');
+                    const dialog = $('#syncModalDialog');
+                    const closeBtn = $('#syncModalCloseBtn');
+                    const headerMessage =$('#syncModalHeaderMessage')
+                    closeBtn.removeClass('d-none');
+                    
+                    
+                    
+                    if (syncModalData.page === 'flagged' ) {
+                        dialog.removeClass('modal-sm modal-lg').addClass('modal-xl');
+                    } 
+                    else if( syncModalData.page === 'normal' ){
+                        dialog.removeClass('modal-sm modal-xl').addClass('modal-lg');
+                    }
+                    else {
+                        dialog.removeClass('modal-xl modal-lg modal-sm');
+                    }
+
+                    headerMessage.html('').addClass('d-none')
+                    primaryBtn.text('Continue').addClass('bg-primary').removeClass('bg-danger').removeClass('d-none');
+                    secondaryBtn.addClass('d-none');
+                    tertiaryBtn.addClass('d-none');
+                    primaryBtn.prop("disabled", false);
+                    $("#syncModal .modal-footer").removeClass("d-none");                    
+                    
+                    if(syncModalData.page==='calculate-success'){
+                        let htmlStatement="Attendance calculated successfully !"
+                        message.html(htmlStatement)
+                        
+                        $("#syncModal .modal-footer").addClass("d-none");                    
+                    }
+
+                    if(syncModalData.page==='normal'){
+
+                        headerMessage.html(syncModalData.headerMessage).removeClass('d-none')
+                        // let htmlStatement = syncModalData.recordsAdded===0&&syncModalData.flaggedRecords.length===0&&syncModalData.invalidRecords===0 ? "All up to date , no new imports":'';
+                        htmlStatement = syncModalData.message;
+                        message.html(htmlStatement);
+                        primaryBtn.text('Ok');
+                    }
+
+                    if(syncModalData.page==='flagged'){
+                        
+
+                        const idsToFetch = syncModalData.flaggedRecords.map((element) => element.uid)
+                        const originalRecordsRequest = $.ajax({
+                            url: "{{ route('employee_times.getMachineRecordsById') }}",
+                            type: "POST",
+                            data: {
+                                idsToFetch : idsToFetch,
+                                _token: "{{ csrf_token() }}"
+                            }
+                        });
+                        const eventCodesRequest = $.ajax({
+                             url: "{{ route('employee_times.getEventCodes') }}",
+                            type: "GET",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            }  
+                        });
+
+                        $.when(originalRecordsRequest,eventCodesRequest).done(function (originalResponse, eventCodesResponse) {
+                            
+
+                            const originalRecords = originalResponse[0];
+                            const eventCodes = eventCodesResponse[0];
+
+
+    
+                            const formattedConflictRecords  = syncModalData.flaggedRecords.map((element,index)=>{
+                                const originals = originalRecords.filter(
+                                        record => record.machine_id == element.uid
+                                    );
+                                let flaggedTime = element.timestamp.split(" ")
+                                
+                                let originalCellsHtml = originals.length > 0
+                                        ? originals.map((original, i) => {
+                                            let originalTime = original.timestamp.split(" ")
+                                            return `
+                                                <div class="row g-0 text-center small align-items-center text-muted bg-danger-subtle ${i > 0 ? 'border-top' : ''}">
+                                                    <div class="col-3 py-1">${original.emp_id}</div>
+                                                    <div class="col-3 py-1">${original.event_type.name}</div>
+                                                    <div class="col-3 py-1">${originalTime[0]}</div>
+                                                    <div class="col-3 py-1">${originalTime[1]}</div>
+                                                </div>`;
+                                        }).join('')
+                                        : `<div class="small text-muted text-center">No conflicting record</div>`;
+
+                                return {
+                                        uid: element.uid,
+                                        flaggedEmpId: element.id,
+                                        flaggedEvent: eventCodes[element.type],
+                                        flaggedDate: flaggedTime[0],
+                                        flaggedClock: flaggedTime[1],
+                                        originalCellsHtml: originalCellsHtml
+                                    };  
+                            }) 
+    
+                            let htmlStatement = `<div class="align-items-center mb-3">${syncModalData.message??''}</div>`
+                            htmlStatement+= `
+                                    <div class="container-fluid">
+    
+                                        <div class="row mb-4">
+                                            <div class="col-12 alert alert-warning">
+                                                <p class="mb-0">
+                                                    Some machine records have the same id as saved records,but with newer dates.
+                                                    <b>What do you want to do?</b>
+                                                </p>
+                                            </div>
+                                        </div>
+    
+                                        <div class="row align-items-center mb-4 ">
+                                            
+                                            <div class="col-1 text-center fw-bold">
+                                                
+                                            </div>
+    
+                                            <div class="col-4 text-center fw-bold">
+                                                Flagged records
+                                            </div>
+    
+                                            <div class="col-4 text-center fw-bold">
+                                                Conflicted records
+                                            </div>
+    
+                                            <div class="col-2 text-center fw-bold">
+                                                
+                                            </div>
+                                        </div>
+
+                                        <div class="row align-items-center mb-2 pb-2 border-bottom">
+                                            
+                                            <div class="col-1 text-center fw-bold">
+                                                ID
+                                            </div>
+    
+                                            <div class="col-4">
+                                                <div class="row g-0 text-center small">
+                                                    <div class="col-3 fw-bold">Employee #</div>
+                                                    <div class="col-3 fw-bold">Event Type</div>
+                                                    <div class="col-3 fw-bold">Date</div>
+                                                    <div class="col-3 fw-bold">Time</div>
+                                                </div>
+                                            </div>
+    
+                                            <div class="col-4">
+                                                <div class="row g-0 text-center small">
+                                                    <div class="col-3 fw-bold">Employee #</div>
+                                                    <div class="col-3 fw-bold">Event Type</div>
+                                                    <div class="col-3 fw-bold">Date</div>
+                                                    <div class="col-3 fw-bold">Time</div>
+                                                </div>
+                                            </div>
+    
+                                            <div class="col-2 text-center fw-bold">
+                                                Actions
+                                            </div>
+                                        </div>`
+    
+                                     formattedConflictRecords.forEach((element,index) => {
+                                        isDuplicate=false
+                                        if(originalRecords.some(record=> record.machine_id == element.uid))
+                                            isDuplicate=true;
+
+                                          htmlStatement += `
+                                                <div class="row align-items-center py-2 mb-1 border-bottom">
+
+                                                    <div class="col-1 text-center text-success fw-bold">
+                                                        ${element.uid}
+                                                    </div>
+
+                            
+                                                    <div id="flagged-record-${element.uid}" class="col-4 px-1">
+                                                        <div class="row g-0 text-center small align-items-center bg-success-subtle">
+                                                            <div class="col-3 py-1">${element.flaggedEmpId}</div>
+                                                            <div class="col-3 py-1">${element.flaggedEvent}</div>
+                                                            <div class="col-3 py-1">${element.flaggedDate}</div>
+                                                            <div class="col-3 py-1">${element.flaggedClock}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div id="original-record-${element.uid}" class="col-4 px-1">
+                                                        ${element.originalCellsHtml}
+                                                    </div>
+                                                    <div class="col-2 d-flex  justify-content-center align-items-center">
+                                                        <button class="rounded border-0 bg-success text-light m-1 p-1 flex-grow-1"  id=submit-btn-${element.uid}>
+                                                        ${isDuplicate?'Overwrite':'Add'}</button>
+                                                        <button class="rounded border-0  bg-danger text-light m-1 p-1 flex-grow-1"  id=ignore-btn-${element.uid}>Ignore</button>
+                                                    </div>
+                                                </div>
+                                            `;});
+    
+                                        htmlStatement+=`</div>`
+    
+                                        
+                                        message.html(htmlStatement)
+                                        headerMessage.html(syncModalData.headerMessage).removeClass('d-none')
+                                        primaryBtn.text('Continue')
+                                        // tertiaryBtn.text('Reset records').removeClass('d-none')
+                                        // tertiaryBtn.prop('disabled', syncModalData.flaggedRecords.length === 0)
+
+                                        closeBtn.addClass('d-none');
+
+                                    
+
+                                        
+                        })
+                        .fail(function(xhr) {
+                                const errorMsg =
+                                    xhr.responseJSON?.error ||
+                                    "An error occurred while Fetching Attendance Records";
+
+                                syncModalData.message = errorMsg;
+                                showSyncModalPage('error');
+                            });
+                                       
+                    }
+
+                    if(syncModalData.page==='flagged-ignore'){
+                        let htmlStatement=syncModalData.message??"";
+                        htmlStatement+=`You still have some unresolved conflicts.All the flagged records will be <span class="text-danger fw-bold">ignored</span> if you continue.Do You want to proceed ?`
+                        message.html(htmlStatement)
+                        primaryBtn.text('Yes')
+                        primaryBtn.addClass('bg-danger').removeClass('bg-primary')
+                        secondaryBtn.text('Go back').removeClass('d-none')
+                        closeBtn.addClass('d-none');
+
+                    }
+
+                    if(syncModalData.page==='import-success'){
+                        let htmlStatement=syncModalData.message??"";
+                        htmlStatement+="Do you want to calculate attendance records now ?"
+                        message.html(htmlStatement)
+                        primaryBtn.text('Yes')
+                        secondaryBtn.text('Later').removeClass('d-none')
+                    }
+
+                    if(syncModalData.page==='import-progress'){
+                        closeBtn.addClass('d-none');
+                        let htmlStatement=`
+                        <div class="d-flex gap-2 flex-column mb-2">
+                        <label for="sync-import-log">Logs:</label>
+                        <textarea class="w-100 rounded border border-secondary-subtle" id="sync-import-log" name="import-log" style="height: 300px; font-size: 0.8rem;">
+                        </textarea>
+                        </div>
+                        <label for="sync-import-progress">Import progress:</label><br>
+                        <div class="d-flex w-100  align-items-center">
+                            <progress class="progress-bar bg-info flex-grow-1" id="sync-import-progress" value="0" max="100"></progress>
+                            <span class="m-2" id="sync-import-progress-label">0%</span>
+                        </div>`
+                        message.html(htmlStatement)
+                        $("#syncModal .modal-footer").addClass("d-none");                    
+
+                    }
+                    if(syncModalData.page==='error')
+                    {   
+                        let htmlStatement = `<h5>Error</h5><div class="alert alert-danger mb-0 ">${syncModalData.message}. </div>`;
+                        message.html(htmlStatement);
+                        primaryBtn.text('Ok'); 
+                        secondaryBtn.hide();
+                        tertiaryBtn.hide();             
+                    }
                 
+                }
+                // shared SSE stream reader used by the sync + calculate flows
+                const createSseReader = ({ onProgress, onError, onDone }) => {
+                    let buffer = '';
+                    let readOffset = 0;
+
+                    const processBlocks = () => {
+                        while (true) {
+                            const boundary = buffer.indexOf('\n\n');
+                            if (boundary === -1) break;
+
+                            const rawEvent = buffer.slice(0, boundary);
+                            buffer = buffer.slice(boundary + 2);
+                            if (rawEvent.trim() === '') continue;
+
+                            let eventName = 'message';
+                            let eventData = '';
+                            rawEvent.split('\n').forEach(line => {
+                                if (line.startsWith('event:')) {
+                                    eventName = line.slice(6).trim();
+                                } else if (line.startsWith('data:')) {
+                                    eventData = line.slice(5).trim();
+                                }
+                            });
+
+                            const payload = JSON.parse(eventData || '{}');
+                            if (eventName === 'progress' && onProgress) onProgress(payload);
+                            else if (eventName === 'error' && onError) onError(payload);
+                            else if (eventName === 'done' && onDone) onDone(payload);
+                        }
+                    };
+
+                    // appends only the newly-received slice and parses complete events
+                    const consume = (responseText) => {
+                        if (responseText.length > readOffset) {
+                            buffer += responseText.slice(readOffset);
+                            readOffset = responseText.length;
+                            processBlocks();
+                        }
+                    };
+
+                    return {
+                        consume,
+                        reset() { buffer = ''; readOffset = 0; }
+                    };
+                };
+
+                // ---- Sync Punch Times flow ----
+                let syncReader = null;
+                let syncFinished = false;
+
+                const finishSync = (errorMsg, response) => {
+                    if (syncFinished) return;
+                    syncFinished = true;
+
+                    const $btn = $("#syncBtn");
+                    $btn.prop("disabled", false).text($btn.data('originalText') || 'Sync Punch Times');
+                    $('#calculateBtn').prop('disabled', false);
+
+                    if (errorMsg) {
+                        syncModalData.message = errorMsg;
+                        showSyncModalPage('error');
+                        syncModal.show();
+                        return;
+                    }
+
+                    var flaggedRecords = response.flaggedRecords || [];
+                    syncModalData.flaggedRecords = flaggedRecords;
+                    syncModalData.invalidRecords = response.invalidRecords;
+                    syncModalData.recordsAdded = response.recordsAdded;
+                    syncModalData.totalRows = response.totalRows;
+                    syncModalData.oldRows = response.oldRows;
+                    syncModalData.headerMessage = response.latestRecord
+                        ? `<div class="d-flex justify-content-end">
+                              <div class="small  bg-danger  rounded p-2 text-light">
+                                <strong class="text-white me-2">Last Sync Data: ID </strong>
+                                <span class="bg-white text-danger fw-bold rounded px-2 py-1 me-2">
+                                  ${response.latestRecord.last_machine_id}
+                                </span>
+                                <strong>Date </strong>
+                                <span class="bg-white text-danger fw-bold rounded px-2 py-1 me-2">
+                                  ${response.latestRecord.last_attendance_date}
+                                </span>
+                              </div>
+                            </div>`
+                        : '';
+                    syncModalData.message = `
+                        <div class="alert alert-success mb-1">
+                            <strong>Sync complete:</strong><br>
+                            <span class="badge bg-success ">${syncModalData.oldRows}</span> rows total before insertion <br>
+                            <span class="badge bg-success ">${syncModalData.recordsAdded}</span> new record(s) imported <br>
+                            <span class="badge bg-success ">${syncModalData.invalidRecords}</span> ignored.<br>
+                           <span class="badge bg-success ">${syncModalData.totalRows}</span> rows total in database.
+                        </div>`;
+
+                    if (flaggedRecords && flaggedRecords.length > 0) {
+                        showSyncModalPage('flagged');
+                    } else {
+                        showSyncModalPage('normal');
+                    }
+                };
+
+                $("#syncBtn").on("click", function() {
+                    const $btn = $(this);
+                    const originalText = $btn.text();
+                    $btn.data('originalText', originalText);
+                    $btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm me-2"></span>Syncing...');
+                    $('#calculateBtn').prop('disabled', true);
+                    showSyncModalPage('import-progress');
+                    syncModal.show();
+
+                    syncFinished = false;
+                    syncReader = createSseReader({
+                        onProgress: function(payload) {
+                            const progress = Number(payload.progress) || 0;
+                            $('#sync-import-progress').val(progress);
+                            $('#sync-import-progress-label').text(`${progress}%`);
+                            const logEl = $('#sync-import-log');
+                            if (payload.message) {
+                                logEl.val((logEl.val() + '\n' + payload.message).trim());
+                                logEl.scrollTop(logEl[0].scrollHeight);
+                            }
+                        },
+                        onError: function(payload) {
+                            finishSync(payload.message || "An error occurred while syncing Punch Times.", null);
+                        },
+                        onDone: function(response) {
+                            finishSync(null, response);
+                        }
+                    });
+                    syncReader.reset();
+
+                    $.ajax({
+                        url: "{{ route('employee_times.importMachineRecords') }}",
+                        type: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        xhr: function() {
+                            const xhr = new XMLHttpRequest();
+                            // read the stream incrementally
+                            xhr.onreadystatechange = function() {
+                                if (xhr.readyState >= 3) {
+                                    syncReader.consume(xhr.responseText);
+                                }
+                            };
+                            return xhr;
+                        },
+                        success: function(response) {
+                            syncReader.consume(response);
+                        },
+                        error: function(xhr) {
+                            if (!syncFinished) {
+                                const errorMsg = xhr.responseJSON?.error || "An error occurred while syncing Punch Times.";
+                                finishSync(errorMsg, null);
+                            }
+                        }
+                    });
+                });
+                $("#SyncModalPrimaryButton").on('click',function(){
+
+                    if(syncModalData.page==='import-success'){
+                        // close the sync modal and hand over to the full calculate flow
+                        syncModal.hide();
+                        $('.modal-backdrop').remove();
+                        $('#calculateBtn').click();
+                    }
+                    else if(syncModalData.page==='normal'){
+                        syncModalData.message='';
+                        showSyncModalPage('import-success');
+                    }
+                    else if(syncModalData.page==='flagged'){
+                        syncModalData.message='';
+                        if(syncModalData.flaggedRecords.length===0)
+                        {
+                            showSyncModalPage('import-success');
+                        }
+                        else{
+                            showSyncModalPage('flagged-ignore');
+                        }
+                        
+                    }
+                    else if (syncModalData.page==='flagged-ignore'){
+                        let count = syncModalData.flaggedRecords.length
+                        syncModalData.flaggedRecords = [];
+                        syncModalData.message=`<div class="alert alert-success mb-0">${count} Flagged records ignored</div>`
+                        
+                        showSyncModalPage('import-success')
+                        
+                    }
+
+                    else if (syncModalData.page==='error'){
+                        if(syncModal){
+                            syncModal.hide();
+                        }
+                    }
+                });
+
+                $("#SyncModalSecondaryButton").on('click',function(){
+
+                    if(syncModalData.page==='flagged-ignore'){
+                        showSyncModalPage('flagged')}
+                    
+                    else{
+                        if (syncModal) {
+                            syncModal.hide()
+                        }
+                    }
+                });
+
+                $('#syncModal').on('hide.bs.modal', function (e) {
+                    if (syncModalData.page === 'flagged' || syncModalData.page === 'flagged-ignore' || syncModalData.page === 'flagged-delete-options' || syncModalData.page === 'import-progress') {
+                        e.preventDefault();
+                    }
+                });
+
+                $("#SyncModalTertiaryButton").on('click',function(){
+                    
+                   
+
+                })
+
+
+              $(document).on('click', 'button[id*="submit-btn-"]', function () {
+                    const id = Number(this.id.slice(11));
+                    const submitBtn = $(this);
+                    const ignoreButton = $(`button[id="ignore-btn-${id}"]`);
+                    const actionLabel = $(this).text().trim();
+
+                    let addedDiv  = $(`<div class="d-flex justify-content-center align-items-center text-center">
+                        <span class="spinner-border spinner-border-sm text-primary"></span>
+                        </div>`);
+                    $(ignoreButton).after(addedDiv);
+                    $(this).hide()
+                    $(ignoreButton).hide()
+
+
+                    $.ajax({
+                        url: '{{ route('employee_times.addFlaggedRecord') }}',
+                        method: 'POST',
+                        data: {
+                            event : syncModalData.flaggedRecords.find(element => element.uid === id),
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            actionLabel === 'Add' ? 
+                            addedDiv.html('<span class="text-success fw-bold">Added</span>'):
+                            addedDiv.html('<span class="text-success fw-bold">Overwritten</span>');
+                            syncModalData.flaggedRecords= syncModalData.flaggedRecords.filter(element => element['uid'] !==id); 
+                            $("#SyncModalTertiaryButton").prop('disabled', syncModalData.flaggedRecords.length === 0);
+                            
+                        },
+                        error: function(xhr) {
+                            let errorMsg = 'Failed to update records.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            addedDiv.html('<span class="text-danger fw-bold">Failed, try again</span>');
+                            submitBtn.show();
+                            ignoreButton.show();
+                        }
+                    });
+                });
+                $(document).on('click', 'button[id*="ignore-btn-"]', function () {
+                    const id = Number(this.id.slice(11));
+                    const submitBtn = $(`button[id="submit-btn-${id}"]`);
+                    let addedDiv  = $(`<div class="d-flex justify-content-center align-items-center text-center">
+                        <span class="spinner-border spinner-border-sm text-primary"></span>
+                        </div>`);
+
+                    $(this).after(addedDiv);
+                    $(this).hide();
+                    $(submitBtn).hide();
+
+                    syncModalData.flaggedRecords = syncModalData.flaggedRecords.filter(element => element.uid !== id);
+                    $("#SyncModalTertiaryButton").prop('disabled', syncModalData.flaggedRecords.length === 0);
+                    addedDiv.html('<span class="text-danger fw-bold">Ignored</span>');
+                    
+                        
+                });
+                
+                var calculateModalData = {
+                    flaggedRecords: [],
+                    conflictedRecords: [],
+                    pendingCount: 0,
+                    touched: false
+                };
+
+                // tracks which page the calculate modal footer buttons should act on
+                // 'flagged' | 'confirm' | 'success' | 'error' | null
+                let calculateModalPage = null;
+
+                const calcAbnormalityLabels = {
+                    'missing_first_in': 'Missing first clock in',
+                    'double_in_with_out': 'Double clock in',
+                    'orphan_out': 'Extra clock out',
+                    'irregular_sequence': 'Irregular event sequence'
+                };
+                const calcAbnormalityColors = {
+                    'missing_first_in': 'bg-warning text-dark',
+                    'double_in_with_out': 'bg-danger',
+                    'orphan_out': 'bg-primary',
+                    'irregular_sequence': 'bg-info text-dark'
+                };
+
+                const formatCalcEventDate = (timestamp) => timestamp ? String(timestamp).split(' ')[0] : '';
+                const formatCalcEventTime = (timestamp) => timestamp ? String(timestamp).split(' ')[1] : '';
+
+                const buildSequenceHtml = (events) => events.map(ev => {
+                    const typeName = ev.event_type ? ev.event_type.name : 'Unknown';
+                    const cls = typeName === 'Clock In' ? 'bg-success'
+                            : typeName === 'Clock Out' ? 'bg-danger'
+                            : typeName === 'Break In' ? 'bg-warning text-dark'
+                            : 'bg-info text-dark';
+                    const fromSaved = (ev.machine_id == 0) ? ' <span class="fw-normal fst-italic">(saved)</span>' : '';
+                    return `<span class="badge ${cls} me-1 mb-1" id="event-badge-${ev.emp_id}-${formatCalcEventDate(ev.timestamp)}-${formatCalcEventTime(ev.timestamp)}">${typeName}${formatCalcEventTime(ev.timestamp)}${fromSaved}</span>`;
+                }).join('<span class="me-1 fw-bold">&rarr;</span>');
+
+
+                const buildConflictsSection = () => {
+                    let html = '';
+                    const grouped = {};
+                    calculateModalData.conflictedRecords.forEach((record) => {
+                        if (!grouped[record.employee_id]) {
+                            grouped[record.employee_id] = [];
+                        }
+                        grouped[record.employee_id].push({...record});
+                    });
+
+                    Object.values(grouped).forEach(empRecords => {
+                        const name = empRecords[0].employee_name;
+                        const empId = empRecords[0].employee_id;
+                        html +=`<div class="d-flex align-items-center">
+                                    <hr class="flex-grow-1">
+                                    <div class="bg-white text-center  p-2 fw-bold  border-danger-subtle rounded border mb-2 mt-2">
+                                    ${name} (#${empId})
+                                    </div>
+                                    <hr class="flex-grow-1">
+                                    <div
+                                        class="arrow-box bg-white text-center p-2 d-flex justify-content-center align-items-center gap-2 fw-bold border-danger-subtle rounded border"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#conflicts-${empId}"
+                                        aria-expanded="false"
+                                        aria-controls="conflicts-${empId}">
+                                        <span class="calc-count-badge" data-emp="${empId}" data-remaining="${empRecords.length}" id="conflict-count-${empId}">${empRecords.length} remaining</span>
+                                        <i class="bi bi-chevron-down arrow"></i>
+                                    </div>
+                                </div>
+                                <div class="collapse" id="conflicts-${empId}">`
+                        empRecords.forEach(record => {
+                            const c = record.conflicts || {};
+                            html += `
+                            <div class="border border-5 border-secondary-subtle shadow  bg-white rounded p-2 mb-2" data-emp="${record.employee_id}" data-name=${record.employee_name}  id="calc-conflict-card-${record.employee_id}-${record.date}">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-dark">${record.date}</span>
+                                    <div class="calc-conflict-status small"></div>
+                                </div>
+                                <div class="calc-conflict-body">
+                                <div class="mb-1 small fw-bold">Events in sequence:</div>
+                                        <div class="p-2 border mb-2  rounded border-secondary-subtle">
+                                            <div class=" small">${buildSequenceHtml(record.events || [])}</div>
+                                        </div>
+                                <div class=" g-2 d-flex  justify-content-between">
+                                    <div class="d-flex gap-2">`;
+                            if (c.clock_in) {
+                                html += `
+                                    <div class="">
+                                        <label class="small fw-bold d-block mb-1">Clock In</label>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="calc-choice-in-${record.employee_id}-${record.date}" id="calc-in-old-${record.employee_id}-${record.date}" value="old" checked>
+                                            <label class="form-check-label small" for="calc-in-old-${record.employee_id}-${record.date}">Old: <span class="text-muted">${c.clock_in.old}</span></label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="calc-choice-in-${record.employee_id}-${record.date}" id="calc-in-new-${record.employee_id}-${record.date}" value="new">
+                                            <label class="form-check-label small" for="calc-in-new-${record.employee_id}-${record.date}">New: <span class="text-muted">${c.clock_in.new}</span></label>
+                                        </div>
+                                    </div>`;
+                            }
+                            if (c.clock_out) {
+                                html += `
+                                    <div class="">
+                                        <label class="small fw-bold d-block mb-1">Clock Out</label>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="calc-choice-out-${record.employee_id}-${record.date}" id="calc-out-old-${record.employee_id}-${record.date}" value="old" checked>
+                                            <label class="form-check-label small" for="calc-out-old-${record.employee_id}-${record.date}">Old: <span class="text-muted">${c.clock_out.old}</span></label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="calc-choice-out-${record.employee_id}-${record.date}" id="calc-out-new-${record.employee_id}-${record.date}" value="new">
+                                            <label class="form-check-label small" for="calc-out-new-${record.employee_id}-${record.date}">New: <span class="text-muted">${c.clock_out.new}</span></label>
+                                        </div>
+                                    </div>`;
+                            }
+                            html += `</div>
+                                    <div class="d-flex justify-content-center align-items-end">
+                                        ${(c.clock_in || c.clock_out)
+                                            ? `<button type="button" class="btn btn-primary btn-sm" id="calc-conflict-submit-${record.employee_id}-${record.date}">Submit</button>`
+                                            : 'No conflicts'}
+                                    </div>
+                                </div>
+                                </div>
+                            </div>`;
+                        });
+                        html +=`</div>`;
+                    });
+                    return html;
+                };
+
+                // renders a single flagged-record card (warning + the flagged action buttons).
+                // used both when building the whole flagged section and when a resolved conflict
+                // turns out to be flagged (so it re-renders in the same card).
+                const buildFlaggedCard = (record) => {
+                    const label = calcAbnormalityLabels[record.abnormality] || record.abnormality || 'Abnormal sequence';
+                    const labelColor = calcAbnormalityColors[record.abnormality] || 'bg-warning text-dark';
+                    const state = record.state || 'abnormal';
+                    const isDerivable = state === 'derivable';
+                    const stateBadge = isDerivable
+                        ? '<span class="badge bg-info text-dark">flagged - derivable</span>'
+                        : '<span class="badge bg-danger">abnormal</span>';
+                    let actions = '';
+                    if (state === 'derivable') {
+                        actions = `
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-success btn-sm flex-grow-1 calc-flag-action" data-action="addpurposeful" id="flag-${record.employee_id}-${record.date}-addpurposeful">Add purposeful</button>
+                                <button type="button" class="btn btn-secondary btn-sm flex-grow-1 calc-flag-action" data-action="ignore" id="flag-${record.employee_id}-${record.date}-ignore">Ignore</button>
+                            </div>`;
+                    } else {
+                        actions = `
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-success btn-sm flex-grow-1 calc-flag-action" data-action="add" id="flag-${record.employee_id}-${record.date}-add">Add</button>
+                                <button type="button" class="btn btn-primary btn-sm flex-grow-1 calc-flag-action" data-action="calculated" id="flag-${record.employee_id}-${record.date}-calculated">Mark as calculated</button>
+                                <button type="button" class="btn btn-secondary btn-sm flex-grow-1 calc-flag-action" data-action="ignore" id="flag-${record.employee_id}-${record.date}-ignore">Ignore</button>
+                            </div>`;
+                    }
+                    return `
+                    <div class="border border-5 border-secondary-subtle shadow  bg-white rounded p-2 mb-2" data-emp="${record.employee_id}" id="calc-flagged-card-${record.employee_id}-${record.date}">
+                            <div class="d-flex gap-2 flex-wrap justify-content-between align-items-center mb-1">
+                                <span class="badge bg-dark">${record.date}</span>
+                                <div class="calc-flagged-status small"></div>
+                                <div>
+                                <span class="badge ${labelColor}">${label}</span>
+                                ${stateBadge}
+                                </div>
+                            </div>
+                            <div class="calc-flagged-body">
+                            <div class="mb-1 small fw-bold">Events in sequence:</div>
+                        <div class="p-2 border mb-2  rounded border-secondary-subtle">
+                            <div class=" small">${buildSequenceHtml(record.events || [])}</div>
+                        </div>
+                        <div class="row g-2 justify-content-end">
+                            <div class="col-md-8 d-flex gap-2 flex-wrap justify-content-end">
+                                ${actions}
+                            </div>
+                        </div>
+                        </div>
+                    </div>`;
+                };
+
+                const buildFlaggedSection = () => {
+                    let html = '';
+                    const grouped = {};
+                    calculateModalData.flaggedRecords.forEach((record) => {
+                        if (!grouped[record.employee_id]) {
+                            grouped[record.employee_id] = [];
+                        }
+                        grouped[record.employee_id].push({...record});
+                    });
+
+
+                    Object.values(grouped).forEach(empRecords => {
+                        const name = empRecords[0].employee_name;
+                        const empId = empRecords[0].employee_id;
+                        html +=`<div class="d-flex align-items-center">
+                                    <hr class="flex-grow-1">
+                                    <div class="bg-white text-center  p-2 fw-bold  border-danger-subtle rounded border mb-2 mt-2">
+                                    ${name} (#${empId})
+                                    </div>
+                                    <hr class="flex-grow-1">
+                                    <div
+                                        class="arrow-box bg-white text-center p-2  d-flex justify-content-center align-items-center gap-2 fw-bold border-danger-subtle rounded border"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#flagged-${empId}"
+                                        aria-expanded="false"
+                                        aria-controls="flagged-${empId}">
+                                        <span class="calc-count-badge" data-emp="${empId}" data-remaining="${empRecords.length}" id="flagged-count-${empId}">${empRecords.length} remaining</span>
+                                        <i class="bi bi-chevron-down arrow"></i>
+                                    </div>
+                                </div>
+                                <div class="collapse" id="flagged-${empId}">`
+                        empRecords.forEach(record => {
+                            html += buildFlaggedCard(record);
+                        });
+                        html +=`</div>`
+                    });
+                    
+                    return html;
+                };
+
+                const decrementCalcCount = (sectionType, employeeId) => {
+                    const prefix = sectionType === 'conflict' ? 'conflict-count-' : 'flagged-count-';
+                    const $badge = $('.calc-count-badge').filter(function () {
+                        return this.id === `${prefix}${employeeId}`;
+                    });
+                    if (!$badge.length) return;
+
+                    const remaining = Math.max(0, Number($badge.attr('data-remaining')) - 1);
+                    $badge.attr('data-remaining', remaining).text(`${remaining} remaining`);
+                };
+
+                const resetCalculateModal = () => {
+                    $('#calculateModalFlagged').addClass('d-none');
+                    $('#calculateModalSuccess').addClass('d-none');
+                    $('#calculateModalConfirm').addClass('d-none');
+                    $('#calculateModalError').addClass('d-none');
+                    $('#calculateModalProgress').addClass('d-none');
+                    $('.calculateModalMessage').html('');
+                    $('#calculateModalPrimaryButton').hide();
+                    $('#calculateModalSecondaryButton').hide();
+                    $('#calculateModalTertiaryButton').hide();
+                    $('#calculateModalDialog').removeClass('modal-xl modal-lg');
+                    calculateModalPage = null;
+                    calculateModalData.flaggedRecords = [];
+                    calculateModalData.conflictedRecords = [];
+                    calculateModalData.pendingCount = 0;
+                    calculateModalData.touched = false;
+                }
+
+                // Calculate Attendance button handler (SSE stream via AJAX)
+                let calcReader = null;
+                let calcFinished = false;
+
+                const finishCalculate = (errorMsg, response) => {
+                    if (calcFinished) return;
+                    calcFinished = true;
+
+                    $('#calculateModal .modal-footer').removeClass('d-none');
+
+                    const $btn = $("#calculateBtn");
+                    $btn.prop("disabled", false).text($btn.data('originalText') || 'Calculate');
+                    $('#syncBtn').prop('disabled', false);
+
+                    const flagged = $('#calculateModalFlagged');
+                    const success = $('#calculateModalSuccess');
+                    const error  = $('#calculateModalError');
+                    const message = $('.calculateModalMessage');
+                    const primaryBtn = $('#calculateModalPrimaryButton');
+                    const secondaryBtn = $('#calculateModalSecondaryButton');
+                    const tertiaryBtn = $('#calculateModalTertiaryButton');
+
+                    if (errorMsg) {
+                        const htmlStatement = `<h5>Error</h5><div class="alert alert-danger mb-0 ">${errorMsg}. </div>`;
+                        error.html(htmlStatement);
+                        $('#calculateModalProgress').addClass('d-none');
+                        error.removeClass('d-none');
+                        primaryBtn.text('Ok').show();
+                        secondaryBtn.hide();
+                        tertiaryBtn.hide();
+                        calculateModalPage = 'error';
+                        $('#calculateModalCloseBtn').show();
+                        calculateModal.show();
+                        return;
+                    }
+
+                    var flaggedRecords = response.flaggedRecords || [];
+                    var conflictedRecords = response.conflictedRecords || [];
+                    var recordsModified = response.recordsModified ;
+                    var recordsCreated = response.recordsCreated ;
+                    var recordsFlagged = response.recordsFlagged ;
+                    var totalRecords = response.totalRecords;
+
+                    let htmlmessage=`
+                        <div class="alert alert-success mb-1">
+                            <strong>Calculation complete:</strong><br>
+                            <span class="badge bg-success ">${recordsCreated}</span> new record(s) calculated <br>
+                            <span class="badge bg-success ">${recordsModified}</span> records modified.<br>
+                            <span class="badge bg-success ">${recordsFlagged}</span> records flagged , <span class="badge bg-warning ">${flaggedRecords.length || 0}</span> of which needs intervention.<br>
+                            <span class="badge bg-warning ">${conflictedRecords.length}</span> records contain contain conflicting times.<br>
+                            <span class="badge bg-secondary ">${totalRecords}</span> records total in database.
+                            </div>`;
+
+                    message.html(htmlmessage);
+
+                    if((flaggedRecords && flaggedRecords.length>0) || (conflictedRecords && conflictedRecords.length>0)){
+                        calculateModalData.flaggedRecords = flaggedRecords;
+                        calculateModalData.conflictedRecords = conflictedRecords;
+                        calculateModalData.pendingCount = flaggedRecords.length + conflictedRecords.length;
+
+                        let interventionHtml = ``;
+
+                        if(conflictedRecords.length > 0){
+                            interventionHtml += `
+                            
+                                <h5 class="fw-bold text-danger-emphasis mt-4 mb-4">
+                                    Conflicted records (${conflictedRecords.length})
+                                    </H5>
+                                    choose old or new times :
+                                    <div class="rounded py-1 px-2">
+                                `
+                                + buildConflictsSection();
+                                +`</div>`
+                        }
+
+                        if(flaggedRecords.length > 0){
+                            interventionHtml += `
+                            <h5 class="fw-bold text-danger-emphasis mt-4 mb-4">
+                            Flagged records (${flaggedRecords.length})
+                            </h5>
+                            <div class="rounded py-1 px-2">`
+                            + buildFlaggedSection();
+                            +`</div>`
+                            }
+
+                        message.append(interventionHtml);
+                        message.find('input[type="radio"][value="old"]').prop('checked', true);
+                        message.find('[data-bs-toggle="collapse"]').each(function () {
+                            new bootstrap.Collapse(this, { toggle: false });
+                        });
+                        $('#calculateModalProgress').addClass('d-none');
+                        flagged.removeClass('d-none');
+                        $('#calculateModalDialog').removeClass('modal-lg').addClass('modal-xl');
+                        primaryBtn.text('ok').show();
+                        calculateModalPage = 'flagged';
+                        $('#calculateModalCloseBtn').hide();
+
+                        // switch to the confirmation page
+                        const showCalculateConfirm = function(){
+                            flagged.addClass('d-none');
+                            const confirmMsg = $('.calculateModalMessage', $('#calculateModalConfirm'));
+                            confirmMsg.html(`
+                                You still have some unresolved conflicts.All the flagged records will be <span class="text-danger fw-bold">ignored</span> if you continue.Do You want to proceed ?`);
+                            $('#calculateModalConfirm').removeClass('d-none');
+                            calculateModalPage = 'confirm';
+                            primaryBtn.text('Yes, ignore all').show();
+                            secondaryBtn.text('Back').removeClass('d-none').show();
+                        };
+
+                        // perform the ignore-all action
+                        // the OK button on the warning (confirm) page spins while the ignore
+                        // requests run, then the modal switches to a success page.
+                        const showCalculateSuccess = function(){
+                            $('#calculateModalConfirm').addClass('d-none');
+                            $('.calculateModalMessage', $('#calculateModalSuccess'))
+                                .html('<div class="alert alert-success mb-0"><strong>Done!</strong> All unresolved records have been handled.</div>');
+                            $('#calculateModalSuccess').removeClass('d-none');
+                            calculateModalPage = 'success';
+                            primaryBtn.text('OK').show();
+                            secondaryBtn.addClass('d-none');
+                            $('#calculateModalCloseBtn').show();
+                        };
+                        const runIgnoreAll = function(){
+                            const emptyRoute = "{{ route('employee_times.addEmptyAttendanceRecord') }}";
+                            const derivable = (calculateModalData.flaggedRecords || [])
+                                .filter(r => (r.state || 'abnormal') === 'derivable');
+                            const reqs = derivable.map(r => $.ajax({
+                                url: emptyRoute,
+                                type: 'POST',
+                                data: {
+                                    employee_id: r.employee_id,
+                                    date: r.date,
+                                    _token: "{{ csrf_token() }}"
+                                }
+                            }));
+                            calculateModalData.pendingCount = 0;
+                            calculateModalData.touched = true;
+                            $('.calculateModalStatus').remove();
+
+                            // spin the OK button while the requests run (stay on the warning page)
+                            primaryBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Ignoring...');
+
+                            if(reqs.length === 0){
+                                // nothing to ignore -> jump straight to the success page
+                                primaryBtn.prop('disabled', false);
+                                showCalculateSuccess();
+                                return;
+                            }
+                            $.when.apply($, reqs).always(function(){
+                                primaryBtn.prop('disabled', false);
+                                showCalculateSuccess();
+                            });
+                        };
+                        calculateModalData.showCalculateConfirm = showCalculateConfirm;
+                        calculateModalData.runIgnoreAll = runIgnoreAll;
+                    }
+                    else{ 
+                        $('#calculateModalProgress').addClass('d-none');
+                        success.removeClass('d-none');
+                        primaryBtn.text('ok').show();
+                        calculateModalPage = 'success';
+                        $('#calculateModalCloseBtn').show();
+                    }
+                    
+                    
+                    calculateModal.show();
+
+                    // Optionally reload the page or grid
+                    // location.reload();
+                };
+
+                $("#calculateBtn").on("click", function() {
+                    const $btn = $(this);
+                    $btn.data('originalText', $btn.text());
+                    $btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm me-2"></span>Calculating...');
+                    $('#syncBtn').prop('disabled', true);
+
+                    resetCalculateModal();
+
+                    // show the progress page inside the modal while the stream runs
+                    $('#calculateModalProgress').removeClass('d-none');
+                    $('#calculateModal .modal-footer').addClass('d-none');
+                    $('#calc-import-log').val('');
+                    $('#calc-import-progress').val(0);
+                    $('#calc-import-progress-label').text('0%');
+                    calculateModalPage = 'progress';
+                    calculateModal.show();
+
+                    calcFinished = false;
+                    calcReader = createSseReader({
+                        onProgress: function(payload) {
+                            const progress = Number(payload.progress) || 0;
+                            $('#calc-import-progress').val(progress);
+                            $('#calc-import-progress-label').text(`${progress}%`);
+                            const logEl = $('#calc-import-log');
+                            if (payload.message) {
+                                logEl.val((logEl.val() + '\n' + payload.message).trim());
+                                logEl.scrollTop(logEl[0].scrollHeight);
+                            }
+                        },
+                        onError: function(payload) {
+                            finishCalculate(payload.message || "An error occurred while Calculating Attendance.", null);
+                        },
+                        onDone: function(response) {
+                            finishCalculate(null, response);
+                        }
+                    });
+                    calcReader.reset();
+
+                    $.ajax({
+                        url: "{{ route('employee_times.calculateAttendance') }}",
+                        type: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        xhr: function() {
+                            const xhr = new XMLHttpRequest();
+                            // read the stream incrementally
+                            xhr.onreadystatechange = function() {
+                                if (xhr.readyState >= 3) {
+                                    calcReader.consume(xhr.responseText);
+                                }
+                            };
+                            return xhr;
+                        },
+                        success: function(response) {
+                            calcReader.consume(response);
+                        },
+                        error: function(xhr) {
+                            if (!calcFinished) {
+                                const errorMsg = xhr.responseJSON?.error || "An error occurred while Calculating Attendance.";
+                                finishCalculate(errorMsg, null);
+                            }
+                        }
+                    });
+                });
+
+
+                $('#calculateModalPrimaryButton').on('click', function(){
+                    if (calculateModalPage === 'flagged') {
+                        // 'ok' -> head to the ignore-all confirmation
+                        if (typeof calculateModalData.showCalculateConfirm === 'function') {
+                            calculateModalData.showCalculateConfirm();
+                        }
+                        return;
+                    }
+                    if (calculateModalPage === 'confirm') {
+                        if (typeof calculateModalData.runIgnoreAll === 'function') {
+                            calculateModalData.runIgnoreAll();
+                        }
+                        return;
+                    }
+                    calculateModal.hide();
+                    calculateModalPage = null;
+                })
+
+                // Back on the confirm page -> return to the flagged list
+                $('#calculateModalSecondaryButton').on('click', function(){
+                    if (calculateModalPage !== 'confirm') return;
+                    $('#calculateModalConfirm').addClass('d-none');
+                    $('#calculateModalFlagged').removeClass('d-none');
+                    calculateModalPage = 'flagged';
+                    $('#calculateModalPrimaryButton').text('ok').show();
+                    $(this).addClass('d-none');
+                })
+
+                // conflict rows : one submit per employee/day -> sends clock in & clock out choices together
+                $(document).on('click', '[id^="calc-conflict-submit-"]', function(){
+                    const id = this.id;
+                    const date = id.slice(-10);
+                    const employeeId = id.slice('calc-conflict-submit-'.length, -11);
+                    const record = calculateModalData.conflictedRecords.find(element => element.date === date && String(element.employee_id) === employeeId);
+                    if (!record) return;
+                    const statusEl = $(`#calc-conflict-card-${record.employee_id}-${record.date} .calc-conflict-status`);
+                    const $btn = $(this);
+                    const c = record.conflicts || {};
+
+                    // resolve the chosen radio ('old'|'new') to the actual H:i:s timestamp
+                    const clockInPick  = c.clock_in  ? $(`input[name="calc-choice-in-${employeeId}-${date}"]:checked`).val() : null;
+                    const clockOutPick = c.clock_out ? $(`input[name="calc-choice-out-${employeeId}-${date}"]:checked`).val() : null;
+                    const clockInChoice  = c.clock_in  ? (clockInPick === 'old' ? c.clock_in.old  : c.clock_in.new)  : null;
+                    const clockOutChoice = c.clock_out ? (clockOutPick === 'old' ? c.clock_out.old : c.clock_out.new) : null;
+
+                    if ((c.clock_in && !clockInChoice) || (c.clock_out && !clockOutChoice)) {
+                        statusEl.html('<span class="text-danger fw-bold">Please choose old or new for each time before submitting.</span>');
+                        return;
+                    }
+
+                    $btn.prop('disabled', true);
+                    const conflictOriginalText = $btn.html();
+                    $btn.html('<span class="spinner-border spinner-border-sm me-1"></span>');
+                    $.ajax({
+                        url: "{{ route('employee_times.resolveCalculationConflicts') }}",
+                        type: "POST",
+                        data: {
+                            choices: {
+                                employee_id: record.employee_id,
+                                date: record.date,
+                                clock_in: clockInChoice,
+                                clock_out: clockOutChoice
+                            },
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(response) {
+                            calculateModalData.touched = true;
+
+                            // clear the submit spinner first so it can never linger, even if the
+                            // flagged re-render below fails for any reason.
+                            $btn.prop('disabled', false).html(conflictOriginalText);
+
+                            // after resolving the conflict the record became flagged -> re-render it
+                            // in the same card with a warning and the flagged-record action buttons,
+                            // so the user keeps going through the flagged pathways. it stays pending
+                            // until one of those actions is taken, so pendingCount is not decremented.
+                            if (response.flagged) {
+                                const flaggedRecord = response.flagged;
+                                flaggedRecord.state = flaggedRecord.state || 'abnormal';
+                                calculateModalData.flaggedRecords.push(flaggedRecord);
+                                $(`#calc-conflict-card-${record.employee_id}-${record.date}`)
+                                    .html(buildFlaggedCard(flaggedRecord));
+                                return;
+                            }
+
+                            calculateModalData.pendingCount--;
+                            const $card = $(`#calc-conflict-card-${record.employee_id}-${record.date}`);
+                            $card.css({'opacity': 0.5, 'pointer-events': 'none'}).addClass('calc-card-resolved');
+                            $card.find('.calc-conflict-body').hide();
+                            $card.find('.calc-conflict-status').html('<span class="text-success fw-bold">Conflict resolved</span>');
+                            decrementCalcCount('conflict', record.employee_id);
+                            if (calculateModalData.pendingCount <= 0) {
+                                calculateModalPage = null;
+                                $('#calculateModalCloseBtn').show();
+                            }
+                        },
+                        error: function(xhr) {
+                            const errorMsg = xhr.responseJSON?.error || "Failed to resolve the conflict.";
+                            statusEl.html(`<span class="text-danger fw-bold">${errorMsg}</span>`);
+                            $btn.prop('disabled', false).html(conflictOriginalText);
+                        }
+                    });
+                });
+
+                // flagged rows : dispatch the action (addpurposeful / add / calculated / ignore) per state
+                $(document).on('click', '.calc-flag-action', function(){
+                    const $btn = $(this);
+                    const action = $btn.data('action');
+                    const card = $btn.closest('[id^="calc-flagged-card-"]');
+                    const cardId = card.attr('id').replace('calc-flagged-card-', '');
+                    const date = cardId.slice(-10);
+                    const employeeId = String(card.data('emp'));
+                    const record = calculateModalData.flaggedRecords.find(
+                        element => String(element.employee_id) === employeeId && element.date === date
+                    );
+                    if (!record) return;
+                    const statusEl = card.find('.calc-flagged-status');
+                    const state = record.state || 'abnormal';
+                    const sectionType = card.closest('.collapse').attr('id').startsWith('conflicts-') ? 'conflict' : 'flagged';
+
+                    // ignore on an abnormal record : do nothing -> will pop up next run
+                    if (action === 'ignore' && state === 'abnormal') {
+                        calculateModalData.pendingCount--;
+                        card.css({'opacity': 0.5, 'pointer-events': 'none'}).addClass('calc-card-resolved');
+                        card.find('.calc-flagged-body').hide();
+                        card.find('.calc-flagged-status').html('<span class="text-secondary fw-bold">Record ignored - will show again next time</span>');
+                        decrementCalcCount(sectionType, employeeId);
+                        if (calculateModalData.pendingCount <= 0) {
+                            calculateModalPage = null;
+                            $('#calculateModalCloseBtn').show();
+                        }
+                        return;
+                    }
+
+                    const routes = {
+                        'addpurposeful': "{{ route('employee_times.addRelevantAttendanceInfo') }}",
+                        'add': "{{ route('employee_times.addEmptyAttendanceRecord') }}",
+                        'calculated': "{{ route('employee_times.ignoreEvents') }}",
+                        'ignore': "{{ route('employee_times.addEmptyAttendanceRecord') }}"
+                    };
+                    const successMessages = {
+                        'addpurposeful': 'Purposeful data added',
+                        'add': 'Empty record added',
+                        'calculated': 'Events marked as calculated',
+                        'ignore': state === 'derivable' ? 'Record ignored - empty record added' : 'Record ignored - will show again next time'
+                    };
+                    const url = routes[action];
+                    if (!url) return;
+
+                    const originalText = $btn.html();
+                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>');
+                    $.ajax({
+                        url: url,
+                        type: "POST",
+                        data: {
+                            employee_id: record.employee_id,
+                            date: record.date,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(response) {
+                            calculateModalData.touched = true;
+                            calculateModalData.pendingCount--;
+                            card.css({'opacity': 0.5, 'pointer-events': 'none'}).addClass('calc-card-resolved');
+                            card.find('.calc-flagged-body').hide();
+                            card.find('.calc-flagged-status').html(`<span class="text-success fw-bold">${successMessages[action] || originalText}</span>`);
+                            decrementCalcCount(sectionType, employeeId);
+
+                            // once every flagged/conflicted record is resolved the user may close
+                            if (calculateModalData.pendingCount <= 0) {
+                                calculateModalPage = null;
+                                $('#calculateModalCloseBtn').show();
+                            }
+                        },
+                        error: function(xhr) {
+                            const errorMsg = xhr.responseJSON?.error || "Failed to process the record.";
+                            statusEl.html(`<span class="text-danger fw-bold">${errorMsg}</span>`);
+                            $btn.prop('disabled', false).html(originalText);
+                        }
+                    });
+                });
+
+                // refresh the grid so resolved times show up
+                // keep the calculate modal open until all flagged/conflicted records are resolved
+                $('#calculateModal').on('hide.bs.modal', function (e) {
+                    if (calculateModalPage === 'flagged' || calculateModalPage === 'confirm' || calculateModalPage === 'progress') {
+                        e.preventDefault();
+                    }
+                });
+
+                $('#calculateModal').on('hidden.bs.modal', function () {
+                    if (calculateModalData.touched) {
+                        location.reload();
+                    }
+                });
+
+
                 // Function to update Select All months state
                 function updateSelectAllMonthsState() {
                     const allMonthCheckboxes = document.querySelectorAll('.month-checkbox');
@@ -880,7 +2205,6 @@
                         selectAllCheckbox.indeterminate = true;
                     }
                 });
-            });
 
             const employeeTimesData = [
                 @foreach($employeeTimes as $item)
@@ -893,6 +2217,10 @@
                     total_time: `{{ $item->total_time ?? '' }}`,
                     status: `{{ $item->off_day ? 'Yes' : 'No' }}`,
                     vacation_type: `{{ $item->vacation_type ?? '' }}`,
+                    flagged: `{{ $item->flagged ? 'Yes' : 'No' }}`,
+                    break_flag : `{{ $item->break_flag??  'pass' }}`,
+                    total_leave_diff : `{{ $item->total_leave_diff ?? '' }}`,
+                    total_break_diff : `{{ $item->total_break_diff ?? '' }}`,
                     reason: `{{ $item->reason ?? '' }}`,
                     editUrl: `{{ route('employee_times.edit', $item->id) }}`,
                     deleteUrl: `{{ route('employee_times.destroy', $item->id) }}`
@@ -926,6 +2254,7 @@
                     form.submit();
                 }
             }
+            window.deleteItem = deleteItem;
 
             $(function() {
                 const dataGridInstance = $("#employeeTimesGrid").dxDataGrid({
@@ -951,6 +2280,11 @@
                         { dataField: "time_in", caption: "Time In", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_in)); } },
                         { dataField: "time_out", caption: "Time Out", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTime(options.data.time_out)); } },
                         { dataField: "total_time", caption: "Total Time", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(formatTotalTime(options.data.total_time)); } },
+                        { dataField: "total_leave_diff", caption: "Leave Difference", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(displayDiff(options.data.total_leave_diff)); } },
+                        { dataField: "total_break_diff", caption: "Break Difference", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(displayDiff(options.data.total_break_diff)); } },
+                        { dataField: "flagged", caption: "Flagged", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+                        { dataField: "break_flag", caption: "Break Flag", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+
                         { 
                             dataField: "extra_minus", 
                             caption: "Extra-Minus", 
@@ -985,8 +2319,11 @@
                         if (e.rowType === 'data') {
                             // Apply colors based on vacation_type
                             const vacationType = e.data.vacation_type ? e.data.vacation_type.toLowerCase() : '';
-                            
-                            if (vacationType === 'off') {
+                            const flaggedRow = e.data.flagged === 'Yes' || e.data.break_flag !== 'pass';
+
+                            if (flaggedRow) {
+                                e.rowElement.addClass('flagged')
+                            } else if (vacationType === 'off') {
                                 e.rowElement.addClass('weekend');
                             } else if (vacationType === 'vacation') {
                                 e.rowElement.addClass('vacation');
@@ -998,7 +2335,7 @@
                                 e.rowElement.addClass('unpaid');
                             } else if (vacationType === 'half day vacation') {
                                 e.rowElement.addClass('halfday');
-                            } 
+                            }
                         }
                     },
                     paging: { pageSize: 30 },
@@ -1273,7 +2610,7 @@
                     $('#bulk-add-success').addClass('d-none');
                     $('#bulkAddSubmitBtn').prop('disabled', false).text('Add Records');
                 });
-            });
+            });});
         </script>
         @endpush
     </div>
@@ -1310,6 +2647,14 @@ function formatTotalTime(timeString) {
     
     return timeString;
 }
+// Display-only helper: shows the diff with a leading '-' (e.g. -01:02) without altering the stored value
+function displayDiff(value) {
+    if (!value || value === '') return '';
+    const parts = String(value).split(':');
+    const hhmm = parts.length >= 2 ? parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0') : String(value);
+    return '-' + hhmm;
+}
+
 // Function to calculate extra/minus time compared to 9 hours (or 4.5 for half-day)
 function calculateExtraMinus(totalTimeString, vacationType) {
     if (!totalTimeString || totalTimeString === '') return '';
