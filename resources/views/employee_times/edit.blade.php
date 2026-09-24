@@ -459,7 +459,7 @@ clockOutInput.addEventListener('change', calculateTotalTime);
                 }).join('<span class="me-1 fw-bold">&rarr;</span>');
 
     $('#sequence-view').html(
-    `<div class="mb-4 p-4 bg-white rounded-3 shadow-sm">
+    `<div class="mb-4 p-4 bg-light rounded-3 shadow-sm">
     <h5 class="mb-3 fw-bold text-primary">
         Clock Schedule
     </h5>
