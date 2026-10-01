@@ -41,13 +41,21 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 18px; gap: 10px;">
+            <div class="d-flex align-items-center justify-content-end" style="gap: 10px;">
                         <!-- Filter Toggle Button -->
                         <button type="button" class="btn btn-primary" id="toggleFilterBtn">Filter</button>
-                        <!-- Sync Button -->
-                        <button type="button" class="btn btn-primary" id="syncBtn">Sync</button>
-                        <!-- Sync Button -->
-                        <button type="button" class="btn btn-primary" id="calculateBtn">Calculate</button>
+                        <div class="d-flex p-2 bg-white border rounded d-flex justify-content-center align-items-center" style="gap: 10px;">
+                            <div id="connection-message" class="d-none mb-0  alert alert-danger"></div>
+                            
+                            <div class="d-flex badge bg-primary user-select-none gap-1" id="test-connection" style="cursor: pointer;">
+                                <i class="bi bi-arrow-clockwise d-none"></i>
+                                <div id="connection-status">Test Connection</div>
+                            </div>
+                            <!-- Sync Button -->
+                            <button type="button" class="btn btn-primary" id="syncBtn">Sync</button>
+                            <!-- Sync Button -->
+                            <button type="button" class="btn btn-primary" id="calculateBtn">Calculate</button>
+                        </div>
                         <!-- Import Button triggers modal -->
                         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
                         <!-- Export All Button triggers modal -->
@@ -448,7 +456,7 @@
                                 </div>
                                 <label for="calc-import-progress">Import progress:</label><br>
                                 <div class="d-flex w-100  align-items-center">
-                                    <progress class="progress-bar bg-info flex-grow-1" id="calc-import-progress" value="0" max="100"></progress>
+                                    <progress class="progress-bar flex-grow-1" id="calc-import-progress" value="0" max="100"></progress>
                                     <span class="m-2" id="calc-import-progress-label">0%</span>
                                 </div>
                             </div>
