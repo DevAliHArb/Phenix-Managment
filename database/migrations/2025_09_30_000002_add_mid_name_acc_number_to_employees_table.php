@@ -13,12 +13,12 @@ return new class extends Migration
     {
         if (!Schema::hasColumn('employees', 'mid_name')) {
             Schema::table('employees', function (Blueprint $table) {
-                $table->string('mid_name')->nullable()->after('name');
+                $table->string('mid_name')->nullable()->after('first_name');
             });
         }
         if (!Schema::hasColumn('employees', 'acc_number')) {
             Schema::table('employees', function (Blueprint $table) {
-                $table->integer('acc_number')->nullable()->after('mid_name');
+                $table->integer('acc_number')->nullable()->after('last_name');
             });
         }
     }

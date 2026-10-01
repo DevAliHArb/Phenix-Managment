@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vacation-dates', function (Blueprint $table) {
+        Schema::create('vacation_dates', function (Blueprint $table) {
             $table->id();
             $table->date('date');
             $table->string('name');
@@ -19,7 +19,7 @@ return new class extends Migration
         });
 
         // Insert provided vacation dates
-        DB::table('vacation-dates')->insert([
+        DB::table('vacation_dates')->insert([
             ['date' => '2025-01-01', 'name' => 'new year', 'created_at' => now(), 'updated_at' => now()],
             ['date' => '2025-04-10', 'name' => 'easter', 'created_at' => now(), 'updated_at' => now()],
             ['date' => '2025-07-14', 'name' => 'national holiday france', 'created_at' => now(), 'updated_at' => now()],
@@ -34,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vacation-dates');
+        Schema::dropIfExists('vacation_dates');
     }
 };
