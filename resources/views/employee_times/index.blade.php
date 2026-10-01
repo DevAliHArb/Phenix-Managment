@@ -471,12 +471,15 @@
             </div>
         </div>
         <!-- Filter Bar (toggled by the Filter button) -->
-        <div id="filterBar" style="display:none; position:relative; z-index:1; background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:12px 16px; margin-bottom:14px; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+        <div id="filterBar" style="display:none; position:relative; z-index:10; background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:12px 16px; margin-bottom:14px; flex-wrap:wrap; gap:10px; align-items:flex-end;">
             <div style="position:relative;">
                 <label class="form-label mb-1" style="font-size:0.8rem;">Employee</label>
-                <input type="text" id="filterEmployeeName" class="form-control form-control-sm" placeholder="Search employee..." autocomplete="off" style="width:220px;">
+                <div style="position:relative; width:220px;">
+                    <input type="text" id="filterEmployeeName" class="form-control form-control-sm" placeholder="Search employee..." autocomplete="off" style="padding-right:30px;">
+                    <button type="button" id="clearEmployeeFilterBtn" aria-label="Clear selected employee" title="Clear selected employee" style="display:none; position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:#6c757d; padding:0 4px; line-height:1; font-size:18px;">&times;</button>
+                </div>
                 <input type="hidden" id="filterEmployeeId" value="">
-                <div id="filterEmployeeList" style="display:none; position:absolute; top:100%; left:0; z-index:1060; width:250px; max-height:180px; overflow-y:auto; background:#fff; border:1px solid #dee2e6; border-radius:6px; margin-top:2px; box-shadow:0 4px 10px rgba(0,0,0,.15);"></div>
+                <div id="filterEmployeeList" style="display:none; position:absolute; top:100%; left:0; z-index:1060; width:250px; max-height:138px; overflow-y:auto; background:#fff; border:1px solid #dee2e6; border-radius:6px; margin-top:2px; box-shadow:0 4px 10px rgba(0,0,0,.15);"></div>
             </div>
             <div>
                 <label class="form-label mb-1" style="font-size:0.8rem;">Month</label>
@@ -514,7 +517,7 @@
             </div>
         </div>
 
-        <div id="employeeTimesGrid"></div>
+        <div id="employeeTimesGrid" style="position:relative; z-index:0;"></div>
 
         <!-- Load PDF.js library -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2600,35 +2603,34 @@
                         }, 0);
                     }
                 }).dxDataGrid('instance');
-            // filter logic: show all months and years until filters are applied
-                $('#filterMonth').val('');
-                $('#filterYear').val('');
+                // Default selections are applied only when the user presses Apply.
+                function resetEmployeeTimeFilterFields() {
+                    $('#filterEmployeeId').val('');
+                    $('#filterEmployeeName').val('');
+                    $('#clearEmployeeFilterBtn').hide();
+                    $('#filterEmployeeList').hide();
+                    $('#filterMonth').val(@json(now()->format('m')));
+                    $('#filterYear').val(@json(now()->format('Y')));
+                }
+                resetEmployeeTimeFilterFields();
 
-                // Employee searchable dropdown (max 4 shown + Show more)
+                // Render every match in a scrollable dropdown showing four rows.
                 var employeeFilterOptions = @json($employees->map(function ($e) {
                     return ['id' => $e->id, 'name' => trim($e->first_name . ' ' . $e->mid_name . ' ' . $e->last_name)];
                 }));
-                var empVisibleLimit = 4;
-                var empExpanded = false;
                 var empFilteredList = employeeFilterOptions;
 
                 function renderEmployeeFilterList() {
-                    var limit = empExpanded ? empFilteredList.length : Math.min(empVisibleLimit, empFilteredList.length);
                     var html = '';
-                    for (var i = 0; i < limit; i++) {
+                    for (var i = 0; i < empFilteredList.length; i++) {
                         var emp = empFilteredList[i];
                         var name = String(emp.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-                        html += '<div class="emp-filter-item" data-id="' + emp.id + '" data-name="' + name + '" style="padding:6px 10px; cursor:pointer; font-size:0.85rem;">' + name + '</div>';
-                    }
-                    if (empFilteredList.length > empVisibleLimit) {
-                        html += empExpanded
-                            ? '<div class="emp-filter-show-less" style="padding:6px 10px; cursor:pointer; font-size:0.8rem; color:#0d6efd; border-top:1px solid #eee;">Show less</div>'
-                            : '<div class="emp-filter-show-more" style="padding:6px 10px; cursor:pointer; font-size:0.8rem; color:#0d6efd; border-top:1px solid #eee;">Show more (' + (empFilteredList.length - empVisibleLimit) + ' more)</div>';
+                        html += '<div class="emp-filter-item" data-id="' + emp.id + '" data-name="' + name + '" style="height:34px; box-sizing:border-box; padding:6px 10px; line-height:22px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; font-size:0.85rem;">' + name + '</div>';
                     }
                     if (!empFilteredList.length) {
                         html = '<div style="padding:6px 10px; font-size:0.85rem; color:#6c757d;">No employees found</div>';
                     }
-                    $('#filterEmployeeList').html(html);
+                    $('#filterEmployeeList').html(html).scrollTop(0);
                 }
 
                 function filterEmployeeOptions() {
@@ -2636,7 +2638,6 @@
                     empFilteredList = q
                         ? employeeFilterOptions.filter(function (e) { return String(e.name).toLowerCase().indexOf(q) !== -1; })
                         : employeeFilterOptions;
-                    empExpanded = false;
                     renderEmployeeFilterList();
                 }
 
@@ -2644,23 +2645,22 @@
                     filterEmployeeOptions();
                     $('#filterEmployeeList').show();
                 });
+                $('#filterEmployeeName').on('input', function () {
+                    $('#filterEmployeeId').val('');
+                    $('#clearEmployeeFilterBtn').toggle(Boolean($(this).val()));
+                });
                 $('#filterEmployeeList').on('click', '.emp-filter-item', function () {
                     $('#filterEmployeeId').val($(this).data('id'));
                     $('#filterEmployeeName').val($(this).data('name'));
+                    $('#clearEmployeeFilterBtn').show();
                     $('#filterEmployeeList').hide();
                 });
-                $('#filterEmployeeList').on('click', '.emp-filter-show-more', function (e) {
-                    e.stopPropagation();
-                    empExpanded = true;
-                    renderEmployeeFilterList();
-                });
-                $('#filterEmployeeList').on('click', '.emp-filter-show-less', function (e) {
-                    e.stopPropagation();
-                    empExpanded = false;
-                    renderEmployeeFilterList();
+                $('#clearEmployeeFilterBtn').on('click', function () {
+                    $('#filterEmployeeId').val('');
+                    $('#filterEmployeeName').val('').trigger('input').trigger('focus');
                 });
                 $(document).on('click', function (e) {
-                    if (!$(e.target).closest('#filterEmployeeName, #filterEmployeeList').length) {
+                    if (!$(e.target).closest('#filterEmployeeName, #filterEmployeeList, #clearEmployeeFilterBtn').length) {
                         $('#filterEmployeeList').hide();
                     }
                 });
@@ -2693,11 +2693,9 @@
 
                 // Clear Filter
                 $('#clearFilterBtn').on('click', function () {
-                    $('#filterEmployeeId').val('');
-                    $('#filterEmployeeName').val('');
-                    $('#filterMonth').val('');
-                    $('#filterYear').val('');
-                    applyEmployeeTimeFilter();
+                    resetEmployeeTimeFilterFields();
+                    dataGridInstance.clearFilter();
+                    dataGridInstance.searchByText('');
                 });
 
                 // Bulk Edit form submission
