@@ -463,7 +463,7 @@
             </div>
         </div>
         <!-- Filter Bar (toggled by the Filter button) -->
-        <div id="filterBar" style="display:none; position:relative; z-index:1100; background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:12px 16px; margin-bottom:14px; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+        <div id="filterBar" style="display:none; position:relative; z-index:1; background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:12px 16px; margin-bottom:14px; flex-wrap:wrap; gap:10px; align-items:flex-end;">
             <div style="position:relative;">
                 <label class="form-label mb-1" style="font-size:0.8rem;">Employee</label>
                 <input type="text" id="filterEmployeeName" class="form-control form-control-sm" placeholder="Search employee..." autocomplete="off" style="width:220px;">
@@ -496,7 +496,7 @@
                         $currentYear = now()->year;
                     @endphp
                     @for($y = 2023; $y <= $currentYear + 1; $y++)
-                        <option value="{{ $y }}" {{ $y == $currentYear ? 'selected' : '' }}>{{ $y }}</option>
+                        <option value="{{ $y }}">{{ $y }}</option>
                     @endfor
                 </select>
             </div>
@@ -2592,11 +2592,9 @@
                         }, 0);
                     }
                 }).dxDataGrid('instance');
-            // filter logic
-                var currentMonth = new Date().getMonth() + 1;
-                var currentYear = new Date().getFullYear().toString();
-                $('#filterMonth').val(currentMonth.toString().padStart(2, '0'));
-                $('#filterYear').val(currentYear);
+            // filter logic: show all months and years until filters are applied
+                $('#filterMonth').val('');
+                $('#filterYear').val('');
 
                 // Employee searchable dropdown (max 4 shown + Show more)
                 var employeeFilterOptions = @json($employees->map(function ($e) {
@@ -2689,13 +2687,10 @@
                 $('#clearFilterBtn').on('click', function () {
                     $('#filterEmployeeId').val('');
                     $('#filterEmployeeName').val('');
-                    $('#filterMonth').val(currentMonth.toString().padStart(2, '0'));
-                    $('#filterYear').val(currentYear);
+                    $('#filterMonth').val('');
+                    $('#filterYear').val('');
                     applyEmployeeTimeFilter();
                 });
-
-                // Apply defaults (current month + current year) on load
-                applyEmployeeTimeFilter();
 
                 // Bulk Edit form submission
                 $('#bulkEditForm').on('submit', function(e) {
