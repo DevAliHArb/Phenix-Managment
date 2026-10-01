@@ -1167,7 +1167,7 @@
 
                                 return {
                                         uid: element.uid,
-                                        flaggedEmpId: element.id,
+                                        flaggedAccountNumber: element.id,
                                         flaggedEvent: eventCodes[element.type],
                                         flaggedDate: flaggedTime[0],
                                         flaggedClock: flaggedTime[1],
@@ -1215,7 +1215,7 @@
 
                                             <div class="col-4">
                                                 <div class="row g-0 text-center small">
-                                                    <div class="col-3 fw-bold">Employee #</div>
+                                                    <div class="col-3 fw-bold">Account #</div>
                                                     <div class="col-3 fw-bold">Event Type</div>
                                                     <div class="col-3 fw-bold">Date</div>
                                                     <div class="col-3 fw-bold">Time</div>
@@ -1224,7 +1224,7 @@
 
                                             <div class="col-4">
                                                 <div class="row g-0 text-center small">
-                                                    <div class="col-3 fw-bold">Employee #</div>
+                                                    <div class="col-3 fw-bold">Account #</div>
                                                     <div class="col-3 fw-bold">Event Type</div>
                                                     <div class="col-3 fw-bold">Date</div>
                                                     <div class="col-3 fw-bold">Time</div>
@@ -1251,7 +1251,7 @@
 
                                                     <div id="flagged-record-${element.uid}" class="col-4 px-1">
                                                         <div class="row g-0 text-center small align-items-center bg-success-subtle">
-                                                            <div class="col-3 py-1">${element.flaggedEmpId}</div>
+                                                            <div class="col-3 py-1">${element.flaggedAccountNumber}</div>
                                                             <div class="col-3 py-1">${element.flaggedEvent}</div>
                                                             <div class="col-3 py-1">${element.flaggedDate}</div>
                                                             <div class="col-3 py-1">${element.flaggedClock}</div>
@@ -1324,7 +1324,7 @@
                         </div>
                         <label for="sync-import-progress">Import progress:</label><br>
                         <div class="d-flex w-100  align-items-center">
-                            <progress class="progress-bar bg-info flex-grow-1" id="sync-import-progress" value="0" max="100"></progress>
+                            <progress class="progress-bar flex-grow-1" id="sync-import-progress" value="0" max="100"></progress>
                             <span class="m-2" id="sync-import-progress-label">0%</span>
                         </div>`
                         message.html(htmlStatement)
@@ -1675,7 +1675,7 @@
                         html +=`<div class="d-flex align-items-center">
                                     <hr class="flex-grow-1">
                                     <div class="bg-white text-center  p-2 fw-bold  border-danger-subtle rounded border mb-2 mt-2">
-                                    ${name} (#${empId})
+                                    ${name} (Account #${empRecords[0].acc_number})
                                     </div>
                                     <hr class="flex-grow-1">
                                     <div
@@ -1815,7 +1815,7 @@
                         html +=`<div class="d-flex align-items-center">
                                     <hr class="flex-grow-1">
                                     <div class="bg-white text-center  p-2 fw-bold  border-danger-subtle rounded border mb-2 mt-2">
-                                    ${name} (#${empId})
+                                    ${name} (Account #${empRecords[0].acc_number})
                                     </div>
                                     <hr class="flex-grow-1">
                                     <div

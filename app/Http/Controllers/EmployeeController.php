@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\EmployeeAttachment;
 use App\Helpers\AttachmentHelper;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
 {
@@ -89,6 +90,7 @@ class EmployeeController extends Controller
                 'housing_type' => 'nullable|in:rent,own',
                 'owner_name' => 'nullable|string|max:255',
                 'owner_mobile_number' => 'nullable|string|max:20',
+                'acc_number' => ['nullable', 'integer', Rule::unique('employees', 'acc_number')],
             ]);
 
             // Check if employee with same first_name, mid_name, and last_name already exists
@@ -211,7 +213,7 @@ class EmployeeController extends Controller
                 'housing_type' => 'nullable|in:rent,own',
                 'owner_name' => 'nullable|string|max:255',
                 'owner_mobile_number' => 'nullable|string|max:20',
-                'acc_number' => 'nullable|integer',
+                'acc_number' => ['nullable', 'integer', Rule::unique('employees', 'acc_number')->ignore($id)],
                 'yearly_vacations_total' => 'nullable|numeric|between:0,9999999999.99',
             ]);
             $employee = Employee::findOrFail($id);
