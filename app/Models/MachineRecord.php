@@ -13,7 +13,7 @@ use HasFactory;
 
     protected $fillable = [
         'machine_id',
-        'emp_id',
+        'emp_id', // Machine account number, matched against employees.acc_number.
         'login_via',
         'event_type_id',
         'timestamp',
@@ -35,7 +35,7 @@ use HasFactory;
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class,'emp_id');
+        return $this->belongsTo(Employee::class, 'emp_id', 'acc_number');
     }
 
     public function employeeTime()

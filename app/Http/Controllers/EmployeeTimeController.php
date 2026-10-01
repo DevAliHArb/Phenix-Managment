@@ -1007,7 +1007,7 @@ class EmployeeTimeController extends Controller
                                     //inserts a new record 
                                     MachineRecord::create([
                                                 'machine_id'=>$event['uid'],
-                                                'emp_id'=> $event['id'],
+                                                'emp_id'=> $event['id'], // Machine account number.
                                                 'login_via'=>$loginMethod,
                                                 'event_type_id'=>$eventType,
                                                 'timestamp'=>$event['timestamp'],
@@ -1152,7 +1152,7 @@ class EmployeeTimeController extends Controller
                 MachineRecord::updateOrCreate(
                     ['machine_id' => $event['uid']],
                     [
-                        'emp_id' => $event['id'],
+                        'emp_id' => $event['id'], // Machine account number.
                         'login_via' => $loginMethod,
                         'event_type_id'=> $eventType,
                         'timestamp' => $event['timestamp'],
@@ -1224,12 +1224,13 @@ class EmployeeTimeController extends Controller
                 MachineRecord::updateOrCreate(
                     ['machine_id' => $event['uid']],
                     [
-                        'emp_id' => $event['id'],
+                        'emp_id' => $event['id'], // Machine account number.
                         'login_via' => $loginMethod,
                         'event_type_id'=> $eventType,
                         'timestamp' => $event['timestamp'],
                         'sync_cycle' => $syncCycle->id,
-                        'calculated' => false
+                        'calculated' => false,
+                        'employee_time_id' => null
                     ]
                 );
             //update the machine sync data record statistics
@@ -1289,16 +1290,22 @@ class EmployeeTimeController extends Controller
                 flush();
 
                 //get all machine events with : 'calculated' set as false or are related to an uncalculated record
-                $events = MachineRecord::with('eventType','employee')->where(function ($q) {
+                $events = MachineRecord::with('eventType')->where(function ($q) {
                     $q->where('calculated', false)
                     ->orWhereIn('employee_time_id', MachineRecord::where('calculated', false)->pluck('employee_time_id'));
                     })->get();
+
+                // Resolve every machine account before calculating or saving any attendance.
+                $employees = $this->employeesByAccountNumber($events->pluck('emp_id'));
+                foreach ($events as $event) {
+                    $event->setRelation('employee', $employees->get($event->emp_id));
+                }
 
                 //get all the related Attendance Records to compare new and old times with  
                 $relatedEmployeeTimes = EmployeeTime::whereIn("date", $events->unique("timestamp")->pluck("timestamp")
                                                         ->map(fn ($t) => Carbon::parse($t)->toDateString())->all())->get();
                 
-                //group by employee id and date
+                // Group by machine account number and date.
                 $groupedEvents = $events->groupBy(function ($event) {
                     return $event->emp_id . '__' . Carbon::parse($event->timestamp)->toDateString();
                 });
@@ -1333,12 +1340,12 @@ class EmployeeTimeController extends Controller
                 $groupedEvents->each(function ($events) use($clockOutCode, $clockInCode , &$recordsCreated, &$recordsModified ,&$recordsFlagged, &$flaggedRecords , &$conflictedRecords ,$relatedEmployeeTimes , $eventTypeLookups , $workSchedule , &$processed , $groupCount) {
                     $orderedEvents = collect($events)->sortBy('timestamp')->values();
                     $first = $orderedEvents->first();
-                    $employeeId = $first->emp_id;
                     $employee = $first->employee;
+                    $employeeId = $employee->id;
                     $date = Carbon::parse($first->timestamp)->toDateString();
                     
                     //get the related employee time for this day
-                    $relatedEmployeeTime = $relatedEmployeeTimes->first(fn ($empTime) => $empTime->date === $date && $empTime->employee_id===$employeeId);
+                    $relatedEmployeeTime = $relatedEmployeeTimes->first(fn ($empTime) => $empTime->date === $date && (string) $empTime->employee_id === (string) $employeeId);
                     
                     //call the helper method to get the data of the day
                     $totalTimeResponse = $this->calculateTotalTime($orderedEvents , $relatedEmployeeTime , $eventTypeLookups , $workSchedule);
@@ -1349,6 +1356,7 @@ class EmployeeTimeController extends Controller
                     $conflicts = $totalTimeResponse['conflicts'] ?? [];
                     if (!empty($conflicts)) {
                         $conflictedRecords[]= ['employee_id' => $employeeId,
+                                                'acc_number' => $employee->acc_number,
                                                 'employee_name' => $employeeName,
                                                 'date' => $date,
                                                 'conflicts' => $conflicts,
@@ -1378,6 +1386,7 @@ class EmployeeTimeController extends Controller
                         elseif ($totalTimeResponse['abnormality'] == 'irregular_sequence' || $totalTimeResponse['state']!=='normal') {
                             $flaggedRecords[] = [
                                 'employee_id' => $employeeId,
+                                'acc_number' => $employee->acc_number,
                                 'employee_name' => $employeeName,
                                 'date' => $date,
                                 'events' => $orderedEvents,
@@ -1470,9 +1479,33 @@ class EmployeeTimeController extends Controller
         ]);
     }
 
-    //return the pedning events for a specific emplouyee and date (same criteria as the caluclateAttendance() method)
+    private function employeesByAccountNumber($accountNumbers)
+    {
+        $accountNumbers = collect($accountNumbers)->unique();
+        if ($accountNumbers->contains(fn ($number) => $number === null || $number === '')) {
+            throw new Exception('An employee account number is missing. Set the account number before calculating attendance.');
+        }
+
+        $employees = Employee::whereIn('acc_number', $accountNumbers)->get()->groupBy('acc_number');
+        foreach ($accountNumbers as $accountNumber) {
+            $matches = $employees->get($accountNumber, collect());
+            if ($matches->isEmpty()) {
+                throw new Exception("No employee found for machine account number {$accountNumber}. Set the employee's account number before calculating attendance.");
+            }
+            if ($matches->count() > 1) {
+                throw new Exception("Multiple employees have account number {$accountNumber}. Assign a unique account number before calculating attendance.");
+            }
+        }
+
+        return $employees->map(fn ($matches) => $matches->first());
+    }
+
+    // Requests use the employee's database ID; machine punches use their account number.
     private function getPendingEventsFor($employeeId , $date){
-        return MachineRecord::where('emp_id', $employeeId)
+        $employee = Employee::findOrFail($employeeId);
+        $this->employeesByAccountNumber([$employee->acc_number]);
+
+        return MachineRecord::where('emp_id', $employee->acc_number)
             ->whereDate('timestamp', $date)
             ->where(function ($q) {
                 $q->where('calculated', false)
@@ -1533,6 +1566,7 @@ class EmployeeTimeController extends Controller
             ['employee_id' => $employeeId,
             'date' => $date],
             [
+            'acc_number' => $events->first()->emp_id,
             'clock_in' => $data['clock_in'],
             'clock_out' => $data['clock_out'],
             'total_time' => $data['total_time'] ?? null,
@@ -1585,7 +1619,8 @@ class EmployeeTimeController extends Controller
         $employeeTime = EmployeeTime::create(
             ['employee_id' => $employeeId,
             'date' => $date,
-            'flagged'=> true, 
+            'acc_number' => $events->first()->emp_id,
+            'flagged'=> true,
             'break_flag' =>null
             ]);
 
@@ -1777,6 +1812,7 @@ class EmployeeTimeController extends Controller
                     'success' => true,
                     'flagged' => [
                         'employee_id' => $choices['employee_id'],
+                        'acc_number' => $employee->acc_number,
                         'employee_name' => $employeeName,
                         'date' => $choices['date'],
                         'events' => $orderedEvents,
@@ -1792,6 +1828,7 @@ class EmployeeTimeController extends Controller
                 ['employee_id' => $choices['employee_id'],
                 'date' => $choices['date']],
                 [
+                'acc_number' => $orderedEvents->first()->emp_id,
                 'clock_in' => $totalTimeResponse['clock_in'],
                 'clock_out' => $totalTimeResponse['clock_out'],
                 'total_time' => $totalTimeResponse['totalTime'],
@@ -2118,7 +2155,7 @@ class EmployeeTimeController extends Controller
             if(!$newClockInEvent && $oldClockIn){
                 $tempIn = new MachineRecord([
                         'machine_id' => 0,
-                        'emp_id'     => $relatedEmployeeTime->employee_id,
+                        'emp_id'     => $orderedEvents->first()->emp_id,
                         'timestamp'  => $relatedEmployeeTime->date . ' ' . $oldClockIn,
                     ]);
                 $tempIn->setRelation('eventType', $eventTypeLookups['Clock In']);
@@ -2131,7 +2168,7 @@ class EmployeeTimeController extends Controller
             if(!$newClockOutEvent && $oldClockOut){
                 $tempOut = new MachineRecord([
                         'machine_id' => 0,
-                        'emp_id'     => $relatedEmployeeTime->employee_id,
+                        'emp_id'     => $orderedEvents->first()->emp_id,
                         'timestamp'  => $relatedEmployeeTime->date . ' ' . $oldClockOut,
                     ]);
                 $tempOut->setRelation('eventType', $eventTypeLookups['Clock Out']);
