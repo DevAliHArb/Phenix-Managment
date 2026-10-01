@@ -23,13 +23,21 @@
             margin: 10px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+        }
     </style>
 @endsection
 
 @section('content')
 <div style="width:100%">
-    <div class="headerContainer">
-        <h1> Punch Time Logs</h1>
+    <div class="headerContainer mb-2">
+        <h1 class="mb-0"> Punch Time Logs</h1>
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -47,7 +55,11 @@
 
                         <a href="{{ route('employee_times.create') }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Add Punch Time</a>
                 </div>
+            </div>
     </div>
+   
+   
+    
         <!-- Export All Modal -->
         <div class="modal fade" id="exportAllModal" tabindex="-1" aria-labelledby="exportAllModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
@@ -521,6 +533,69 @@
                 const calculateModalElement = document.getElementById('calculateModal');
                 const calculateModal = new bootstrap.Modal(calculateModalElement);
                 const importForm = document.getElementById('importForm');
+
+                const $testConn = $('#test-connection');
+                const $testConnIcon = $testConn.find('i.bi');
+                const $connectionStatus = $('#connection-status');
+                const $connectionMessage = $('#connection-message');
+                const $syncBtn = $('#syncBtn');
+                let machineConnected = true;
+
+                const setSyncDisabled = (disabled) => {
+                    machineConnected = !disabled;
+                    if (disabled) {
+                        $syncBtn.prop('disabled', true).attr('title', 'Cannot sync while the machine is unreachable.');
+                    } else {
+                        $syncBtn.prop('disabled', false).removeAttr('title');
+                    }
+                };
+
+                $testConn.on('click', function() {
+                    const machineSettings = @json($machineSettings);
+                    const ip = machineSettings.ip;
+                    const port = machineSettings.port;
+                    
+                    $testConnIcon.removeClass('d-none')
+                    $connectionMessage.addClass('d-none').html('');
+                    $testConnIcon.addClass('spin');
+                    $connectionStatus.html('Testing...');
+
+                    $.ajax({
+                        url: '{{ route('settings.testMachineConnection') }}',
+                        method: 'POST',
+                        data: {
+                            ip: ip,
+                            port: port,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            $testConn.removeClass('bg-primary');
+                            $testConnIcon.removeClass('spin');
+                            if (response.status === 'connected') {
+                                $connectionStatus.html('Online');
+                                $testConn.removeClass('bg-danger').addClass('bg-success');
+                                setSyncDisabled(false);
+                            } else {
+                                $connectionStatus.html('Unreachable');
+                                $testConn.removeClass('bg-success').addClass('bg-danger');
+                                setSyncDisabled(true);
+                            }
+                        },
+                        error: function(xhr) {
+                            $testConn.removeClass('bg-primary');
+                            $testConnIcon.removeClass('spin');
+                            let errorMsg = 'Connection test failed. Please try again.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            $connectionStatus.html('Unreachable');
+                            $testConn.removeClass('bg-success').addClass('bg-danger');
+                            $connectionMessage.html(`${errorMsg}`).removeClass('d-none');
+                            setSyncDisabled(true);
+                        }
+                    });
+                });
+
                 if(importForm) {
                     importForm.addEventListener('submit', function(e) {
                         e.preventDefault();
@@ -1310,7 +1385,7 @@
                     syncFinished = true;
 
                     const $btn = $("#syncBtn");
-                    $btn.prop("disabled", false).text($btn.data('originalText') || 'Sync Punch Times');
+                    $btn.prop("disabled", !machineConnected).text($btn.data('originalText') || 'Sync Punch Times');
                     $('#calculateBtn').prop('disabled', false);
 
                     if (errorMsg) {
@@ -1571,7 +1646,7 @@
                     const fromSaved = (ev.machine_id == 0) ? ' <span class="fw-normal fst-italic">(saved)</span>' : '';
                     return `<span class="badge ${cls} me-1 mb-1" id="event-badge-${ev.emp_id}-${formatCalcEventDate(ev.timestamp)}-${formatCalcEventTime(ev.timestamp)}">${typeName}${formatCalcEventTime(ev.timestamp)}${fromSaved}</span>`;
                 }).join('<span class="me-1 fw-bold">&rarr;</span>');
-
+               
 
                 const buildConflictsSection = () => {
                     let html = '';

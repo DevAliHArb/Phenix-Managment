@@ -38,6 +38,7 @@ Route::post('employee_times/import-machine-records',[EmployeeTimeController::cla
 Route::get('settings' , [SettingsController::class , 'index'])->name('settings.index');
 Route::get('settings/machine-settings', [SettingsController::class, 'getMachineSettings'])->name('settings.machineSettings');
 Route::put('settings/machine-settings', [SettingsController::class, 'updateMachineSettings'])->name('settings.updateMachineSettings');
+Route::post('settings/test-machine-connection', [EmployeeTimeController::class, 'testMachineConnection'])->name('settings.testMachineConnection');
 Route::post('employee_times/calculate-attendance',[EmployeeTimeController::class,'calculateAttendance'])->name('employee_times.calculateAttendance');
 Route::post('employee_times/get-machine-records-by-id',[EmployeeTimeController::class,'getMachineRecordsById'])->name('employee_times.getMachineRecordsById');
 Route::get('employee_times/event-codes', [EmployeeTimeController::class, 'getEventCodes'])->name('employee_times.getEventCodes');

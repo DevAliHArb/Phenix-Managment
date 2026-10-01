@@ -34,7 +34,7 @@
                     <div class="mb-3">
                         <label for="yearly_vacations_left" class="form-label">Yearly Vacations Left</label>
                         <input type="number" class="form-control" id="yearly_vacations_left" name="yearly_vacations_left" disabled step="0.1" min="0" max="9999999999.99" pattern="^\d{1,10}(\.\d{1,2})?$">
-                    </div>  
+                    </div>
                     <button type="submit" class="btn btn-primary">Save</button>
                 </form>
             </div>
