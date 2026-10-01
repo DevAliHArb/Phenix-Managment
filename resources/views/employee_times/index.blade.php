@@ -17,7 +17,7 @@
             overflow: auto;
             background: #525659;
         }
-        
+
         #pdfPreviewContainer canvas {
             display: block;
             margin: 10px auto;
@@ -41,28 +41,18 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-        
-            <div class="d-flex align-items-center justify-content-end" style="gap: 10px;">
-
-                <div class="d-flex p-2 bg-white border rounded d-flex justify-content-center align-items-center" style="gap: 10px;">
-                    
-                    <div id="connection-message" class="d-none mb-0  alert alert-danger"></div>
-                    
-                    <div class="d-flex badge bg-primary user-select-none gap-1" id="test-connection" style="cursor: pointer;">
-                        <i class="bi bi-arrow-clockwise d-none"></i>
-                        <div id="connection-status">Test Connection</div>
-                    </div>
-                    <!-- Sync Button -->
-                    <button type="button" class="btn btn-primary" id="syncBtn">Sync</button>
-                    <!-- Sync Button -->
-                    <button type="button" class="btn btn-primary" id="calculateBtn">Calculate</button>
-                </div>
-                <div  class="d-flex justify-content-center align-items-center" style="gap: 10px;">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 18px; gap: 10px;">
+                        <!-- Filter Toggle Button -->
+                        <button type="button" class="btn btn-primary" id="toggleFilterBtn">Filter</button>
+                        <!-- Sync Button -->
+                        <button type="button" class="btn btn-primary" id="syncBtn">Sync</button>
+                        <!-- Sync Button -->
+                        <button type="button" class="btn btn-primary" id="calculateBtn">Calculate</button>
                         <!-- Import Button triggers modal -->
                         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
                         <!-- Export All Button triggers modal -->
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportAllModal">Export All</button>
-                        
+
                         <a href="{{ route('employee_times.create') }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Add Punch Time</a>
                 </div>
             </div>
@@ -279,7 +269,7 @@
                 </div>
             </div>
         </div>
-    
+
         <!-- Bulk Edit Modal -->
         <div class="modal fade" id="bulkEditModal" tabindex="-1" aria-labelledby="bulkEditModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -423,7 +413,7 @@
                     <div class="modal-footer">
                         <button type="button" id="SyncModalPrimaryButton" class="btn btn-primary">Yes</button>
                         <button type="button" id="SyncModalSecondaryButton" class="btn btn-secondary">No</button>
-                        <button type="button" id="SyncModalTertiaryButton" class="btn btn-secondary">No</button>                    
+                        <button type="button" id="SyncModalTertiaryButton" class="btn btn-secondary">No</button>
                     </div>
                 </div>
             </div>
@@ -435,7 +425,7 @@
                 <div class="modal-content">
                     <div class="modal-header justify-content-between">
                         <h5 class="modal-title" id="bulkAddModalLabel">Calculate Attendance</h5>
-                        <button type="button" id="calculateModalCloseBtn" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> 
+                        <button type="button" id="calculateModalCloseBtn" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                         <div class="modal-body">
                             <div class="calculateModalPage" id="calculateModalSuccess">
@@ -448,7 +438,7 @@
                                 <div class="calculateModalMessage"></div>
                             </div>
                             <div class="calculateModalPage" id="calculateModalError">
-        
+
                             </div>
                             <div class="calculateModalPage d-none" id="calculateModalProgress">
                                 <div class="d-flex gap-2 flex-column mb-2">
@@ -467,25 +457,77 @@
                             <div class="modal-footer">
                                 <button type="button" id="calculateModalPrimaryButton" class="btn btn-primary">Yes</button>
                                 <button type="button" id="calculateModalSecondaryButton" class="btn btn-secondary">No</button>
-                                <button type="button" id="calculateModalTertiaryButton" class="btn btn-secondary">No</button>                    
+                                <button type="button" id="calculateModalTertiaryButton" class="btn btn-secondary">No</button>
                             </div>
                 </div>
             </div>
         </div>
+        <!-- Filter Bar (toggled by the Filter button) -->
+        <div id="filterBar" style="display:none; position:relative; z-index:1100; background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:12px 16px; margin-bottom:14px; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+            <div style="position:relative;">
+                <label class="form-label mb-1" style="font-size:0.8rem;">Employee</label>
+                <input type="text" id="filterEmployeeName" class="form-control form-control-sm" placeholder="Search employee..." autocomplete="off" style="width:220px;">
+                <input type="hidden" id="filterEmployeeId" value="">
+                <div id="filterEmployeeList" style="display:none; position:absolute; top:100%; left:0; z-index:1060; width:250px; max-height:180px; overflow-y:auto; background:#fff; border:1px solid #dee2e6; border-radius:6px; margin-top:2px; box-shadow:0 4px 10px rgba(0,0,0,.15);"></div>
+            </div>
+            <div>
+                <label class="form-label mb-1" style="font-size:0.8rem;">Month</label>
+                <select id="filterMonth" class="form-select form-select-sm" style="width:130px;">
+                    <option value="">All Months</option>
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label mb-1" style="font-size:0.8rem;">Year</label>
+                <select id="filterYear" class="form-select form-select-sm" style="width:100px;">
+                    <option value="">All Years</option>
+                    @php
+                        $currentYear = now()->year;
+                    @endphp
+                    @for($y = 2023; $y <= $currentYear + 1; $y++)
+                        <option value="{{ $y }}" {{ $y == $currentYear ? 'selected' : '' }}>{{ $y }}</option>
+                    @endfor
+                </select>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <button type="button" id="applyFilterBtn" class="btn btn-primary btn-sm">Apply</button>
+                <button type="button" id="clearFilterBtn" class="btn btn-secondary btn-sm">Clear</button>
+            </div>
+        </div>
 
         <div id="employeeTimesGrid"></div>
-        
+
         <!-- Load PDF.js library -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <script>
             // Configure PDF.js worker
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         </script>
-        
+
         @push('scripts')
         <script>
             // Import form logic
             document.addEventListener('DOMContentLoaded', function() {
+                // Toggle filter bar visibility
+                $('#toggleFilterBtn').on('click', function() {
+                    const $bar = $('#filterBar');
+                    if ($bar.is(':visible')) {
+                        $bar.slideUp(200);
+                    } else {
+                        $bar.css('display', 'flex').hide().slideDown(200);
+                    }
+                });
                 const syncModalElement = document.getElementById('syncModal');
                 const syncModal = new bootstrap.Modal(syncModalElement);
                 const calculateModalElement = document.getElementById('calculateModal');
@@ -573,7 +615,7 @@
                         importBtnSpinner.classList.remove('d-none');
                         importBtnText.textContent = 'Importing...';
                         importSubmitBtn.disabled = true;
-                    
+
                         let progressKey = null;
                         let pollInterval = null;
 
@@ -674,7 +716,7 @@
                     const checkedEmployees = document.querySelectorAll('.employee-checkbox:checked');
                     let employeeIds = Array.from(checkedEmployees).map(checkbox => checkbox.value);
                     const exportType = document.querySelector('input[name="exportType"]:checked').value;
-                    
+
                     if (months.length === 0 || years.length === 0) {
                         alert('Please select at least one month and one year.');
                         return;
@@ -683,10 +725,10 @@
                         alert('Please select at least one employee.');
                         return;
                     }
-                    
+
                     exportAllBtn.disabled = true;
                     exportAllBtn.textContent = 'Exporting...';
-                    
+
                     if (exportType === 'separate') {
                         // Export each employee as a separate PDF
                         exportSeparatePDFs(employeeIds, months, years, exportAllBtn);
@@ -695,7 +737,7 @@
                         exportSinglePDF(employeeIds, months, years, exportAllBtn);
                     }
                 });
-                
+
                 // Function to export all employees in one combined PDF
                 function exportSinglePDF(employeeIds, months, years, exportAllBtn) {
                     // Build URL with query parameters for the multiple export request
@@ -706,12 +748,12 @@
                     years.forEach(year => {
                         params.append('years[]', year);
                     });
-                    
+
                     // Add all selected employee IDs
                     employeeIds.forEach(id => {
                         params.append('ids[]', id);
                     });
-                    
+
                     // Use the existing exportMultipleTimesheets endpoint
                     fetch('/employee_times/export-multiple?' + params.toString(), {
                         method: 'GET',
@@ -729,7 +771,7 @@
                         if (blob.size === 0) {
                             throw new Error('Exported file is empty');
                         }
-                        
+
                         // Generate filename based on selection
                         const employeeCount = employeeIds.length;
                         const monthCount = months.length;
@@ -737,12 +779,12 @@
                         const monthsText = monthCount === 12 ? 'all_months' : months.join('_');
                         const yearsText = yearCount === 1 ? years[0] : years.join('_');
                         const fileName = `combined_timesheets_${employeeCount}_employees_${monthsText}_${yearsText}.pdf`;
-                        
+
                         // Show preview modal
                         showPdfPreview(blob, fileName);
-                        
+
                         console.log(`Successfully loaded preview for ${employeeCount} employees for ${monthCount} months and ${yearCount} years`);
-                        
+
                     })
                     .catch((error) => {
                         console.error('Export error:', error);
@@ -755,64 +797,64 @@
                         if(modal) modal.hide();
                     });
                 }
-                
+
                 // Function to show PDF preview in modal
                 async function showPdfPreview(blob, fileName) {
                     const url = window.URL.createObjectURL(blob);
                     const container = document.getElementById('pdfPreviewContainer');
                     const loadingDiv = document.getElementById('pdfPreviewLoading');
                     const downloadBtn = document.getElementById('downloadPdfBtn');
-                    
+
                     // Clear previous content
                     container.innerHTML = '';
-                    
+
                     // Show preview modal
                     const previewModal = new bootstrap.Modal(document.getElementById('pdfPreviewModal'));
                     previewModal.show();
-                    
+
                     // Show loading
                     loadingDiv.style.display = 'flex';
                     container.style.display = 'none';
-                    
+
                     try {
                         // Load PDF document
                         const pdf = await pdfjsLib.getDocument(url).promise;
-                        
+
                         // Render all pages
                         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                             const page = await pdf.getPage(pageNum);
-                            
+
                             // Calculate scale to fit width
                             const viewport = page.getViewport({ scale: 1 });
                             const containerWidth = container.clientWidth || 800;
                             const scale = (containerWidth * 0.95) / viewport.width;
                             const scaledViewport = page.getViewport({ scale: scale });
-                            
+
                             // Create canvas for this page
                             const canvas = document.createElement('canvas');
                             const context = canvas.getContext('2d');
                             canvas.height = scaledViewport.height;
                             canvas.width = scaledViewport.width;
-                            
+
                             // Render page
                             await page.render({
                                 canvasContext: context,
                                 viewport: scaledViewport
                             }).promise;
-                            
+
                             // Add canvas to container
                             container.appendChild(canvas);
                         }
-                        
+
                         // Hide loading, show container
                         loadingDiv.style.display = 'none';
                         container.style.display = 'block';
-                        
+
                     } catch (error) {
                         console.error('Error loading PDF:', error);
                         loadingDiv.innerHTML = '<div class="text-center text-white"><p>Error loading PDF preview</p><p class="small">' + error.message + '</p></div>';
                     }
-                    
+
                     // Setup download button
                     downloadBtn.onclick = function() {
                         const a = document.createElement('a');
@@ -822,7 +864,7 @@
                         a.click();
                         document.body.removeChild(a);
                     };
-                    
+
                     // Clean up when modal closes
                     document.getElementById('pdfPreviewModal').addEventListener('hidden.bs.modal', function() {
                         window.URL.revokeObjectURL(url);
@@ -832,16 +874,16 @@
                         container.style.display = 'none';
                     }, { once: true });
                 }
-                
+
                 // Function to export each employee as a separate PDF
                 function exportSeparatePDFs(employeeIds, months, years, exportAllBtn) {
                     let completedDownloads = 0;
                     let totalDownloads = employeeIds.length;
                     let hasErrors = false;
-                    
+
                     // Update button to show progress
                     exportAllBtn.textContent = `Exporting... (0/${totalDownloads})`;
-                    
+
                     // Create downloads sequentially to avoid overwhelming the server
                     async function downloadEmployeePDF(employeeId, index) {
                         try {
@@ -854,36 +896,36 @@
                                 params.append('years[]', year);
                             });
                             params.append('ids[]', employeeId);
-                            
+
                             const response = await fetch('/employee_times/export-multiple?' + params.toString(), {
                                 method: 'GET',
                                 headers: {
                                     'X-Requested-With': 'XMLHttpRequest'
                                 }
                             });
-                            
+
                             if (!response.ok) {
                                 throw new Error(`Export failed: ${response.status} ${response.statusText}`);
                             }
-                            
+
                             const blob = await response.blob();
-                            
+
                             if (blob.size === 0) {
                                 throw new Error('Exported file is empty');
                             }
-                            
+
                             // Get employee name for filename
                             const employeeCheckbox = document.getElementById(`emp_${employeeId}`);
-                            const employeeName = employeeCheckbox ? 
-                                employeeCheckbox.nextElementSibling.textContent.trim().replace(/\s+/g, '_') : 
+                            const employeeName = employeeCheckbox ?
+                                employeeCheckbox.nextElementSibling.textContent.trim().replace(/\s+/g, '_') :
                                 `Employee_${employeeId}`;
-                            
+
                             const monthCount = months.length;
                             const yearCount = years.length;
                             const monthsText = monthCount === 12 ? 'all_months' : months.join('_');
                             const yearsText = yearCount === 1 ? years[0] : years.join('_');
                             const fileName = `${employeeName}_timesheet_${monthsText}_${yearsText}.pdf`;
-                            
+
                             // Download the PDF
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -891,35 +933,35 @@
                             a.download = fileName;
                             document.body.appendChild(a);
                             a.click();
-                            
+
                             // Clean up
                             setTimeout(() => {
                                 window.URL.revokeObjectURL(url);
                                 document.body.removeChild(a);
                             }, 100);
-                            
+
                             completedDownloads++;
                             exportAllBtn.textContent = `Exporting... (${completedDownloads}/${totalDownloads})`;
-                            
+
                             console.log(`Successfully exported timesheet for ${employeeName} covering ${yearCount} years and ${monthCount} months`);
-                            
+
                         } catch (error) {
                             hasErrors = true;
                             console.error(`Error exporting employee ${employeeId}:`, error);
                         }
                     }
-                    
+
                     // Create promises for each employee (one PDF per employee with all their selected months/years)
                     let downloadPromises = [];
-                    
+
                     employeeIds.forEach((employeeId, index) => {
                         downloadPromises.push(
-                            new Promise(resolve => 
+                            new Promise(resolve =>
                                 setTimeout(() => resolve(downloadEmployeePDF(employeeId, index)), index * 500)
                             )
                         );
                     });
-                    
+
                     // Download all employee PDFs with staggered timing
                     Promise.all(downloadPromises).then(() => {
                         if (hasErrors) {
@@ -934,28 +976,28 @@
                         if(modal) modal.hide();
                     });
                 }
-                
+
                 // Set default month/year when modal is shown
                 $(document).on('show.bs.modal', '#exportAllModal', function() {
                     const now = new Date();
-                    
+
                     // Set current month as checked, uncheck all others
                     document.querySelectorAll('.month-checkbox').forEach(checkbox => {
                         checkbox.checked = false;
                     });
                     document.getElementById('month_' + (now.getMonth() + 1)).checked = true;
-                    
+
                     // Set current year as checked, uncheck all others
                     document.querySelectorAll('.year-checkbox').forEach(checkbox => {
                         checkbox.checked = false;
                     });
                     document.getElementById('year_' + now.getFullYear()).checked = true;
-                    
+
                     // Update Select All checkboxes state
                     updateSelectAllMonthsState();
                     updateSelectAllYearsState();
                 });
-                
+
                 // Handle Select All checkbox for years
                 $(document).on('change', '#selectAllYears', function() {
                     const isChecked = this.checked;
@@ -963,18 +1005,18 @@
                         checkbox.checked = isChecked;
                     });
                 });
-                
+
                 // Handle individual year checkboxes
                 $(document).on('change', '.year-checkbox', function() {
                     updateSelectAllYearsState();
                 });
-                
+
                 // Function to update Select All years state
                 function updateSelectAllYearsState() {
                     const allYearCheckboxes = document.querySelectorAll('.year-checkbox');
                     const checkedYearCheckboxes = document.querySelectorAll('.year-checkbox:checked');
                     const selectAllYearsCheckbox = document.getElementById('selectAllYears');
-                    
+
                     if (checkedYearCheckboxes.length === allYearCheckboxes.length) {
                         selectAllYearsCheckbox.checked = true;
                         selectAllYearsCheckbox.indeterminate = false;
@@ -986,7 +1028,7 @@
                         selectAllYearsCheckbox.indeterminate = true;
                     }
                 }
-                
+
                 // Handle Select All checkbox for months
                 $(document).on('change', '#selectAllMonths', function() {
                     const isChecked = this.checked;
@@ -994,7 +1036,7 @@
                         checkbox.checked = isChecked;
                     });
                 });
-                
+
                 // Handle individual month checkboxes
                 $(document).on('change', '.month-checkbox', function() {
                     updateSelectAllMonthsState();
@@ -1029,12 +1071,12 @@
                     const closeBtn = $('#syncModalCloseBtn');
                     const headerMessage =$('#syncModalHeaderMessage')
                     closeBtn.removeClass('d-none');
-                    
-                    
-                    
+
+
+
                     if (syncModalData.page === 'flagged' ) {
                         dialog.removeClass('modal-sm modal-lg').addClass('modal-xl');
-                    } 
+                    }
                     else if( syncModalData.page === 'normal' ){
                         dialog.removeClass('modal-sm modal-xl').addClass('modal-lg');
                     }
@@ -1047,13 +1089,13 @@
                     secondaryBtn.addClass('d-none');
                     tertiaryBtn.addClass('d-none');
                     primaryBtn.prop("disabled", false);
-                    $("#syncModal .modal-footer").removeClass("d-none");                    
-                    
+                    $("#syncModal .modal-footer").removeClass("d-none");
+
                     if(syncModalData.page==='calculate-success'){
                         let htmlStatement="Attendance calculated successfully !"
                         message.html(htmlStatement)
-                        
-                        $("#syncModal .modal-footer").addClass("d-none");                    
+
+                        $("#syncModal .modal-footer").addClass("d-none");
                     }
 
                     if(syncModalData.page==='normal'){
@@ -1066,7 +1108,7 @@
                     }
 
                     if(syncModalData.page==='flagged'){
-                        
+
 
                         const idsToFetch = syncModalData.flaggedRecords.map((element) => element.uid)
                         const originalRecordsRequest = $.ajax({
@@ -1082,23 +1124,23 @@
                             type: "GET",
                             data: {
                                 _token: "{{ csrf_token() }}"
-                            }  
+                            }
                         });
 
                         $.when(originalRecordsRequest,eventCodesRequest).done(function (originalResponse, eventCodesResponse) {
-                            
+
 
                             const originalRecords = originalResponse[0];
                             const eventCodes = eventCodesResponse[0];
 
 
-    
+
                             const formattedConflictRecords  = syncModalData.flaggedRecords.map((element,index)=>{
                                 const originals = originalRecords.filter(
                                         record => record.machine_id == element.uid
                                     );
                                 let flaggedTime = element.timestamp.split(" ")
-                                
+
                                 let originalCellsHtml = originals.length > 0
                                         ? originals.map((original, i) => {
                                             let originalTime = original.timestamp.split(" ")
@@ -1119,13 +1161,13 @@
                                         flaggedDate: flaggedTime[0],
                                         flaggedClock: flaggedTime[1],
                                         originalCellsHtml: originalCellsHtml
-                                    };  
-                            }) 
-    
+                                    };
+                            })
+
                             let htmlStatement = `<div class="align-items-center mb-3">${syncModalData.message??''}</div>`
                             htmlStatement+= `
                                     <div class="container-fluid">
-    
+
                                         <div class="row mb-4">
                                             <div class="col-12 alert alert-warning">
                                                 <p class="mb-0">
@@ -1134,32 +1176,32 @@
                                                 </p>
                                             </div>
                                         </div>
-    
+
                                         <div class="row align-items-center mb-4 ">
-                                            
+
                                             <div class="col-1 text-center fw-bold">
-                                                
+
                                             </div>
-    
+
                                             <div class="col-4 text-center fw-bold">
                                                 Flagged records
                                             </div>
-    
+
                                             <div class="col-4 text-center fw-bold">
                                                 Conflicted records
                                             </div>
-    
+
                                             <div class="col-2 text-center fw-bold">
-                                                
+
                                             </div>
                                         </div>
 
                                         <div class="row align-items-center mb-2 pb-2 border-bottom">
-                                            
+
                                             <div class="col-1 text-center fw-bold">
                                                 ID
                                             </div>
-    
+
                                             <div class="col-4">
                                                 <div class="row g-0 text-center small">
                                                     <div class="col-3 fw-bold">Employee #</div>
@@ -1168,7 +1210,7 @@
                                                     <div class="col-3 fw-bold">Time</div>
                                                 </div>
                                             </div>
-    
+
                                             <div class="col-4">
                                                 <div class="row g-0 text-center small">
                                                     <div class="col-3 fw-bold">Employee #</div>
@@ -1177,12 +1219,12 @@
                                                     <div class="col-3 fw-bold">Time</div>
                                                 </div>
                                             </div>
-    
+
                                             <div class="col-2 text-center fw-bold">
                                                 Actions
                                             </div>
                                         </div>`
-    
+
                                      formattedConflictRecords.forEach((element,index) => {
                                         isDuplicate=false
                                         if(originalRecords.some(record=> record.machine_id == element.uid))
@@ -1195,7 +1237,7 @@
                                                         ${element.uid}
                                                     </div>
 
-                            
+
                                                     <div id="flagged-record-${element.uid}" class="col-4 px-1">
                                                         <div class="row g-0 text-center small align-items-center bg-success-subtle">
                                                             <div class="col-3 py-1">${element.flaggedEmpId}</div>
@@ -1215,10 +1257,10 @@
                                                     </div>
                                                 </div>
                                             `;});
-    
+
                                         htmlStatement+=`</div>`
-    
-                                        
+
+
                                         message.html(htmlStatement)
                                         headerMessage.html(syncModalData.headerMessage).removeClass('d-none')
                                         primaryBtn.text('Continue')
@@ -1227,9 +1269,9 @@
 
                                         closeBtn.addClass('d-none');
 
-                                    
 
-                                        
+
+
                         })
                         .fail(function(xhr) {
                                 const errorMsg =
@@ -1239,7 +1281,7 @@
                                 syncModalData.message = errorMsg;
                                 showSyncModalPage('error');
                             });
-                                       
+
                     }
 
                     if(syncModalData.page==='flagged-ignore'){
@@ -1275,18 +1317,18 @@
                             <span class="m-2" id="sync-import-progress-label">0%</span>
                         </div>`
                         message.html(htmlStatement)
-                        $("#syncModal .modal-footer").addClass("d-none");                    
+                        $("#syncModal .modal-footer").addClass("d-none");
 
                     }
                     if(syncModalData.page==='error')
-                    {   
+                    {
                         let htmlStatement = `<h5>Error</h5><div class="alert alert-danger mb-0 ">${syncModalData.message}. </div>`;
                         message.html(htmlStatement);
-                        primaryBtn.text('Ok'); 
+                        primaryBtn.text('Ok');
                         secondaryBtn.hide();
-                        tertiaryBtn.hide();             
+                        tertiaryBtn.hide();
                     }
-                
+
                 }
                 // shared SSE stream reader used by the sync + calculate flows
                 const createSseReader = ({ onProgress, onError, onDone }) => {
@@ -1467,15 +1509,15 @@
                         else{
                             showSyncModalPage('flagged-ignore');
                         }
-                        
+
                     }
                     else if (syncModalData.page==='flagged-ignore'){
                         let count = syncModalData.flaggedRecords.length
                         syncModalData.flaggedRecords = [];
                         syncModalData.message=`<div class="alert alert-success mb-0">${count} Flagged records ignored</div>`
-                        
+
                         showSyncModalPage('import-success')
-                        
+
                     }
 
                     else if (syncModalData.page==='error'){
@@ -1489,7 +1531,7 @@
 
                     if(syncModalData.page==='flagged-ignore'){
                         showSyncModalPage('flagged')}
-                    
+
                     else{
                         if (syncModal) {
                             syncModal.hide()
@@ -1504,8 +1546,8 @@
                 });
 
                 $("#SyncModalTertiaryButton").on('click',function(){
-                    
-                   
+
+
 
                 })
 
@@ -1532,12 +1574,12 @@
                             _token: '{{ csrf_token() }}'
                         },
                         success: function(response) {
-                            actionLabel === 'Add' ? 
+                            actionLabel === 'Add' ?
                             addedDiv.html('<span class="text-success fw-bold">Added</span>'):
                             addedDiv.html('<span class="text-success fw-bold">Overwritten</span>');
-                            syncModalData.flaggedRecords= syncModalData.flaggedRecords.filter(element => element['uid'] !==id); 
+                            syncModalData.flaggedRecords= syncModalData.flaggedRecords.filter(element => element['uid'] !==id);
                             $("#SyncModalTertiaryButton").prop('disabled', syncModalData.flaggedRecords.length === 0);
-                            
+
                         },
                         error: function(xhr) {
                             let errorMsg = 'Failed to update records.';
@@ -1564,10 +1606,10 @@
                     syncModalData.flaggedRecords = syncModalData.flaggedRecords.filter(element => element.uid !== id);
                     $("#SyncModalTertiaryButton").prop('disabled', syncModalData.flaggedRecords.length === 0);
                     addedDiv.html('<span class="text-danger fw-bold">Ignored</span>');
-                    
-                        
+
+
                 });
-                
+
                 var calculateModalData = {
                     flaggedRecords: [],
                     conflictedRecords: [],
@@ -1782,7 +1824,7 @@
                         });
                         html +=`</div>`
                     });
-                    
+
                     return html;
                 };
 
@@ -1879,7 +1921,7 @@
 
                         if(conflictedRecords.length > 0){
                             interventionHtml += `
-                            
+
                                 <h5 class="fw-bold text-danger-emphasis mt-4 mb-4">
                                     Conflicted records (${conflictedRecords.length})
                                     </H5>
@@ -1971,15 +2013,15 @@
                         calculateModalData.showCalculateConfirm = showCalculateConfirm;
                         calculateModalData.runIgnoreAll = runIgnoreAll;
                     }
-                    else{ 
+                    else{
                         $('#calculateModalProgress').addClass('d-none');
                         success.removeClass('d-none');
                         primaryBtn.text('ok').show();
                         calculateModalPage = 'success';
                         $('#calculateModalCloseBtn').show();
                     }
-                    
-                    
+
+
                     calculateModal.show();
 
                     // Optionally reload the page or grid
@@ -2254,7 +2296,7 @@
                     const allMonthCheckboxes = document.querySelectorAll('.month-checkbox');
                     const checkedMonthCheckboxes = document.querySelectorAll('.month-checkbox:checked');
                     const selectAllMonthsCheckbox = document.getElementById('selectAllMonths');
-                    
+
                     if (checkedMonthCheckboxes.length === allMonthCheckboxes.length) {
                         selectAllMonthsCheckbox.checked = true;
                         selectAllMonthsCheckbox.indeterminate = false;
@@ -2266,7 +2308,7 @@
                         selectAllMonthsCheckbox.indeterminate = true;
                     }
                 }
-                
+
                 // Handle Select All checkbox
                 $(document).on('change', '#selectAllEmployees', function() {
                     const isChecked = this.checked;
@@ -2274,13 +2316,13 @@
                         checkbox.checked = isChecked;
                     });
                 });
-                
+
                 // Handle individual checkboxes
                 $(document).on('change', '.employee-checkbox', function() {
                     const allCheckboxes = document.querySelectorAll('.employee-checkbox');
                     const checkedCheckboxes = document.querySelectorAll('.employee-checkbox:checked');
                     const selectAllCheckbox = document.getElementById('selectAllEmployees');
-                    
+
                     if (checkedCheckboxes.length === allCheckboxes.length) {
                         selectAllCheckbox.checked = true;
                         selectAllCheckbox.indeterminate = false;
@@ -2298,7 +2340,12 @@
                 {
                     id: {{ $item->id }},
                     employee: `{{ optional($item->employee)->first_name }} {{ optional($item->employee)->mid_name }} {{ optional($item->employee)->last_name }}`,
+                    employee_id: {{ $item->employee_id }},
+                    first_name: `{{ optional($item->employee)->first_name }}`,
+                    mid_name: `{{ optional($item->employee)->mid_name }}`,
+                    last_name: `{{ optional($item->employee)->last_name }}`,
                     date: `{{ $item->date }}`,
+                    date_str: `{{ $item->date }}`,
                     time_in: `{{ $item->clock_in }}`,
                     time_out: `{{ $item->clock_out }}`,
                     total_time: `{{ $item->total_time ?? '' }}`,
@@ -2322,21 +2369,21 @@
                     form.method = 'POST';
                     form.action = deleteUrl;
                     form.style.display = 'none';
-                    
+
                     // Add CSRF token
                     const csrfInput = document.createElement('input');
                     csrfInput.type = 'hidden';
                     csrfInput.name = '_token';
                     csrfInput.value = csrfToken;
                     form.appendChild(csrfInput);
-                    
+
                     // Add DELETE method
                     const methodInput = document.createElement('input');
                     methodInput.type = 'hidden';
                     methodInput.name = '_method';
                     methodInput.value = 'DELETE';
                     form.appendChild(methodInput);
-                    
+
                     document.body.appendChild(form);
                     form.submit();
                 }
@@ -2353,12 +2400,12 @@
                     columns: [
                         { dataField: "id", caption: "ID", width: 60, allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
                         { dataField: "employee", caption: "Employee", width: 200, allowFiltering: true, headerFilter: { allowSearch: true } },
-                        { 
-                            dataField: "date", 
-                            caption: "Date", 
+                        {
+                            dataField: "date",
+                            caption: "Date",
                             dataType: "date",
-                            allowFiltering: true, 
-                            headerFilter: { allowSearch: true }, 
+                            allowFiltering: true,
+                            headerFilter: { allowSearch: true },
                             sortOrder: "desc",
                             format: "dd/MM/yyyy",
                             filterOperations: ['between', '=', '<>', '<', '<=', '>', '>='],
@@ -2371,11 +2418,16 @@
                         { dataField: "total_break_diff", caption: "Break Difference", allowFiltering: true, headerFilter: { allowSearch: true }, cellTemplate: function(container, options) { $(container).text(displayDiff(options.data.total_break_diff)); } },
                         { dataField: "flagged", caption: "Flagged", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
                         { dataField: "break_flag", caption: "Break Flag", allowFiltering: true, headerFilter: { allowSearch: true }, visible: false },
+                        { dataField: "employee_id", visible: false, allowFiltering: true },
+                        { dataField: "first_name", visible: false, allowFiltering: true },
+                        { dataField: "mid_name", visible: false, allowFiltering: true },
+                        { dataField: "last_name", visible: false, allowFiltering: true },
+                        { dataField: "date_str", visible: false, allowFiltering: true },
 
-                        { 
-                            dataField: "extra_minus", 
-                            caption: "Extra-Minus", 
-                            allowFiltering: true, 
+                        {
+                            dataField: "extra_minus",
+                            caption: "Extra-Minus",
+                            allowFiltering: true,
                             headerFilter: { allowSearch: true },
                             cellTemplate: function(container, options) {
                                 const extraMinusTime = calculateExtraMinus(options.data.total_time, options.data.vacation_type);
@@ -2522,13 +2574,13 @@
                     noDataText: 'No Punch Time found.',
                     onSelectionChanged: function(selectedItems) {
                         const selectedKeys = selectedItems.selectedRowKeys;
-                        
+
                         // Use setTimeout to ensure button is rendered
                         setTimeout(function() {
                             const bulkEditBtnElement = $('#bulkEditBtn');
                             if (bulkEditBtnElement.length > 0) {
                                 const bulkEditBtn = bulkEditBtnElement.dxButton('instance');
-                                
+
                                 if (selectedKeys.length > 0) {
                                     bulkEditBtn.option('disabled', false);
                                     bulkEditBtn.option('text', `Bulk Edit (${selectedKeys.length})`);
@@ -2540,14 +2592,118 @@
                         }, 0);
                     }
                 }).dxDataGrid('instance');
-                
+            // filter logic
+                var currentMonth = new Date().getMonth() + 1;
+                var currentYear = new Date().getFullYear().toString();
+                $('#filterMonth').val(currentMonth.toString().padStart(2, '0'));
+                $('#filterYear').val(currentYear);
+
+                // Employee searchable dropdown (max 4 shown + Show more)
+                var employeeFilterOptions = @json($employees->map(function ($e) {
+                    return ['id' => $e->id, 'name' => trim($e->first_name . ' ' . $e->mid_name . ' ' . $e->last_name)];
+                }));
+                var empVisibleLimit = 4;
+                var empExpanded = false;
+                var empFilteredList = employeeFilterOptions;
+
+                function renderEmployeeFilterList() {
+                    var limit = empExpanded ? empFilteredList.length : Math.min(empVisibleLimit, empFilteredList.length);
+                    var html = '';
+                    for (var i = 0; i < limit; i++) {
+                        var emp = empFilteredList[i];
+                        var name = String(emp.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                        html += '<div class="emp-filter-item" data-id="' + emp.id + '" data-name="' + name + '" style="padding:6px 10px; cursor:pointer; font-size:0.85rem;">' + name + '</div>';
+                    }
+                    if (empFilteredList.length > empVisibleLimit) {
+                        html += empExpanded
+                            ? '<div class="emp-filter-show-less" style="padding:6px 10px; cursor:pointer; font-size:0.8rem; color:#0d6efd; border-top:1px solid #eee;">Show less</div>'
+                            : '<div class="emp-filter-show-more" style="padding:6px 10px; cursor:pointer; font-size:0.8rem; color:#0d6efd; border-top:1px solid #eee;">Show more (' + (empFilteredList.length - empVisibleLimit) + ' more)</div>';
+                    }
+                    if (!empFilteredList.length) {
+                        html = '<div style="padding:6px 10px; font-size:0.85rem; color:#6c757d;">No employees found</div>';
+                    }
+                    $('#filterEmployeeList').html(html);
+                }
+
+                function filterEmployeeOptions() {
+                    var q = $('#filterEmployeeName').val().trim().toLowerCase();
+                    empFilteredList = q
+                        ? employeeFilterOptions.filter(function (e) { return String(e.name).toLowerCase().indexOf(q) !== -1; })
+                        : employeeFilterOptions;
+                    empExpanded = false;
+                    renderEmployeeFilterList();
+                }
+
+                $('#filterEmployeeName').on('focus input', function () {
+                    filterEmployeeOptions();
+                    $('#filterEmployeeList').show();
+                });
+                $('#filterEmployeeList').on('click', '.emp-filter-item', function () {
+                    $('#filterEmployeeId').val($(this).data('id'));
+                    $('#filterEmployeeName').val($(this).data('name'));
+                    $('#filterEmployeeList').hide();
+                });
+                $('#filterEmployeeList').on('click', '.emp-filter-show-more', function (e) {
+                    e.stopPropagation();
+                    empExpanded = true;
+                    renderEmployeeFilterList();
+                });
+                $('#filterEmployeeList').on('click', '.emp-filter-show-less', function (e) {
+                    e.stopPropagation();
+                    empExpanded = false;
+                    renderEmployeeFilterList();
+                });
+                $(document).on('click', function (e) {
+                    if (!$(e.target).closest('#filterEmployeeName, #filterEmployeeList').length) {
+                        $('#filterEmployeeList').hide();
+                    }
+                });
+
+                function applyEmployeeTimeFilter() {
+                    var employeeId = $('#filterEmployeeId').val();
+                    var month = $('#filterMonth').val();
+                    var year = $('#filterYear').val();
+
+                    var filters = [];
+
+                    if (employeeId) {
+                        filters.push(['employee_id', '=', parseInt(employeeId, 10)]);
+                    }
+                    if (month && year) {
+                        var padMonth = month.padStart(2, '0');
+                        filters.push(['date_str', 'contains', year + '-' + padMonth]);
+                    } else if (month) {
+                        var padMonth = month.padStart(2, '0');
+                        filters.push(['date_str', 'contains', '-' + padMonth + '-']);
+                    } else if (year) {
+                        filters.push(['date_str', 'contains', year + '-']);
+                    }
+
+                    dataGridInstance.filter(filters.length > 0 ? filters : null);
+                }
+
+                // Apply Filter
+                $('#applyFilterBtn').on('click', applyEmployeeTimeFilter);
+
+                // Clear Filter
+                $('#clearFilterBtn').on('click', function () {
+                    $('#filterEmployeeId').val('');
+                    $('#filterEmployeeName').val('');
+                    $('#filterMonth').val(currentMonth.toString().padStart(2, '0'));
+                    $('#filterYear').val(currentYear);
+                    applyEmployeeTimeFilter();
+                });
+
+                // Apply defaults (current month + current year) on load
+                applyEmployeeTimeFilter();
+
                 // Bulk Edit form submission
                 $('#bulkEditForm').on('submit', function(e) {
                     e.preventDefault();
-                    
+
                     const selectedRows = dataGridInstance.getSelectedRowsData();
                     const selectedIds = selectedRows.map(row => row.id);
-                    
+
                     const formData = {
                         ids: selectedIds,
                         clock_in: $('#bulk_clock_in').val(),
@@ -2557,15 +2713,15 @@
                         clear_reason: $('#bulk_clear_reason').is(':checked') ? 1 : 0,
                         _token: '{{ csrf_token() }}'
                     };
-                    
+
                     const errorsDiv = $('#bulk-edit-errors');
                     const successDiv = $('#bulk-edit-success');
                     const submitBtn = $('#bulkEditSubmitBtn');
-                    
+
                     errorsDiv.addClass('d-none');
                     successDiv.addClass('d-none');
                     submitBtn.prop('disabled', true).text('Saving...');
-                    
+
                     $.ajax({
                         url: '{{ route('employee_times.bulk-update') }}',
                         method: 'POST',
@@ -2573,7 +2729,7 @@
                         success: function(response) {
                             successDiv.text(response.message || 'Records updated successfully!');
                             successDiv.removeClass('d-none');
-                            
+
                             setTimeout(function() {
                                 $('#bulkEditModal').modal('hide');
                                 window.location.reload();
@@ -2590,7 +2746,7 @@
                         }
                     });
                 });
-                
+
                 // Reset form when modal is closed
                 $('#bulkEditModal').on('hidden.bs.modal', function() {
                     $('#bulkEditForm')[0].reset();
@@ -2603,20 +2759,20 @@
                 $('#bulkAddForm').on('submit', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    
+
                     const submitBtn = $('#bulkAddSubmitBtn');
-                    
+
                     // Prevent double submission
                     if (submitBtn.prop('disabled')) {
                         return false;
                     }
-                    
+
                     // Collect selected employee IDs from checkboxes
                     const selectedEmployeeIds = [];
                     $('.bulk-add-employee-checkbox:checked').each(function() {
                         selectedEmployeeIds.push($(this).val());
                     });
-                    
+
                     // Validate at least one employee is selected
                     if (selectedEmployeeIds.length === 0) {
                         const errorsDiv = $('#bulk-add-errors');
@@ -2624,7 +2780,7 @@
                         errorsDiv.removeClass('d-none');
                         return false;
                     }
-                    
+
                     const formData = new FormData();
                     formData.append('_token', '{{ csrf_token() }}');
                     formData.append('date', $('#bulk_add_date').val());
@@ -2632,19 +2788,19 @@
                     formData.append('clock_out', $('#bulk_add_clock_out').val());
                     formData.append('vacation_type', $('#bulk_add_vacation_type').val());
                     formData.append('reason', $('#bulk_add_reason').val());
-                    
+
                     // Add each selected employee ID
                     selectedEmployeeIds.forEach(function(id) {
                         formData.append('employee_ids[]', id);
                     });
-                    
+
                     const errorsDiv = $('#bulk-add-errors');
                     const successDiv = $('#bulk-add-success');
-                    
+
                     errorsDiv.addClass('d-none');
                     successDiv.addClass('d-none');
                     submitBtn.prop('disabled', true).text('Adding...');
-                    
+
                     $.ajax({
                         url: '{{ route('employee_times.bulk-add') }}',
                         method: 'POST',
@@ -2654,7 +2810,7 @@
                         success: function(response) {
                             successDiv.text(response.message || 'Records added successfully!');
                             successDiv.removeClass('d-none');
-                            
+
                             setTimeout(function() {
                                 $('#bulkAddModal').modal('hide');
                                 window.location.reload();
@@ -2672,7 +2828,7 @@
                             submitBtn.prop('disabled', false).text('Add Records');
                         }
                     });
-                    
+
                     return false;
                 });
 
@@ -2687,7 +2843,7 @@
                     const checkedCheckboxes = $('.bulk-add-employee-checkbox:checked').length;
                     $('#selectAllBulkAddEmployees').prop('checked', totalCheckboxes === checkedCheckboxes);
                 });
-                
+
                 // Reset form when bulk add modal is closed
                 $('#bulkAddModal').on('hidden.bs.modal', function() {
                     $('#bulkAddForm')[0].reset();
@@ -2707,23 +2863,23 @@
 // Function to format time from 24-hour to 12-hour AM/PM format
 function formatTime(timeString) {
     if (!timeString || timeString === '') return '';
-    
+
     // Parse the time string (assuming format like "11:30" or "14:30")
     const [hours, minutes] = timeString.split(':');
     const hour = parseInt(hours, 10);
     const minute = minutes || '00';
-    
+
     // Convert to 12-hour format
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    
+
     return `${displayHour}:${minute} ${ampm}`;
 }
 
 // Function to format total time to hh:mm format (remove seconds)
 function formatTotalTime(timeString) {
     if (!timeString || timeString === '') return '';
-    
+
     // If the time string has seconds (hh:mm:ss), remove them
     const timeParts = timeString.split(':');
     if (timeParts.length >= 2) {
@@ -2731,7 +2887,7 @@ function formatTotalTime(timeString) {
         const minutes = timeParts[1].padStart(2, '0');
         return `${hours}:${minutes}`;
     }
-    
+
     return timeString;
 }
 // Display-only helper: shows the diff with a leading '-' (e.g. -01:02) without altering the stored value
@@ -2745,39 +2901,39 @@ function displayDiff(value) {
 // Function to calculate extra/minus time compared to 9 hours (or 4.5 for half-day)
 function calculateExtraMinus(totalTimeString, vacationType) {
     if (!totalTimeString || totalTimeString === '') return '';
-    
+
     // Parse total time string (format: "hh:mm:ss" or "hh:mm")
     const timeParts = totalTimeString.split(':');
     if (timeParts.length < 2) return '';
-    
+
     const hours = parseInt(timeParts[0], 10) || 0;
     const minutes = parseInt(timeParts[1], 10) || 0;
     const seconds = parseInt(timeParts[2], 10) || 0;
-    
+
     // Convert total time to minutes
     const totalMinutes = (hours * 60) + minutes + (seconds / 60);
-    
+
     // Determine standard minutes based on vacation type
     let standardMinutes = 9 * 60; // Default 9 hours
     if (vacationType && vacationType.toLowerCase() === 'half day vacation') {
         standardMinutes = 4.5 * 60; // 4.5 hours for half-day
     }
-    
+
     // Calculate difference
     const diffMinutes = totalMinutes - standardMinutes;
-    
+
     // Convert back to hours, minutes
     const absMinutes = Math.abs(diffMinutes);
     const diffHours = Math.floor(absMinutes / 60);
     const diffMins = Math.floor(absMinutes % 60);
-    
+
     // Format with leading zeros
     const formattedHours = diffHours.toString().padStart(2, '0');
     const formattedMins = diffMins.toString().padStart(2, '0');
-    
+
     // Add sign (always show + for zero or positive, - for negative)
     const sign = diffMinutes >= 0 ? '+' : '-';
-    
+
     return `${sign}${formattedHours}:${formattedMins}`;
 }
 </script>
