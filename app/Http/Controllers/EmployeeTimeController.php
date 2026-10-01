@@ -386,7 +386,7 @@ class EmployeeTimeController extends Controller
                 'reason' => 'nullable|string',
                 'reason_select' => 'nullable|string',
                 'vacation_type' => 'nullable|string',
-                'flagged' => 'in:0,1',
+                 'flagged' => 'in:0,1',
                 'total_break_diff' =>'regex:/^\d{2}:\d{2}:\d{2}$/',
                 'total_leave_diff' =>'regex:/^\d{2}:\d{2}:\d{2}$/',
                 'break_flag' => 'in:Only In,Only Out,pass,No Break,'
@@ -2253,6 +2253,34 @@ class EmployeeTimeController extends Controller
                 'state' => $state];
     }
 
-   
+   public function testMachineConnection(Request $request){
+        try {
+            $validated = $request->validate([
+                'ip' => 'required|ip',
+                'port' => 'nullable|integer|min:1|max:65535',
+            ]);
+
+            $ip = $validated['ip'];
+            $port = $validated['port'] ?? config('zkteco.port');
+            $timeout = ['sec' => (int) config('zkteco.timeout', 2), 'usec' => 0];
+
+            $machine = new ZKTeco($ip, $port);
+            socket_set_option($machine->_zkclient, SOL_SOCKET, SO_RCVTIMEO, $timeout);
+            socket_set_option($machine->_zkclient, SOL_SOCKET, SO_SNDTIMEO, $timeout);
+
+            if ($machine->connect()) {
+                $machine->disconnect();
+                return response()->json(['status' => 'connected']);
+            }
+
+            $machine->disconnect();
+            return response()->json(['status' => 'unreachable'], 503);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+   }
 
 }
