@@ -16,11 +16,11 @@
             @csrf
             @method('PUT')
             <label class="form-label" for="ip">Ip</label>
-            <input type="text" class="form-control mb-2" name="ip" id="ip" value={{ $machineSettings->ip??null}} required> 
+            <input type="text" class="form-control mb-2" name="ip" id="ip" value="{{ $machineSettings->ip??null}}" required> 
             <label class="form-label" for="port">Port</label>
-            <input type="text" class="form-control mb-2" name="port" id="port" value={{  $machineSettings->port??null  }} required>
+            <input type="text" class="form-control mb-2" name="port" id="port" value="{{  $machineSettings->port??null  }}" required>
             <label class="form-label" for="timeout">Connection Timeout (seconds)</label>
-            <input type="number" class="form-control mb-2" name="timeout" id="timeout" min="1" max="60" value={{  $machineSettings->timeout ?? config('zkteco.timeout')  }} required>
+            <input type="number" class="form-control mb-2" name="timeout" id="timeout" min="1" max="60" value="{{  $machineSettings->timeout ?? config('zkteco.timeout')  }}" required>
             <div class="d-flex justify-content-end align-items-center">
                 <button type="submit" class="btn btn-primary mt-2 mb-2">Save</button>
             </div>
