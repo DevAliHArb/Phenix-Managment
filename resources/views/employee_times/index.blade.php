@@ -46,7 +46,7 @@
                         <button type="button" class="btn btn-primary" id="toggleFilterBtn">Filter</button>
                         <div class="d-flex p-2 bg-white border rounded d-flex justify-content-center align-items-center" style="gap: 10px;">
                             <div id="connection-message" class="d-none mb-0  alert alert-danger"></div>
-                            
+
                             <div class="d-flex badge bg-primary user-select-none gap-1" id="test-connection" style="cursor: pointer;">
                                 <i class="bi bi-arrow-clockwise d-none"></i>
                                 <div id="connection-status">Test Connection</div>
@@ -65,9 +65,9 @@
                 </div>
             </div>
     </div>
-   
-   
-    
+
+
+
         <!-- Export All Modal -->
         <div class="modal fade" id="exportAllModal" tabindex="-1" aria-labelledby="exportAllModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
@@ -565,7 +565,7 @@
                     const machineSettings = @json($machineSettings);
                     const ip = machineSettings.ip;
                     const port = machineSettings.port;
-                    
+
                     $testConnIcon.removeClass('d-none')
                     $connectionMessage.addClass('d-none').html('');
                     $testConnIcon.addClass('spin');
@@ -1657,7 +1657,7 @@
                     const fromSaved = (ev.machine_id == 0) ? ' <span class="fw-normal fst-italic">(saved)</span>' : '';
                     return `<span class="badge ${cls} me-1 mb-1" id="event-badge-${ev.emp_id}-${formatCalcEventDate(ev.timestamp)}-${formatCalcEventTime(ev.timestamp)}">${typeName}${formatCalcEventTime(ev.timestamp)}${fromSaved}</span>`;
                 }).join('<span class="me-1 fw-bold">&rarr;</span>');
-               
+
 
                 const buildConflictsSection = () => {
                     let html = '';
