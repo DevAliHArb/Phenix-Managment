@@ -117,14 +117,15 @@
                     $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                     $rowClass = '';
                 }
-                // If dayoff, extra is 0
-                if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout']))) {
+                // Only complete attendance rows contribute to extra time.
+                $hasCompleteTime = !empty($row['timein']) && !empty($row['timeout']) && isset($row['totalhourscalc']);
+                if (!empty($row['dayoff']) || !$hasCompleteTime) {
                     $extra = 0;
                 } else {
                     $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
                 }
                 // Format extra as +H:MM or -H:MM, but keep empty for off days
-                if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout'])) || $rowClass === 'unknown') {
+                if (!empty($row['dayoff']) || !$hasCompleteTime || $rowClass === 'unknown') {
                     $extraFormatted = '';
                 } else {
                     $extraSign = $extra >= 0 ? '+' : '-';
@@ -219,7 +220,7 @@
     // Calculate total extra-minus time (sum of all daily $extra values)
     $totalExtraMinutes = 0;
     foreach ($timesheet as $row) {
-        if (!empty($row['dayoff'])) {
+        if (!empty($row['dayoff']) || empty($row['timein']) || empty($row['timeout']) || !isset($row['totalhourscalc'])) {
             $extra = 0;
         } else {
             $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;

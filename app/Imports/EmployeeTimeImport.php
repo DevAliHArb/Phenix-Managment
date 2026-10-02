@@ -87,7 +87,7 @@ class EmployeeTimeImport implements ToCollection
                     }
                     
                     // Check if this date should be added (weekend, holiday, or vacation)
-                    $offDay = false;
+                    $offDay = true;
                     $reason = null;
                     $vacationType = 'Unknown';
                     
@@ -170,8 +170,8 @@ class EmployeeTimeImport implements ToCollection
                     if ($employeeId && EmployeeTime::where('employee_id', $employeeId)->where('date', $dateStr)->exists()) {
                         continue;
                     }
-                    // Missing punches do not establish that the employee took a day off.
-                    $offDay = false;
+                    // Empty missing-date records default to vacation Yes and Unknown.
+                    $offDay = true;
                     $reason = null;
                     $vacationType = 'Unknown';
                     $employeeVacation = null;
@@ -444,6 +444,7 @@ class EmployeeTimeImport implements ToCollection
 
                 // Preserve known leave classifications; otherwise empty punches are Unknown.
                 if (empty($clockPairs) && $vacationType === 'Attended' && !$offDay) {
+                    $offDay = true;
                     $vacationType = 'Unknown';
                 }
 

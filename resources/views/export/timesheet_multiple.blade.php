@@ -147,15 +147,16 @@
                     $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                             $rowClass = '';
                         }
-                        // If dayoff, extra is 0
+                        // Only complete attendance rows contribute to extra time.
+                        $hasCompleteTime = !empty($row['timein']) && !empty($row['timeout']) && isset($row['totalhourscalc']);
                         $expectedHours = $isHalfDay ? 4.5 : 9;
-                        if ((!empty($row['dayoff']) && !$isHalfDay) || (empty($row['timein']) && empty($row['timeout']))) {
+                        if ((!empty($row['dayoff']) && !$isHalfDay) || !$hasCompleteTime) {
                             $extra = 0;
                         } else {
                             $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;
                         }
                         // Format extra as +H:MM or -H:MM, but keep empty for off days (except half-day)
-                        if ((!empty($row['dayoff']) && !$isHalfDay) || (empty($row['timein']) && empty($row['timeout'])) || $rowClass === 'unknown') {
+                        if ((!empty($row['dayoff']) && !$isHalfDay) || !$hasCompleteTime || $rowClass === 'unknown') {
                             $extraFormatted = '';
                         } else {
                             $extraSign = $extra >= 0 ? '+' : '-';
@@ -244,7 +245,7 @@
                     $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
                     $isHalfDay = $date && in_array($date, $sheet['halfday'] ?? []);
                     $expectedHours = $isHalfDay ? 4.5 : 9;
-                    if (!empty($row['dayoff']) && !$isHalfDay) {
+                    if ((!empty($row['dayoff']) && !$isHalfDay) || empty($row['timein']) || empty($row['timeout']) || !isset($row['totalhourscalc'])) {
                         $extra = 0;
                     } else {
                         $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;

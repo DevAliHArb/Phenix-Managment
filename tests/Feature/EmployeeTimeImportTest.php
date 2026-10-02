@@ -75,7 +75,7 @@ class EmployeeTimeImportTest extends TestCase
             $this->assertNull($record->clock_in);
             $this->assertNull($record->clock_out);
             $this->assertNull($record->total_time);
-            $this->assertFalse((bool) $record->off_day);
+            $this->assertTrue((bool) $record->off_day);
         }
     }
 
@@ -112,5 +112,19 @@ class EmployeeTimeImportTest extends TestCase
         $this->assertSame('09:00:00', $record->clock_in);
         $this->assertSame('17:00:00', $record->clock_out);
         $this->assertSame('08:00:00', $record->total_time);
+        $this->assertFalse((bool) $record->off_day);
+    }
+
+    public function test_missing_days_before_first_imported_date_default_to_vacation_yes_and_unknown(): void
+    {
+        (new EmployeeTimeImport())->collection(collect([
+            $this->row('03/09/2026', '09:00', '17:00'),
+        ]));
+
+        foreach (['2026-09-01', '2026-09-02'] as $date) {
+            $record = EmployeeTime::where('date', $date)->firstOrFail();
+            $this->assertSame('Unknown', $record->vacation_type);
+            $this->assertTrue((bool) $record->off_day);
+        }
     }
 }
