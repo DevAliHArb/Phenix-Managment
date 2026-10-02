@@ -113,8 +113,15 @@ class EmployeeVacationController extends Controller
                     'vacation_type' => $vacationType,
                 ]);
             }
-            $returnUrl = $request->get('return_url', route('employee-vacations.index'));
-            
+            $returnUrl = route('employee-vacations.index');
+            if ($request->boolean('save_and_continue')) {
+                $returnUrl = route('employee-vacations.create', [
+                    'employee_id' => $validated['employee_id'],
+                    'lock_employee' => $request->boolean('lock_employee') ? 1 : 0,
+                    'return_url' => $request->get('return_url', $returnUrl),
+                ]);
+            }
+
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'redirect' => $returnUrl]);
             }

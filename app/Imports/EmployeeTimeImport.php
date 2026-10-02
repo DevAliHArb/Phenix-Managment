@@ -89,7 +89,7 @@ class EmployeeTimeImport implements ToCollection
                     // Check if this date should be added (weekend, holiday, or vacation)
                     $offDay = false;
                     $reason = null;
-                    $vacationType = null;
+                    $vacationType = 'Unknown';
                     
                     // Check if it's a weekend based on employee working days
                     $dayName = strtolower($dateObj->format('l'));
@@ -129,8 +129,8 @@ class EmployeeTimeImport implements ToCollection
                         }
                     }
                     
-                    // Only add if it's an off day (weekend, holiday, or vacation)
-                    if ($offDay) {
+                    // Include unclassified missing days as empty Unknown records.
+                    if ($employeeId) {
                         EmployeeTime::create([
                             'employee_id' => $employeeId,
                             'acc_number'  => $acNo,
@@ -170,10 +170,11 @@ class EmployeeTimeImport implements ToCollection
                     if ($employeeId && EmployeeTime::where('employee_id', $employeeId)->where('date', $dateStr)->exists()) {
                         continue;
                     }
-                    // Default missing dates to off day with no vacation type
-                    $offDay = true;
+                    // Missing punches do not establish that the employee took a day off.
+                    $offDay = false;
                     $reason = null;
-                    $vacationType = null;
+                    $vacationType = 'Unknown';
+                    $employeeVacation = null;
                     // Determine weekend/off-day based on employee working days (columns: monday..sunday).
                     // If employee record available, use its boolean flags; otherwise fallback to Sat/Sun.
                     $dayName = strtolower($dateObj->format('l')); // monday, tuesday, ... sunday
@@ -210,8 +211,8 @@ class EmployeeTimeImport implements ToCollection
                             $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
                         }
                     }
-                    // Skip if employee not found or if it's a half-day vacation (will be handled with actual clock times)
-                    if (!$employeeId || (isset($employeeVacation) && $employeeVacation && $employeeVacation->lookup_type_id === 35)) {
+                    // Keep an empty row even when a half-day vacation has no punches.
+                    if (!$employeeId) {
                         continue;
                     }
                     EmployeeTime::create([
@@ -441,10 +442,9 @@ class EmployeeTimeImport implements ToCollection
                     }
                 }
 
-                // If both clock_in and clock_out are null, treat as potential day off.
-                if ($clockIn === null && $clockOut === null) {
-                    $vacationType = null;
-                    $reason = null;
+                // Preserve known leave classifications; otherwise empty punches are Unknown.
+                if (empty($clockPairs) && $vacationType === 'Attended' && !$offDay) {
+                    $vacationType = 'Unknown';
                 }
 
                 // Apply late arrival / early leave reason logic if not already off day or vacation
@@ -493,6 +493,19 @@ class EmployeeTimeImport implements ToCollection
                 $existingRecord = EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->first();
                 
                 if ($existingRecord) {
+                    // A later import can replace an empty Unknown placeholder with punches.
+                    if ($existingRecord->vacation_type === 'Unknown'
+                        && !$existingRecord->clock_in && !$existingRecord->clock_out
+                        && !empty($clockPairs)) {
+                        $existingRecord->update([
+                            'clock_in' => $clockIn,
+                            'clock_out' => $clockOut,
+                            'total_time' => $totalTime,
+                            'off_day' => $offDay,
+                            'reason' => $reason,
+                            'vacation_type' => $vacationType,
+                        ]);
+                    }
                     // If it's a vacation type record, update it with new clock in/out values
                     if ($existingRecord->vacation_type && in_array($existingRecord->vacation_type, ['Half day vacation'])) {
                         $existingRecord->update([
