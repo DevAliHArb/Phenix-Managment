@@ -98,12 +98,10 @@ class EmployeeVacationController extends Controller
                 ->where('date', $validated['date'])
                 ->first();
             if ($employeeTime) {
-                if (!$employeeTime->off_day) {
-                    $employeeTime->off_day = true;
-                    $employeeTime->reason = $validated['reason'];
-                    $employeeTime->vacation_type = $vacationType;
-                    $employeeTime->save();
-                }
+                $employeeTime->off_day = true;
+                $employeeTime->reason = $validated['reason'];
+                $employeeTime->vacation_type = $vacationType;
+                $employeeTime->save();
             } else {
                 \App\Models\EmployeeTime::create([
                     'employee_id' => $validated['employee_id'],
@@ -247,12 +245,10 @@ class EmployeeVacationController extends Controller
                 ->where('date', $validated['date'])
                 ->first();
             if ($employeeTime) {
-                if (!$employeeTime->off_day) {
-                    $employeeTime->off_day = true;
-                    $employeeTime->reason = $validated['reason'];
-                    $employeeTime->vacation_type = $vacationType;
-                    $employeeTime->save();
-                }
+                $employeeTime->off_day = true;
+                $employeeTime->reason = $validated['reason'];
+                $employeeTime->vacation_type = $vacationType;
+                $employeeTime->save();
             } else {
                 \App\Models\EmployeeTime::create([
                     'employee_id' => $validated['employee_id'],
