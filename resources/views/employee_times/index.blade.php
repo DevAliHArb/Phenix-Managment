@@ -10,6 +10,26 @@
         .unpaid { background: #bcd6bc !important; }
         .halfday { background: #fff4cc !important; }
         .flagged { background: #ff9d9d !important; }
+        .grid-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            padding: 4px 0;
+        }
+        .grid-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .grid-legend-color {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #999;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
         .calc-card-resolved { background-color: rgba(25, 135, 84, 0.15) !important; }
         #pdfPreviewContainer {
             width: 100%;
@@ -432,10 +452,20 @@
             <div class="modal-dialog modal-dialog-scrollable" id="calculateModalDialog">
                 <div class="modal-content">
                     <div class="modal-header justify-content-between">
-                        <h5 class="modal-title" id="bulkAddModalLabel">Calculate Attendance</h5>
+                        <h5 class="modal-title" id="calculateModalLabel">Calculate Attendance</h5>
                         <button type="button" id="calculateModalCloseBtn" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                         <div class="modal-body">
+                            <div class="calculateModalPage d-none" id="calculateModalOptions">
+                                <p>Calculate attendance from synced machine records?</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="addNoAttendanceRows" name="add_no_attendance_rows" checked aria-describedby="addNoAttendanceRowsHelp">
+                                    <label class="form-check-label" for="addNoAttendanceRows">Add rows for no-attendance days</label>
+                                </div>
+                                <small class="form-text text-muted" id="addNoAttendanceRowsHelp">
+                                    Adds missing working-day and scheduled off-day rows between each active employee's first and last attendance rows, using their schedule. Existing attendance is kept.
+                                </small>
+                            </div>
                             <div class="calculateModalPage" id="calculateModalSuccess">
                                 <div class="calculateModalMessage"></div>
                             </div>
@@ -1629,7 +1659,7 @@
                 };
 
                 // tracks which page the calculate modal footer buttons should act on
-                // 'flagged' | 'confirm' | 'success' | 'error' | null
+                // 'options' | 'progress' | 'flagged' | 'confirm' | 'success' | 'error' | null
                 let calculateModalPage = null;
 
                 const calcAbnormalityLabels = {
@@ -1851,13 +1881,14 @@
                 };
 
                 const resetCalculateModal = () => {
+                    $('#calculateModalOptions').addClass('d-none');
                     $('#calculateModalFlagged').addClass('d-none');
                     $('#calculateModalSuccess').addClass('d-none');
                     $('#calculateModalConfirm').addClass('d-none');
                     $('#calculateModalError').addClass('d-none');
                     $('#calculateModalProgress').addClass('d-none');
                     $('.calculateModalMessage').html('');
-                    $('#calculateModalPrimaryButton').hide();
+                    $('#calculateModalPrimaryButton').prop('disabled', false).hide();
                     $('#calculateModalSecondaryButton').hide();
                     $('#calculateModalTertiaryButton').hide();
                     $('#calculateModalDialog').removeClass('modal-xl modal-lg');
@@ -1910,11 +1941,17 @@
                     var recordsCreated = response.recordsCreated ;
                     var recordsFlagged = response.recordsFlagged ;
                     var totalRecords = response.totalRecords;
+                    const gapRowsCreated = Number(response.gapRowsCreated) || 0;
+                    const gapSummary = response.gapFillingEnabled === false
+                        ? 'No-attendance row creation was skipped.<br>'
+                        : `<span class="badge bg-success">${gapRowsCreated}</span> no-attendance day row(s) added (included in new records).<br>`;
+                    calculateModalData.touched = Number(recordsCreated) > 0 || Number(recordsModified) > 0;
 
                     let htmlmessage=`
                         <div class="alert alert-success mb-1">
                             <strong>Calculation complete:</strong><br>
-                            <span class="badge bg-success ">${recordsCreated}</span> new record(s) calculated <br>
+                             <span class="badge bg-success ">${recordsCreated}</span> new record(s) created <br>
+                             ${gapSummary}
                             <span class="badge bg-success ">${recordsModified}</span> records modified.<br>
                             <span class="badge bg-success ">${recordsFlagged}</span> records flagged , <span class="badge bg-warning ">${flaggedRecords.length || 0}</span> of which needs intervention.<br>
                             <span class="badge bg-warning ">${conflictedRecords.length}</span> records contain contain conflicting times.<br>
@@ -2040,7 +2077,19 @@
                 };
 
                 $("#calculateBtn").on("click", function() {
-                    const $btn = $(this);
+                    resetCalculateModal();
+                    $('#calculateModalOptions').removeClass('d-none');
+                    $('#calculateModal .modal-footer').removeClass('d-none');
+                    $('#calculateModalPrimaryButton').text('Calculate').removeClass('d-none').show();
+                    $('#calculateModalSecondaryButton').text('Cancel').removeClass('d-none').show();
+                    $('#calculateModalCloseBtn').show();
+                    calculateModalPage = 'options';
+                    calculateModal.show();
+                });
+
+                const startCalculate = function() {
+                    const addNoAttendanceRows = $('#addNoAttendanceRows').is(':checked');
+                    const $btn = $('#calculateBtn');
                     $btn.data('originalText', $btn.text());
                     $btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm me-2"></span>Calculating...');
                     $('#syncBtn').prop('disabled', true);
@@ -2081,7 +2130,8 @@
                         url: "{{ route('employee_times.calculateAttendance') }}",
                         type: "POST",
                         data: {
-                            _token: "{{ csrf_token() }}"
+                            _token: "{{ csrf_token() }}",
+                            add_no_attendance_rows: addNoAttendanceRows ? 1 : 0
                         },
                         xhr: function() {
                             const xhr = new XMLHttpRequest();
@@ -2103,10 +2153,14 @@
                             }
                         }
                     });
-                });
+                };
 
 
                 $('#calculateModalPrimaryButton').on('click', function(){
+                    if (calculateModalPage === 'options') {
+                        startCalculate();
+                        return;
+                    }
                     if (calculateModalPage === 'flagged') {
                         // 'ok' -> head to the ignore-all confirmation
                         if (typeof calculateModalData.showCalculateConfirm === 'function') {
@@ -2126,6 +2180,11 @@
 
                 // Back on the confirm page -> return to the flagged list
                 $('#calculateModalSecondaryButton').on('click', function(){
+                    if (calculateModalPage === 'options') {
+                        calculateModal.hide();
+                        calculateModalPage = null;
+                        return;
+                    }
                     if (calculateModalPage !== 'confirm') return;
                     $('#calculateModalConfirm').addClass('d-none');
                     $('#calculateModalFlagged').removeClass('d-none');
@@ -2516,6 +2575,34 @@
                     },
                     toolbar: {
                         items: [
+                            {
+                                location: 'before',
+                                locateInMenu: 'auto',
+                                template: function() {
+                                    const legends = [
+                                        ['flagged', 'Flagged'],
+                                        ['weekend', 'Off day'],
+                                        ['vacation', 'Vacation'],
+                                        ['holiday', 'Holiday'],
+                                        ['sickleave', 'Sick leave'],
+                                        ['unpaid', 'Unpaid'],
+                                        ['halfday', 'Half-day vacation']
+                                    ];
+                                    const container = $('<div class="grid-legend" role="group" aria-label="Row color legend">');
+
+                                    legends.forEach(function([className, label]) {
+                                        $('<span class="grid-legend-item">')
+                                            .append(
+                                                $('<span class="grid-legend-color" aria-hidden="true">')
+                                                    .addClass(className)
+                                            )
+                                            .append($('<span>').text(label))
+                                            .appendTo(container);
+                                    });
+
+                                    return container;
+                                }
+                            },
                             {
                                 location: 'after',
                                 widget: 'dxButton',

@@ -151,7 +151,9 @@
                 @enderror
             </div>
         <div class="formContainer" style="margin-top:30px;">
-            <a href="{{ route('employee_times.index') }}" class="btn btn-secondary" style="margin-left:10px;">Back</a>
+            
+            
+            <a href="{{ route('employee_times.index') }}" class="flex-centered btn btn-secondary" style="margin-left:10px;">Back</a>
             <button type="submit" class="btn btn-primary">Update</button>
         </div>
     </form>
