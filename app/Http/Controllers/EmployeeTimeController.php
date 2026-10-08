@@ -9,6 +9,7 @@ use App\Models\MachineSyncData;
 use App\Models\VacationDate;
 use App\Models\WorkSchedule;
 use App\Models\Lookup;
+use App\Services\AttendanceGapService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -1273,9 +1274,12 @@ class EmployeeTimeController extends Controller
     //Main method to calculate attendance of any new uncalculated data 
     public function calculateAttendance(Request $request){
 
+        $request->validate(['add_no_attendance_rows' => 'sometimes|boolean']);
+        $addNoAttendanceRows = $request->boolean('add_no_attendance_rows', true);
+
         \session_write_close();
 
-        return response()->stream(function() use ($request) {
+        return response()->stream(function() use ($addNoAttendanceRows) {
             try {
                 $recordsCreated = 0;
                 $recordsModified = 0;
@@ -1331,7 +1335,7 @@ class EmployeeTimeController extends Controller
                 if ($groupCount === 0) {
                     echo $this->sseEvent('progress', [
                         'progress' => 100,
-                        'message' => 'Nothing to calculate.'
+                        'message' => 'No new punch records to calculate.'
                     ]);
                     flush();
                 }
@@ -1423,6 +1427,8 @@ class EmployeeTimeController extends Controller
                         return;
                     }
 
+                    $attendanceAttributes = ($relatedEmployeeTime ?? new EmployeeTime())->machineAttendanceAttributes();
+
                     $employeeTime = EmployeeTime::updateOrCreate(
                         ['employee_id' => $employeeId, 'date' => $date],
                         ['acc_number' => $employee->acc_number,
@@ -1433,7 +1439,7 @@ class EmployeeTimeController extends Controller
                         'total_break_diff' => $totalTimeResponse['total_break_diff'],
                         'flagged' => !empty($totalTimeResponse['abnormality']),
                         'break_flag' => $totalTimeResponse['break_flag'] ?? null
-                        ]);
+                        ] + $attendanceAttributes);
 
                     if ($employeeTime->wasRecentlyCreated) {
                         $recordsCreated++;
@@ -1454,10 +1460,23 @@ class EmployeeTimeController extends Controller
                     flush();
                 });
 
+                $gapRowsCreated = 0;
+                if ($addNoAttendanceRows) {
+                    echo $this->sseEvent('progress', [
+                        'progress' => 100,
+                        'message' => 'Adding rows for no-attendance days ...'
+                    ]);
+                    flush();
+                    $gapRowsCreated = $this->addVacantRows();
+                }
+                $recordsCreated += $gapRowsCreated;
+
                 echo $this->sseEvent('done', [
                     'success' => true,
                     'recordsModified' => $recordsModified,
                     'recordsCreated' => $recordsCreated,
+                    'gapRowsCreated' => $gapRowsCreated,
+                    'gapFillingEnabled' => $addNoAttendanceRows,
                     'recordsFlagged' => $recordsFlagged,
                     'flaggedRecords' => $flaggedRecords,
                     'conflictedRecords' => $conflictedRecords,
@@ -1561,6 +1580,8 @@ class EmployeeTimeController extends Controller
         //calls the helper method to extract data
         $data = $this->getPurposefulData($events, $eventTypeLookups, $workSchedule);
 
+        $existingAttendance = EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->first();
+
         //creates or overwrites the employeeTime record
         $employeeTime = EmployeeTime::updateOrCreate(
             ['employee_id' => $employeeId,
@@ -1574,7 +1595,7 @@ class EmployeeTimeController extends Controller
             'total_break_diff' => $data['break_duration'] ?? null,
             'flagged'=> true, 
             'break_flag' => $data['break_flag']
-        ]) ;
+        ] + ($existingAttendance ?? new EmployeeTime())->machineAttendanceAttributes()) ;
         
         //sets the machine record's  calculated as true and links it to the employeeTime record that was just created / updated 
         MachineRecord::whereIn('id' , $events->pluck('id'))->update(['employee_time_id'=>$employeeTime->id , 'calculated' => true]);
@@ -1620,6 +1641,7 @@ class EmployeeTimeController extends Controller
             ['employee_id' => $employeeId,
             'date' => $date,
             'acc_number' => $events->first()->emp_id,
+            'vacation_type' => 'Attended',
             'flagged'=> true,
             'break_flag' =>null
             ]);
@@ -1824,6 +1846,8 @@ class EmployeeTimeController extends Controller
             }
 
             //if no flag -> create / overwrite the employeeTime record
+            $existingAttendance = EmployeeTime::where('employee_id', $choices['employee_id'])
+                ->where('date', $choices['date'])->first();
             $employeeTime = EmployeeTime::updateOrCreate(
                 ['employee_id' => $choices['employee_id'],
                 'date' => $choices['date']],
@@ -1836,7 +1860,7 @@ class EmployeeTimeController extends Controller
                 'total_break_diff' => $totalTimeResponse['total_break_diff'],
                 'flagged'=> $totalTimeResponse['abnormality']? true : false , 
                 'break_flag' => $totalTimeResponse['break_flag']?? 'pass'
-            ]) ;
+            ] + ($existingAttendance ?? new EmployeeTime())->machineAttendanceAttributes()) ;
 
             //update the machine records  'calculated' to true and link to the employeeTime record
             MachineRecord::whereIn('id', $orderedEvents->pluck('id')->filter())
@@ -2313,11 +2337,39 @@ class EmployeeTimeController extends Controller
             $machine->disconnect();
             return response()->json(['status' => 'unreachable'], 503);
         } catch (\Throwable $e) {
+            if (stripos($e->getMessage(), 'unpack') !== false) {
+                return response()->json([
+                    'status' => 'unreachable',
+                    'message' => 'Machine unreachable.',
+                ], 503);
+            }
+
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage(),
             ], 500);
         }
    }
+
+    // The shared service uses each active employee's combined old/new attendance
+    // range and saved schedule, never a global machine range or a history cursor.
+    public function addVacantRows(): int
+    {
+        // Validate accounts even when there were no new events to calculate.
+        $accounts = Employee::where('status', 'active')->whereNotNull('acc_number')->where('acc_number', '!=', '')
+            ->pluck('acc_number');
+        $this->employeesByAccountNumber($accounts);
+        $gaps = app(AttendanceGapService::class);
+        $created = 0;
+
+        Employee::where('status', 'active')->whereNotNull('acc_number')->where('acc_number', '!=', '')
+            ->chunkById(100, function ($employees) use ($gaps, &$created) {
+                foreach ($employees as $employee) {
+                    $created += $gaps->fillBetweenAttendance($employee);
+                }
+            });
+
+        return $created;
+    }
 
 }

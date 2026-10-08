@@ -98,8 +98,8 @@ class EmployeeVacationController extends Controller
                 ->where('date', $validated['date'])
                 ->first();
             if ($employeeTime) {
-                if (!$employeeTime->off_day) {
-                    $employeeTime->off_day = true;
+                if (!$employeeTime->off_day || $employeeTime->isUnknownAbsence()) {
+                    $employeeTime->off_day = $vacationType !== 'Half day vacation';
                     $employeeTime->reason = $validated['reason'];
                     $employeeTime->vacation_type = $vacationType;
                     $employeeTime->save();
@@ -108,7 +108,7 @@ class EmployeeVacationController extends Controller
                 \App\Models\EmployeeTime::create([
                     'employee_id' => $validated['employee_id'],
                     'date' => $validated['date'],
-                    'off_day' => true,
+                    'off_day' => $vacationType !== 'Half day vacation',
                     'reason' => $validated['reason'],
                     'vacation_type' => $vacationType,
                 ]);
@@ -240,8 +240,8 @@ class EmployeeVacationController extends Controller
                 ->where('date', $validated['date'])
                 ->first();
             if ($employeeTime) {
-                if (!$employeeTime->off_day) {
-                    $employeeTime->off_day = true;
+                if (!$employeeTime->off_day || $employeeTime->isUnknownAbsence()) {
+                    $employeeTime->off_day = $vacationType !== 'Half day vacation';
                     $employeeTime->reason = $validated['reason'];
                     $employeeTime->vacation_type = $vacationType;
                     $employeeTime->save();
@@ -250,7 +250,7 @@ class EmployeeVacationController extends Controller
                 \App\Models\EmployeeTime::create([
                     'employee_id' => $validated['employee_id'],
                     'date' => $validated['date'],
-                    'off_day' => true,
+                    'off_day' => $vacationType !== 'Half day vacation',
                     'reason' => $validated['reason'],
                     'vacation_type' => $vacationType,
                 ]);

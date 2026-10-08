@@ -2,19 +2,17 @@
 
 namespace App\Imports;
 
+use App\Models\Employee;
 use App\Models\EmployeeTime;
+use App\Models\WorkSchedule;
+use App\Services\AttendanceGapService;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
-use Illuminate\Support\Collection;
-
 class EmployeeTimeImport implements ToCollection
 {
-    /**
-    * @param array $row
-    *
-    * @return \Illuminate\Database\Eloquent\Model|null
-    */
     protected $progressKey;
 
     public function __construct($progressKey = null)
@@ -24,505 +22,91 @@ class EmployeeTimeImport implements ToCollection
 
     public function collection(Collection $rows)
     {
-        // Skip header row
-        $rows = $rows->filter(function($row) {
-            return isset($row[0]) && $row[0] !== 'Emp No.';
-        });
+        $rows = $rows->filter(fn ($row) => isset($row[0]) && $row[0] !== 'Emp No.');
+        $grouped = $rows->groupBy(fn ($row) => $row[1]);
+        $total = $rows->count();
+        $processed = 0;
+        $workSchedule = WorkSchedule::first();
+        $gaps = app(AttendanceGapService::class);
 
-        // Group rows by employee acc_number
-        $grouped = $rows->groupBy(function($row) {
-            return $row[1]; // AC-No.
-        });
+        foreach ($grouped as $acNo => $employeeRows) {
+            $employee = Employee::where('acc_number', $acNo)->first();
+            if (!$employee) {
+                continue;
+            }
 
-    $total = $rows->count();
-    $processed = 0;
-
-
-    // Load global work schedule once
-    $workSchedule = \App\Models\WorkSchedule::first();
-
-    foreach ($grouped as $acNo => $employeeRows) {
-            // Sort by date
-            $dates = $employeeRows->map(function($row) {
-                if (!empty($row[4])) {
-                    if (is_numeric($row[4])) {
-                        return Date::excelToDateTimeObject($row[4])->format('Y-m-d');
-                    } else {
-                        $parsed = \DateTime::createFromFormat('d/m/Y', $row[4]);
-                        if ($parsed && $parsed->format('d/m/Y') === $row[4]) {
-                            return $parsed->format('Y-m-d');
-                        }
-                    }
-                }
-                return null;
-            })->filter()->sort()->values();
-
-            if ($dates->count() === 0) continue;
+            $dates = $employeeRows->map(fn ($row) => $this->parseDate($row[4] ?? null))
+                ->filter()->unique()->sort()->values();
+            if ($dates->isEmpty()) {
+                continue;
+            }
 
             $start = $dates->first();
             $end = $dates->last();
-            
-            // Check if we need to add missing days from the start of the month
-            $firstDate = new \DateTime($start);
-            $monthStart = new \DateTime($firstDate->format('Y-m-01'));
-            
-            // If the first date is not the 1st of the month, check for missing weekends/off days
-            if ($firstDate->format('d') != '01') {
-                $checkPeriod = new \DatePeriod(
-                    $monthStart,
-                    new \DateInterval('P1D'),
-                    $firstDate
-                );
-                
-                foreach ($checkPeriod as $dateObj) {
-                    $dateStr = $dateObj->format('Y-m-d');
-                    $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
-                    $employeeId = $employee ? $employee->id : null;
-                    
-                    if (!$employeeId) continue;
-                    
-                    // Skip if already exists
-                    if (EmployeeTime::where('employee_id', $employeeId)->where('date', $dateStr)->exists()) {
-                        continue;
-                    }
-                    
-                    // Check if this date should be added (weekend, holiday, or vacation)
-                    $offDay = false;
-                    $reason = null;
-                    $vacationType = null;
-                    
-                    // Check if it's a weekend based on employee working days
-                    $dayName = strtolower($dateObj->format('l'));
-                    if ($employee) {
-                        $isWorking = (bool) ($employee->{$dayName} ?? true);
-                        if (!$isWorking) {
-                            $offDay = true;
-                            $reason = 'Weekend';
-                            $vacationType = 'Off';
-                        }
-                    } else {
-                        $dayOfWeek = $dateObj->format('N');
-                        if ($dayOfWeek == 6 || $dayOfWeek == 7) {
-                            $offDay = true;
-                            $reason = 'Weekend';
-                            $vacationType = 'Off';
-                        }
-                    }
-                    
-                    // Check for holidays
-                    $vacationDate = \App\Models\VacationDate::where('date', $dateStr)->first();
-                    if ($vacationDate) {
-                        $offDay = true;
-                        $reason = $vacationDate->name ?? 'vacationdate';
-                        $vacationType = 'Holiday';
-                    } else if ($employeeId) {
-                        $employeeVacation = \App\Models\EmployeeVacation::where('employee_id', $employeeId)
-                            ->where('date', $dateStr)
-                            ->first();
-                        if ($employeeVacation) {
-                            // For half-day vacation, don't set offDay to true (keep clock times)
-                            if ($employeeVacation->lookup_type_id !== 35) {
-                                $offDay = true;
-                            }
-                            $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
-                        }
-                    }
-                    
-                    // Only add if it's an off day (weekend, holiday, or vacation)
-                    if ($offDay) {
-                        EmployeeTime::create([
-                            'employee_id' => $employeeId,
-                            'acc_number'  => $acNo,
-                            'date'        => $dateStr,
-                            'clock_in'    => null,
-                            'clock_out'   => null,
-                            'total_time'  => null,
-                            'off_day'     => $offDay,
-                            'reason'      => $reason,
-                            'vacation_type' => $vacationType,
-                        ]);
-                        
-                        $processed++;
-                        if ($this->progressKey && $total > 0) {
-                            $percent = intval(($processed / $total) * 100);
-                            \Cache::put($this->progressKey, $percent, 600);
-                        }
-                    }
-                }
-            }
-            
-            $period = new \DatePeriod(
-                new \DateTime($start),
-                new \DateInterval('P1D'),
-                (new \DateTime($end))->modify('+1 day')
-            );
+            $calendar = $gaps->calendar($employee, $start, $end);
 
-            $dateSet = $dates->flip();
-
-            // Add missing dates
-            foreach ($period as $dateObj) {
-                $dateStr = $dateObj->format('Y-m-d');
-                if (!$dateSet->has($dateStr)) {
-                    $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
-                    $employeeId = $employee ? $employee->id : null;
-                    // Skip if already exists
-                    if ($employeeId && EmployeeTime::where('employee_id', $employeeId)->where('date', $dateStr)->exists()) {
-                        continue;
-                    }
-                    // Default missing dates to off day with no vacation type
-                    $offDay = true;
-                    $reason = null;
-                    $vacationType = null;
-                    // Determine weekend/off-day based on employee working days (columns: monday..sunday).
-                    // If employee record available, use its boolean flags; otherwise fallback to Sat/Sun.
-                    $dayName = strtolower($dateObj->format('l')); // monday, tuesday, ... sunday
-                    if ($employee) {
-                        $isWorking = (bool) ($employee->{$dayName} ?? true);
-                        if (!$isWorking) {
-                            $offDay = true;
-                            $reason = 'Weekend';
-                            $vacationType = 'Off';
-                        }
-                    } else {
-                        $dayOfWeek = $dateObj->format('N');
-                        if ($dayOfWeek == 6 || $dayOfWeek == 7) {
-                            $offDay = true;
-                            $reason = 'Weekend';
-                            $vacationType = 'Off';
-                        }
-                    }
-                    $vacationDate = \App\Models\VacationDate::where('date', $dateStr)->first();
-                    if ($vacationDate) {
-                        $offDay = true;
-                        $reason = $vacationDate->name ?? 'vacationdate';
-                        $vacationType = 'Holiday';
-                    } else if ($employeeId) {
-                        $employeeVacation = \App\Models\EmployeeVacation::where('employee_id', $employeeId)
-                            ->where('date', $dateStr)
-                            ->first();
-                        if ($employeeVacation) {
-                            // For half-day vacation, don't set offDay to true (keep clock times)
-                            if ($employeeVacation->lookup_type_id !== 35) {
-                                $offDay = true;
-                            }
-                            $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
-                        }
-                    }
-                    // Skip if employee not found or if it's a half-day vacation (will be handled with actual clock times)
-                    if (!$employeeId || (isset($employeeVacation) && $employeeVacation && $employeeVacation->lookup_type_id === 35)) {
-                        continue;
-                    }
-                    EmployeeTime::create([
-                        'employee_id' => $employeeId,
-                        'acc_number'  => $acNo,
-                        'date'        => $dateStr,
-                        'clock_in'    => null,
-                        'clock_out'   => null,
-                        'total_time'  => null,
-                        'off_day'     => $offDay,
-                        'reason'      => $reason,
-                        'vacation_type' => $vacationType,
-                    ]);
-                    // Progress update for each inserted row (missing date)
-                    $processed++;
-                    if ($this->progressKey && $total > 0) {
-                        $percent = intval(($processed / $total) * 100);
-                        \Cache::put($this->progressKey, $percent, 600); // 10 min expiry
-                    }
-                }
-            }
-
-            // Process present dates (imported rows)
             foreach ($employeeRows as $row) {
-                // Emp No. and AC-No. are in columns 0 and 1
-                $acNo = isset($row[1]) ? $row[1] : null;
-
-                // Handle Date (Excel date vs string) from column 4
-                $date = null;
-                if (!empty($row[4])) {
-                    if (is_numeric($row[4])) {
-                        $date = Date::excelToDateTimeObject($row[4])->format('Y-m-d');
-                    } else {
-                        $parsed = \DateTime::createFromFormat('d/m/Y', $row[4]);
-                        if ($parsed && $parsed->format('d/m/Y') === $row[4]) {
-                            $date = $parsed->format('Y-m-d');
-                        } else {
-                            $date = null;
-                        }
-                    }
+                $date = $this->parseDate($row[4] ?? null);
+                if (!$date) {
+                    continue;
                 }
-
-                // Handle multiple Clock In/Out pairs (columns 5/6, 7/8, 9/10, ...)
-                $clockPairs = [];
-                for ($i = 5; $i < count($row); $i += 2) {
-                    $in = !empty($row[$i]) ? (is_numeric($row[$i])
-                        ? Date::excelToDateTimeObject($row[$i])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[$i]))) : null;
-                    $out = (!empty($row[$i+1])) ? (is_numeric($row[$i+1])
-                        ? Date::excelToDateTimeObject($row[$i+1])->format('H:i:s')
-                        : date('H:i:s', strtotime($row[$i+1]))) : null;
-                    if ($in || $out) {
-                        $clockPairs[] = [$in, $out];
-                    }
-                }
-
-                // New logic: clockIn = first in, clockOut = last out, totalTime = (last out - first in) - sum of all gaps
-                $clockIn = null;
-                $clockOut = null;
-                $numPairs = count($clockPairs);
-                // Find first clock in
-                for ($i = 0; $i < $numPairs; $i++) {
-                    if ($clockPairs[$i][0]) {
-                        $clockIn = $clockPairs[$i][0];
-                        break;
-                    }
-                }
-                // Calculate total time and set clock_out as clock_in + total_time
-                $totalTime = null;
-                $clockOut = null;
-                if ($clockIn) {
-                    // Find last clock out for gap calculation only
-                    $lastOut = null;
-                    for ($i = $numPairs - 1; $i >= 0; $i--) {
-                        if ($clockPairs[$i][1]) {
-                            $lastOut = $clockPairs[$i][1];
-                            break;
-                        }
-                    }
-                    if ($lastOut) {
-                        $inSec = strtotime($clockIn);
-                        $outSec = strtotime($lastOut);
-                        if ($inSec !== false && $outSec !== false && $outSec > $inSec) {
-                            $grossSeconds = $outSec - $inSec;
-                            // Calculate total gap seconds
-                            $gapSeconds = 0;
-                            for ($i = 0; $i < $numPairs - 1; $i++) {
-                                $out1 = $clockPairs[$i][1];
-                                $in2 = $clockPairs[$i+1][0];
-                                if ($out1 && $in2) {
-                                    $gap = strtotime($in2) - strtotime($out1);
-                                    if ($gap > 0) {
-                                        $gapSeconds += $gap;
-                                    }
-                                }
-                            }
-                            $netSeconds = $grossSeconds - $gapSeconds;
-                            if ($netSeconds < 0) $netSeconds = 0;
-                            $hours = floor($netSeconds / 3600);
-                            $minutes = floor(($netSeconds % 3600) / 60);
-                            $seconds = $netSeconds % 60;
-                            $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
-                            // Set clock_out as clock_in + total_time
-                            $clockOutSec = $inSec + $netSeconds;
-                            $clockOut = date('H:i:s', $clockOutSec);
-                        }
-                    }
-                }
-
-                // Detect if the date is Saturday or Sunday, or in SickLeave/YearlyVacation
-                $offDay = false;
-                $reason = null;
-                $vacationType = 'Attended';
-                $excelDateValue = $row[4] ?? null;
-                $checkDate = null;
-                if (!empty($excelDateValue)) {
-                    if (is_numeric($excelDateValue)) {
-                        $carbonDate = Date::excelToDateTimeObject($excelDateValue);
-                        $checkDate = $carbonDate->format('Y-m-d');
-                    } else {
-                        $parsed = \DateTime::createFromFormat('d/m/Y', $excelDateValue);
-                        if ($parsed && $parsed->format('d/m/Y') === $excelDateValue) {
-                            $carbonDate = $parsed;
-                            $checkDate = $carbonDate->format('Y-m-d');
-                        } else {
-                            try {
-                                $carbonDate = new \DateTime($excelDateValue);
-                                $checkDate = $carbonDate->format('Y-m-d');
-                            } catch (\Exception $e) {
-                                $carbonDate = null;
-                                $checkDate = null;
-                            }
-                        }
-                    }
-                    if ($carbonDate) {
-                        // Determine weekend based on employee working days if we can resolve the employee later.
-                        // We'll check employee flags after resolving $employeeId below; for now keep $carbonDate available.
-                        $dayNameForCheck = strtolower($carbonDate->format('l'));
-                        // Temporarily store dayName to be used after resolving employee
-                        $dayName = $dayNameForCheck;
-                    }
-                }
-
-                $employeeId = null;
-                if ($acNo) {
-                    $employee = \App\Models\Employee::where('acc_number', $acNo)->first();
-                    if ($employee) {
-                        $employeeId = $employee->id;
-                    }
-                }
-                // If we have the $carbonDate dayName from above, determine weekend/off-day using employee flags
-                if (isset($dayName)) {
-                    if (isset($employee) && $employee) {
-                        $isWorkingDay = (bool) ($employee->{$dayName} ?? true);
-                        if (!$isWorkingDay) {
-                            $offDay = true;
-                            $reason = 'Weekend';
-                            $vacationType = 'Off';
-                        }
-                    } else {
-                        // fallback to Sat/Sun
-                        $dow = $carbonDate->format('N');
-                        if ($dow == 6 || $dow == 7) {
-                            $offDay = true;
-                            $reason = 'Weekend';
-                            $vacationType = 'Off';
-                        }
-                    }
-                }
-
-                // Determine late-arrival and early-leave thresholds from work schedule
-                // WorkSchedule stores start_time/end_time as 'H:i:s' and late_arrival/early_leave as minutes
-                $lateThreshold = null; // time string H:i:s
-                $earlyThreshold = null; // time string H:i:s
-                if ($workSchedule && $workSchedule->start_time) {
-                    $baseStart = $workSchedule->start_time; // e.g. '09:00:00'
-                    $lateMinutes = intval($workSchedule->late_arrival ?? 0);
-                    try {
-                        $dt = new \DateTime($baseStart);
-                        if ($lateMinutes > 0) {
-                            $dt->modify("+{$lateMinutes} minutes");
-                        }
-                        $lateThreshold = $dt->format('H:i:s');
-                    } catch (\Exception $e) {
-                        $lateThreshold = $baseStart;
-                    }
-                }
-                if ($workSchedule && $workSchedule->end_time) {
-                    $baseEnd = $workSchedule->end_time; // e.g. '17:00:00'
-                    $earlyMinutes = intval($workSchedule->early_leave ?? 0);
-                    try {
-                        $dt2 = new \DateTime($baseEnd);
-                        if ($earlyMinutes > 0) {
-                            // early leave threshold is end_time minus earlyMinutes
-                            $dt2->modify("-{$earlyMinutes} minutes");
-                        }
-                        $earlyThreshold = $dt2->format('H:i:s');
-                    } catch (\Exception $e) {
-                        $earlyThreshold = $baseEnd;
-                    }
-                }
-                if ($checkDate) {
-                    $vacationDate = \App\Models\VacationDate::where('date', $checkDate)->first();
-                    if ($vacationDate) {
-                        $offDay = true;
-                        $reason = $vacationDate->name ?? 'vacationdate';
-                        $vacationType = 'Holiday';
-                        // Set clock times to null for holidays
-                        $clockIn = null;
-                        $clockOut = null;
-                        $totalTime = null;
-                    } else if ($employeeId) {
-                        $employeeVacation = \App\Models\EmployeeVacation::where('employee_id', $employeeId)
-                            ->where('date', $checkDate)
-                            ->first();
-                        if ($employeeVacation) {
-                            $reason = $employeeVacation->reason ?? 'Employee Vacation';
-                            $vacationType = $employeeVacation->lookup_type_id === 31 ? 'Vacation' : ($employeeVacation->lookup_type_id === 32 ? 'Sick Leave' : ($employeeVacation->lookup_type_id === 35 ? 'Half day vacation' : 'Attended'));
-                            // For half-day vacation, keep the clock times; for others, set to null
-                            if ($employeeVacation->lookup_type_id !== 35) {
-                                $offDay = true;
-                                $clockIn = null;
-                                $clockOut = null;
-                                $totalTime = null;
-                            }
-                        }
-                    }
-                }
-
-                // If both clock_in and clock_out are null, treat as potential day off.
-                if ($clockIn === null && $clockOut === null) {
-                    $vacationType = null;
-                    $reason = null;
-                }
-
-                // Apply late arrival / early leave reason logic if not already off day or vacation
-                $reasons = [];
-                if (!$offDay && !$reason) {
-                    // Late arrival: clockIn exists and is after lateThreshold
-                    if ($clockIn && $lateThreshold) {
-                        // compare times using DateTime
-                        try {
-                            $ci = new \DateTime($clockIn);
-                            $lt = new \DateTime($lateThreshold);
-                            if ($ci > $lt) {
-                                $reasons[] = 'Late arrival';
-                            }
-                        } catch (\Exception $e) {
-                            // ignore parse errors
-                        }
-                    }
-
-                    // Early leave: clockOut exists and is before earlyThreshold
-                    if ($clockOut && $earlyThreshold) {
-                        try {
-                            $co = new \DateTime($clockOut);
-                            $et = new \DateTime($earlyThreshold);
-                            if ($co < $et) {
-                                $reasons[] = 'Early leave';
-                            }
-                        } catch (\Exception $e) {
-                            // ignore parse errors
-                        }
-                    }
-
-                    if (count($reasons) === 1) {
-                        $reason = $reasons[0];
-                    } else if (count($reasons) > 1) {
-                        $reason = implode(' / ', $reasons); // e.g. 'Late arrival / Early leave'
-                    }
-                }
-
-                // Skip if employee not found
-                if (!$employeeId) {
+                if (($employee->start_date && Carbon::parse($date)->lt(Carbon::parse($employee->start_date)))
+                    || ($employee->end_date && Carbon::parse($date)->gt(Carbon::parse($employee->end_date)))) {
                     continue;
                 }
 
-                // Check if record already exists
-                $existingRecord = EmployeeTime::where('employee_id', $employeeId)->where('date', $date)->first();
-                
-                if ($existingRecord) {
-                    // If it's a vacation type record, update it with new clock in/out values
-                    if ($existingRecord->vacation_type && in_array($existingRecord->vacation_type, ['Half day vacation'])) {
-                        $existingRecord->update([
+                [$clockIn, $clockOut, $totalTime] = $this->clockTimes($row);
+                $details = $gaps->dayDetails($employee, $date, $calendar);
+
+                // Preserve full-day leave/holiday handling, but never erase its reason.
+                if (in_array($details['vacation_type'], ['Holiday', 'Vacation', 'Sick Leave', 'Unpaid', 'Attended'], true)) {
+                    $clockIn = $clockOut = $totalTime = null;
+                }
+
+                if ($details['vacation_type'] === null) {
+                    if ($clockIn === null && $clockOut === null) {
+                        $details['off_day'] = true;
+                        $details['reason'] = 'Unknown';
+                    } else {
+                        $details['vacation_type'] = 'Attended';
+                    }
+                }
+
+                if (!$details['off_day'] && !$details['reason']) {
+                    $details['reason'] = $this->lateEarlyReason($clockIn, $clockOut, $workSchedule);
+                }
+
+                $data = $details + [
+                    'acc_number' => $employee->acc_number,
+                    'clock_in' => $clockIn,
+                    'clock_out' => $clockOut,
+                    'total_time' => $totalTime,
+                ];
+                $existing = EmployeeTime::where('employee_id', $employee->id)->where('date', $date)->first();
+
+                if ($existing) {
+                    if ($existing->isUnknownAbsence()) {
+                        $existing->update($data);
+                    } elseif ($existing->vacation_type === 'Half day vacation') {
+                        $existing->update([
                             'clock_in' => $clockIn,
                             'clock_out' => $clockOut,
                             'total_time' => $totalTime,
                         ]);
                     }
-                    // Skip if not a vacation record (keep existing data)
+                    // Keep other existing/manual attendance unchanged.
                     continue;
                 }
 
-                EmployeeTime::create([
-                    'employee_id' => $employeeId,
-                    'acc_number'  => $acNo,
-                    'date'        => $date,
-                    'clock_in'    => $clockIn,
-                    'clock_out'   => $clockOut,
-                    'total_time'  => $totalTime,
-                    'off_day'     => $offDay,
-                    'reason'      => $reason,
-                    'vacation_type' => $vacationType,
-                ]);
-                // Progress update for each inserted row (present date)
+                EmployeeTime::firstOrCreate(['employee_id' => $employee->id, 'date' => $date], $data);
                 $processed++;
-                if ($this->progressKey && $total > 0) {
-                    $percent = intval(($processed / $total) * 100);
-                    \Cache::put($this->progressKey, $percent, 600); // 10 min expiry
-                }
+                $this->updateProgress($processed, $total);
             }
+
+            // Use the same range/rules as machine calculation, after all imported
+            // attendance is saved so old and new rows define one employee range.
+            $processed += $gaps->fillBetweenAttendance($employee);
+            $this->updateProgress($processed, $total);
         }
 
         if ($this->progressKey) {
@@ -530,4 +114,87 @@ class EmployeeTimeImport implements ToCollection
         }
     }
 
+    private function parseDate($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        if (is_numeric($value)) {
+            return Date::excelToDateTimeObject($value)->format('Y-m-d');
+        }
+        $parsed = \DateTime::createFromFormat('d/m/Y', $value);
+
+        return $parsed && $parsed->format('d/m/Y') === $value ? $parsed->format('Y-m-d') : null;
+    }
+
+    private function clockTimes($row): array
+    {
+        $pairs = [];
+        for ($i = 5; $i < count($row); $i += 2) {
+            $in = $this->parseTime($row[$i] ?? null);
+            $out = $this->parseTime($row[$i + 1] ?? null);
+            if ($in || $out) {
+                $pairs[] = [$in, $out];
+            }
+        }
+
+        $clockIn = null;
+        $lastOut = null;
+        foreach ($pairs as [$in, $out]) {
+            $clockIn = $clockIn ?: $in;
+            $lastOut = $out ?: $lastOut;
+        }
+        if (!$clockIn || !$lastOut || strtotime($lastOut) <= strtotime($clockIn)) {
+            return [$clockIn, null, null];
+        }
+
+        $gapSeconds = 0;
+        for ($i = 0; $i < count($pairs) - 1; $i++) {
+            if ($pairs[$i][1] && $pairs[$i + 1][0]) {
+                $gapSeconds += max(0, strtotime($pairs[$i + 1][0]) - strtotime($pairs[$i][1]));
+            }
+        }
+        $net = max(0, strtotime($lastOut) - strtotime($clockIn) - $gapSeconds);
+        $total = sprintf('%02d:%02d:%02d', floor($net / 3600), floor(($net % 3600) / 60), $net % 60);
+
+        // Retain the import's existing synthetic clock-out (clock-in + net time).
+        return [$clockIn, date('H:i:s', strtotime($clockIn) + $net), $total];
+    }
+
+    private function parseTime($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        return is_numeric($value)
+            ? Date::excelToDateTimeObject($value)->format('H:i:s')
+            : date('H:i:s', strtotime($value));
+    }
+
+    private function lateEarlyReason($clockIn, $clockOut, ?WorkSchedule $schedule): ?string
+    {
+        $reasons = [];
+        if ($clockIn && $schedule?->start_time) {
+            $threshold = Carbon::parse($schedule->start_time)->addMinutes(max(0, (int) $schedule->late_arrival));
+            if (Carbon::parse($clockIn)->gt($threshold)) {
+                $reasons[] = 'Late arrival';
+            }
+        }
+        if ($clockOut && $schedule?->end_time) {
+            $threshold = Carbon::parse($schedule->end_time)->subMinutes(max(0, (int) $schedule->early_leave));
+            if (Carbon::parse($clockOut)->lt($threshold)) {
+                $reasons[] = 'Early leave';
+            }
+        }
+
+        return $reasons ? implode(' / ', $reasons) : null;
+    }
+
+    private function updateProgress(int $processed, int $total): void
+    {
+        if ($this->progressKey && $total > 0) {
+            \Cache::put($this->progressKey, min(99, intval(($processed / $total) * 100)), 600);
+        }
+    }
 }
