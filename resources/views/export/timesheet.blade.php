@@ -20,6 +20,7 @@
     .unpaid { background: #bcd6bc !important; }
     .sickleave { background: #ffe6e6; }
     .holiday { background: #e6ffe6; }
+    .halfday { background: #fff4cc; }
     </style>
 </head>
 <body>
@@ -76,12 +77,27 @@
                 $vacationsArr = isset($vacations) ? $vacations : [];
                 $sickleaveArr = isset($sickleave) ? $sickleave : [];
                 $unpaidArr = isset($unpaid) ? $unpaid : [];
+                $halfdayArr = isset($halfday) ? $halfday : [];
                 $offdaysArr = isset($offdays) ? $offdays : [];
+                $savedType = $row['vacation_type'] ?? null;
+                $isHalfDay = $savedType === 'Half day vacation' || in_array($dateStr, $halfdayArr);
+                $leaveClasses = [
+                    'Vacation' => 'vacation',
+                    'Sick Leave' => 'sickleave',
+                    'Holiday' => 'holiday',
+                    'Unpaid' => 'unpaid',
+                    'Half day vacation' => 'halfday',
+                ];
                 $vacationType = null;
                 $reason = '';
                 $rowClass = '';
                 // Find if this date is a vacation or sickleave and get the type
-                if (in_array($dateStr, $vacationsArr)) {
+                if (isset($leaveClasses[$savedType])) {
+                    $status = $savedType;
+                    $vacationType = $savedType;
+                    $reason = $row['notes'] ?? '';
+                    $rowClass = $leaveClasses[$savedType];
+                } elseif (in_array($dateStr, $vacationsArr)) {
                     $status = 'Vacation';
                     $vacationType = 'Vacation';
                     $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
@@ -101,6 +117,11 @@
                     $vacationType = 'Unpaid';
                     $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                     $rowClass = 'unpaid';
+                } elseif ($isHalfDay) {
+                    $status = 'Half day vacation';
+                    $vacationType = 'Half day vacation';
+                    $reason = $row['notes'] ?? '';
+                    $rowClass = 'halfday';
                 } elseif ($isWeekend) {
                     $status = 'Off';
                     $vacationType = 'Off';
@@ -117,14 +138,16 @@
                     $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
                     $rowClass = '';
                 }
-                // If dayoff, extra is 0
-                if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout']))) {
+                // Only complete attendance rows contribute to extra time.
+                $hasCompleteTime = !empty($row['timein']) && !empty($row['timeout']) && isset($row['totalhourscalc']);
+                $expectedHours = $isHalfDay ? 4.5 : 9;
+                if ((!empty($row['dayoff']) && !$isHalfDay) || !$hasCompleteTime) {
                     $extra = 0;
                 } else {
-                    $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
+                    $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;
                 }
                 // Format extra as +H:MM or -H:MM, but keep empty for off days
-                if (!empty($row['dayoff']) || (empty($row['timein']) && empty($row['timeout'])) || $rowClass === 'unknown') {
+                if ((!empty($row['dayoff']) && !$isHalfDay) || !$hasCompleteTime || $rowClass === 'unknown') {
                     $extraFormatted = '';
                 } else {
                     $extraSign = $extra >= 0 ? '+' : '-';
@@ -168,43 +191,48 @@
 
     @php
         // Helper to sum time in H:i:s format
-        function sumTimes($times) {
-            $totalSeconds = 0;
-            foreach ($times as $t) {
-                if (!$t) continue;
-                $parts = explode(':', $t);
-                $h = isset($parts[0]) ? (int)$parts[0] : 0;
-                $m = isset($parts[1]) ? (int)$parts[1] : 0;
-                $s = isset($parts[2]) ? (int)$parts[2] : 0;
-                $totalSeconds += $h * 3600 + $m * 60 + $s;
+        if (!function_exists('sumTimes')) {
+            function sumTimes($times) {
+                $totalSeconds = 0;
+                foreach ($times as $t) {
+                    if (!$t) continue;
+                    $parts = explode(':', $t);
+                    $h = isset($parts[0]) ? (int)$parts[0] : 0;
+                    $m = isset($parts[1]) ? (int)$parts[1] : 0;
+                    $s = isset($parts[2]) ? (int)$parts[2] : 0;
+                    $totalSeconds += $h * 3600 + $m * 60 + $s;
+                }
+                $h = floor($totalSeconds / 3600);
+                $m = floor(($totalSeconds % 3600) / 60);
+                $s = $totalSeconds % 60;
+                return sprintf('%d:%02d:%02d', $h, $m, $s);
             }
-            $h = floor($totalSeconds / 3600);
-            $m = floor(($totalSeconds % 3600) / 60);
-            $s = $totalSeconds % 60;
-            return sprintf('%d:%02d:%02d', $h, $m, $s);
         }
 
     // $attendanceRequired is now passed from the controller
         $dailyHoursRequired = 9;
-        $attendanceTotal = collect($timesheet)->filter(function($row) use ($vacations, $sickleave, $offdays, $unpaid) {
+        $attendanceTotal = collect($timesheet)->reduce(function($carry, $row) use ($vacations, $sickleave, $offdays, $unpaid, $halfday) {
             $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
-            if (!$date) return false;
-            if (in_array($date, $vacations ?? [])) return false;
-            if (in_array($date, $sickleave ?? [])) return false;
-            if (in_array($date, $offdays ?? [])) return false;
-            if (in_array($date, $unpaid ?? [])) return false;
+            if (!$date) return $carry;
+            if (in_array($row['vacation_type'] ?? null, ['Vacation', 'Sick Leave', 'Holiday', 'Unpaid'])) return $carry;
+            if (in_array($date, $vacations ?? [])) return $carry;
+            if (in_array($date, $sickleave ?? [])) return $carry;
+            if (in_array($date, $offdays ?? [])) return $carry;
+            if (in_array($date, $unpaid ?? [])) return $carry;
             $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : false;
-            if ($isWeekend) return false;
+            if ($isWeekend) return $carry;
             // Exclude Unknown status
-            if (empty($row['timein']) && empty($row['timeout'])) return false;
-            return true;
-        })->count();
+            if (empty($row['timein']) && empty($row['timeout'])) return $carry;
+            $isHalfDay = ($row['vacation_type'] ?? null) === 'Half day vacation' || in_array($date, $halfday ?? []);
+            return $carry + ($isHalfDay ? 0.5 : 1);
+        }, 0);
         $vacationOffTotal = $timesheet->where('dayoff', true)->filter(function($row){
             // Not weekend (assuming is_weekend is set)
             return empty($row['is_weekend']);
         })->count();
         $leaveDays = $vacationOffTotal; // If you want to separate leave/vacation, adjust here
         $timeRequired = $attendanceTotal * $dailyHoursRequired;
+        $timeRequiredFormatted = sprintf('%d:%02d', floor($timeRequired), round(($timeRequired - floor($timeRequired)) * 60));
 
         $extraTimeFormatted = 0;
         $totalLoggedTime = sumTimes($timesheet->pluck('totalhours_raw') ?? []);
@@ -219,10 +247,13 @@
     // Calculate total extra-minus time (sum of all daily $extra values)
     $totalExtraMinutes = 0;
     foreach ($timesheet as $row) {
-        if (!empty($row['dayoff'])) {
+        $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
+        $isHalfDay = ($row['vacation_type'] ?? null) === 'Half day vacation' || ($date && in_array($date, $halfday ?? []));
+        $expectedHours = $isHalfDay ? 4.5 : 9;
+        if ((!empty($row['dayoff']) && !$isHalfDay) || empty($row['timein']) || empty($row['timeout']) || !isset($row['totalhourscalc'])) {
             $extra = 0;
         } else {
-            $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - 9 : 0;
+            $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;
         }
         $totalExtraMinutes += (int)round($extra * 60);
     }
@@ -252,7 +283,7 @@
                     {{ $attendanceRequired }}<br>
                     {{ $dailyHoursRequired }}<br>
                     {{ $extraTimeFormatted }}<br>
-                    {{ sprintf('%d:00', $timeRequired) }}<br>
+                    {{ $timeRequiredFormatted }}<br>
                 </td>
                 <td style="width:20%; text-align:left; font-weight:bold; border:none;row-gap: 10px;">
                     Attendance Total<br>
@@ -262,24 +293,12 @@
                     Time logged Total<br>
                 </td>
                 <td style="width:10%; background:#fbe4d5; text-align:center; font-weight:normal; border:none; row-gap: 10px;">
-                    {{-- Attendance Total: count of status Attended (exclude Unknown and Unpaid) --}}
-                    {{ collect($timesheet)->filter(function($row) use ($vacations, $sickleave, $offdays, $unpaid) {
-                        $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
-                        if (!$date) return false;
-                        if (in_array($date, $vacations ?? [])) return false;
-                        if (in_array($date, $sickleave ?? [])) return false;
-                        if (in_array($date, $offdays ?? [])) return false;
-                        if (in_array($date, $unpaid ?? [])) return false;
-                        $isWeekend = isset($row['is_weekend']) ? $row['is_weekend'] : false;
-                        if ($isWeekend) return false;
-                        // Exclude Unknown status
-                        if (empty($row['timein']) && empty($row['timeout'])) return false;
-                        return true;
-                    })->count() }}<br>
+                    {{-- Attendance Total: half-day attendance contributes 0.5 --}}
+                    {{ $attendanceTotal }}<br>
                     {{-- Off Days Total: length of offdays --}}
                     {{ isset($offdays) ? count($offdays) : 0 }}<br>
-                    {{-- Vacations Total: length of vacations + unpaid --}}
-                    {{ (isset($vacations) ? count($vacations) : 0) + (isset($unpaid) ? count($unpaid) : 0) }}<br>
+                    {{-- Vacations Total: vacations + unpaid + 0.5 for half-day --}}
+                    {{ (isset($vacations) ? count($vacations) : 0) + (isset($unpaid) ? count($unpaid) : 0) + (isset($halfday) ? count($halfday) * 0.5 : 0) }}<br>
                     {{-- Sick Leaves Total: length of sickleave --}}
                     {{ isset($sickleave) ? count($sickleave) : 0 }}<br>
                     {{ $totalLoggedTimeFormatted }}<br>
