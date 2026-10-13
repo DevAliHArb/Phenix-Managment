@@ -22,6 +22,9 @@
     <div class="headerContainer" >
         <h1>Add Transaction Day</h1>
     </div>
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
     @if ($errors->any())
         <div class="alert alert-danger">
             <ul style="margin-bottom:0;">
@@ -33,6 +36,7 @@
     @endif
     <form action="{{ route('employee-vacations.store') }}" method="POST" enctype="multipart/form-data" novalidate>
         @csrf
+        <input type="hidden" name="lock_employee" value="{{ !empty($lockEmployee) ? 1 : 0 }}">
         <input type="hidden" name="return_url" value="{{ $returnUrl ?? route('employee-vacations.index') }}">
         <div class="formContainer">
             <div class="mb-3">
@@ -43,7 +47,7 @@
                     @if(isset($employees) && count($employees) > 0)
                         @foreach($employees as $employee)
                             <option value="{{ $employee->id }}" 
-                                {{ (old('employee_id') == $employee->id || (isset($selectedEmployeeId) && $selectedEmployeeId == $employee->id)) ? 'selected' : '' }}>
+                                {{ old('employee_id', $selectedEmployeeId ?? '') == $employee->id ? 'selected' : '' }}>
                                 {{ $employee->first_name }} {{ $employee->mid_name }} {{ $employee->last_name }}
                             </option>
                         @endforeach
@@ -97,7 +101,8 @@
                 @enderror
             </div>
         </div>
-        <button type="submit" class="btn btn-success">Save</button>
+        <button type="submit" name="save_and_continue" value="0" class="btn btn-success">Save</button>
+        <button type="submit" name="save_and_continue" value="1" class="btn btn-success">Save and Continue</button>
         <a href="{{ $returnUrl ?? route('employee-vacations.index') }}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>

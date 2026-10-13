@@ -90,7 +90,7 @@ class EmployeeTimeController extends Controller
                         $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
                         $isVacation = $row->off_day && $row->reason === 'vacation';
                         $status = $row->off_day ? 'Off' : 'Attended';
-                        $totalHourscalc = 0;
+                        $totalHourscalc = null;
                         if ($row->total_time) {
                             $parts = explode(':', $row->total_time);
                             $h = isset($parts[0]) ? (int)$parts[0] : 0;
@@ -119,7 +119,9 @@ class EmployeeTimeController extends Controller
                     });
 
                     // Calculate attendanceRequired for this employee/month/year
-                    $vacationDates = \App\Models\VacationDate::whereYear('date', $currentYear)->whereMonth('date', $month)->pluck('date')->toArray();
+                    $vacationDates = \App\Models\VacationDate::whereYear('date', $currentYear)->whereMonth('date', $month)->pluck('date')
+                        ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
+                        ->toArray();
                     $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $currentYear);
                     $attendanceRequiredCount = 0;
                     for ($day = 1; $day <= $daysInMonth; $day++) {
@@ -145,6 +147,7 @@ class EmployeeTimeController extends Controller
                         ->whereYear('date', $currentYear)
                         ->whereMonth('date', $month)
                         ->pluck('date')
+                        ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
                         ->toArray();
 
                     $unpaid = $employee->employeeVacations()
@@ -152,6 +155,7 @@ class EmployeeTimeController extends Controller
                         ->whereYear('date', $currentYear)
                         ->whereMonth('date', $month)
                         ->pluck('date')
+                        ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
                         ->toArray();
 
                     $sickleave = $employee->employeeVacations()
@@ -159,6 +163,7 @@ class EmployeeTimeController extends Controller
                         ->whereYear('date', $currentYear)
                         ->whereMonth('date', $month)
                         ->pluck('date')
+                        ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
                         ->toArray();
 
                         
@@ -167,6 +172,7 @@ class EmployeeTimeController extends Controller
                         ->whereYear('date', $currentYear)
                         ->whereMonth('date', $month)
                         ->pluck('date')
+                        ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
                         ->toArray();
 
                     $offDays = $vacationDates;
@@ -241,7 +247,7 @@ class EmployeeTimeController extends Controller
             $isVacation = $row->off_day && $row->reason === 'vacation';
             $status = $row->off_day ? 'Off' : 'Attended';
             // Parse total_time as H:i:s string to decimal hours
-            $totalHourscalc = 0;
+            $totalHourscalc = null;
             if ($row->total_time) {
                 $parts = explode(':', $row->total_time);
                 $h = isset($parts[0]) ? (int)$parts[0] : 0;
@@ -273,7 +279,9 @@ class EmployeeTimeController extends Controller
         });
 
         // Calculate attendanceRequired for this employee/month/year
-        $vacationDates = \App\Models\VacationDate::whereYear('date', $year)->whereMonth('date', $month)->pluck('date')->toArray();
+        $vacationDates = \App\Models\VacationDate::whereYear('date', $year)->whereMonth('date', $month)->pluck('date')
+            ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
+            ->toArray();
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
         $attendanceRequiredCount = 0;
         for ($day = 1; $day <= $daysInMonth; $day++) {
@@ -307,6 +315,7 @@ class EmployeeTimeController extends Controller
             ->whereYear('date', $year)
             ->whereMonth('date', $month)
             ->pluck('date')
+            ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
             ->toArray();
 
         // Get employee unpaid (lookup_type_id = 34) for the month
@@ -315,6 +324,7 @@ class EmployeeTimeController extends Controller
             ->whereYear('date', $year)
             ->whereMonth('date', $month)
             ->pluck('date')
+            ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
             ->toArray();
 
         // Get employee sickleave (lookup_type_id = 32) for the month
@@ -323,6 +333,7 @@ class EmployeeTimeController extends Controller
             ->whereYear('date', $year)
             ->whereMonth('date', $month)
             ->pluck('date')
+            ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
             ->toArray();
 
         $halfday = $employee->employeeVacations()
@@ -330,6 +341,7 @@ class EmployeeTimeController extends Controller
             ->whereYear('date', $year)
             ->whereMonth('date', $month)
             ->pluck('date')
+            ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
             ->toArray();
         // Off days (vacation dates for the month)
         $offDays = $vacationDates;

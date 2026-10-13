@@ -113,7 +113,7 @@ class AttendanceGapService
             };
 
             return [
-                'off_day' => $type !== 'Half day vacation',
+                'off_day' => true,
                 'reason' => $vacation->reason ?: 'Employee Vacation',
                 'vacation_type' => $type,
             ];
