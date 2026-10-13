@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\EmployeeTime;
 use App\Models\WorkSchedule;
 use App\Services\AttendanceGapService;
+use App\Services\MachineAttendanceService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -26,8 +27,9 @@ class EmployeeTimeImport implements ToCollection
         $grouped = $rows->groupBy(fn ($row) => $row[1]);
         $total = $rows->count();
         $processed = 0;
-        $workSchedule = WorkSchedule::first();
+        $workSchedule = WorkSchedule::orderBy('created_at', 'desc')->first();
         $gaps = app(AttendanceGapService::class);
+        $attendance = app(MachineAttendanceService::class);
 
         foreach ($grouped as $acNo => $employeeRows) {
             $employee = Employee::where('acc_number', $acNo)->first();
@@ -66,9 +68,20 @@ class EmployeeTimeImport implements ToCollection
                 if ($details['vacation_type'] === null) {
                     if ($clockIn === null && $clockOut === null) {
                         $details['off_day'] = true;
-                        $details['reason'] = 'Unknown';
                     } else {
                         $details['vacation_type'] = 'Attended';
+                    }
+                }
+
+                // Check the import's existing gap-adjusted total, without
+                // deducting any additional break allowance from imported time.
+                if (!$details['off_day'] && $details['vacation_type'] === 'Attended'
+                    && $clockIn !== null && $clockOut !== null && $totalTime !== null) {
+                    [$hours, $minutes, $seconds] = array_map('intval', explode(':', $totalTime));
+                    $workedSeconds = $hours * 3600 + $minutes * 60 + $seconds;
+                    if ($attendance->isHalfDayDuration($employee, $workedSeconds, $workSchedule)) {
+                        $details['off_day'] = true;
+                        $details['vacation_type'] = 'Half day vacation';
                     }
                 }
 

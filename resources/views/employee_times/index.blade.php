@@ -330,7 +330,7 @@
                                     <option value="Sick Leave">Sick Leave</option>
                                     <option value="Holiday">Holiday</option>
                                     <option value="Unpaid">Unpaid</option>
-                                    <option value="Half Day Vacation">Half Day Vacation</option>
+                                    <option value="Half day vacation">Half Day Vacation</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -405,7 +405,7 @@
                                     <option value="Sick Leave">Sick Leave</option>
                                     <option value="Holiday">Holiday</option>
                                     <option value="Unpaid">Unpaid</option>
-                                    <option value="Half Day Vacation">Half Day Vacation</option>
+                                    <option value="Half day vacation">Half Day Vacation</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -2419,6 +2419,7 @@
                     time_in: `{{ $item->clock_in }}`,
                     time_out: `{{ $item->clock_out }}`,
                     total_time: `{{ $item->total_time ?? '' }}`,
+                    expected_work_hours: {{ $expectedWorkHours[$item->employee_id] ?? 9 }},
                     status: `{{ $item->off_day ? 'Yes' : 'No' }}`,
                     vacation_type: `{{ $item->vacation_type ?? '' }}`,
                     flagged: `{{ $item->flagged ? 'Yes' : 'No' }}`,
@@ -2500,7 +2501,7 @@
                             allowFiltering: true,
                             headerFilter: { allowSearch: true },
                             cellTemplate: function(container, options) {
-                                const extraMinusTime = calculateExtraMinus(options.data.total_time, options.data.vacation_type);
+                                const extraMinusTime = calculateExtraMinus(options.data.total_time, options.data.vacation_type, options.data.expected_work_hours);
                                 $(container).text(extraMinusTime);
                             }
                         },
@@ -2528,7 +2529,8 @@
                         if (e.rowType === 'data') {
                             // Apply colors based on vacation_type
                             const vacationType = e.data.vacation_type ? e.data.vacation_type.toLowerCase() : '';
-                            const flaggedRow = e.data.flagged === 'Yes' || e.data.break_flag !== 'pass';
+                            const halfDayWithoutBreak = vacationType === 'half day vacation' && e.data.break_flag === 'No Break';
+                            const flaggedRow = e.data.flagged === 'Yes' || (e.data.break_flag !== 'pass' && !halfDayWithoutBreak);
 
                             if (flaggedRow) {
                                 e.rowElement.addClass('flagged')
@@ -2986,8 +2988,8 @@ function displayDiff(value) {
     return '-' + hhmm;
 }
 
-// Function to calculate extra/minus time compared to 9 hours (or 4.5 for half-day)
-function calculateExtraMinus(totalTimeString, vacationType) {
+// Compare against this employee's scheduled net hours (half for half-day leave).
+function calculateExtraMinus(totalTimeString, vacationType, expectedWorkHours = 9) {
     if (!totalTimeString || totalTimeString === '') return '';
 
     // Parse total time string (format: "hh:mm:ss" or "hh:mm")
@@ -3002,9 +3004,9 @@ function calculateExtraMinus(totalTimeString, vacationType) {
     const totalMinutes = (hours * 60) + minutes + (seconds / 60);
 
     // Determine standard minutes based on vacation type
-    let standardMinutes = 9 * 60; // Default 9 hours
+    let standardMinutes = expectedWorkHours * 60;
     if (vacationType && vacationType.toLowerCase() === 'half day vacation') {
-        standardMinutes = 4.5 * 60; // 4.5 hours for half-day
+        standardMinutes /= 2;
     }
 
     // Calculate difference

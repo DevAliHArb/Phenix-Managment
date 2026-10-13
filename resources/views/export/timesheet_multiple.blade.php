@@ -82,6 +82,9 @@
                 </thead>
                 <tbody>
                 @php
+                    $sheet['halfday'] = collect($sheet['halfday'] ?? [])->merge(collect($sheet['timesheet'])
+                        ->where('vacation_type', 'Half day vacation')->pluck('date'))
+                        ->map(fn ($date) => Carbon::parse($date)->toDateString())->unique()->all();
                     // Build a map of date (Y-m-d) => row for fast lookup
                     $rowMap = collect($sheet['timesheet'])->keyBy(function($row) {
                         return isset($row['date']) ? Carbon::parse($row['date'])->format('Y-m-d') : null;
@@ -101,12 +104,20 @@
                         $unpaidArr = isset($sheet['unpaid']) ? $sheet['unpaid'] : [];
                         $halfdayArr = isset($sheet['halfday']) ? $sheet['halfday'] : [];
                         $offdaysArr = isset($sheet['offdays']) ? $sheet['offdays'] : [];
-                        $isHalfDay = in_array($dateStr, $halfdayArr);
+                        $savedType = $row['vacation_type'] ?? null;
+                        $isHalfDay = $savedType === 'Half day vacation' || in_array($dateStr, $halfdayArr);
+                        $leaveClasses = ['Vacation' => 'vacation', 'Sick Leave' => 'sickleave', 'Holiday' => 'holiday',
+                            'Unpaid' => 'unpaid', 'Half day vacation' => 'halfday', 'Off' => 'weekend'];
                         $vacationType = null;
                         $reason = '';
                         $rowClass = '';
                         // Find if this date is a vacation or sickleave and get the type
-                        if (in_array($dateStr, $vacationsArr)) {
+                        if (isset($leaveClasses[$savedType])) {
+                            $status = $savedType;
+                            $vacationType = $savedType;
+                            $reason = $row['notes'] ?? '';
+                            $rowClass = $leaveClasses[$savedType];
+                        } elseif (in_array($dateStr, $vacationsArr)) {
                             $status = 'Vacation';
                             $vacationType = 'Vacation';
                             $reason = isset($row['notes']) && $row['notes'] ? $row['notes'] : (isset($row['reason']) ? $row['reason'] : '');
@@ -148,14 +159,15 @@
                             $rowClass = '';
                         }
                         // If dayoff, extra is 0
-                        $expectedHours = $isHalfDay ? 4.5 : 9;
-                        if ((!empty($row['dayoff']) && !$isHalfDay) || (empty($row['timein']) && empty($row['timeout']))) {
+                        $expectedHours = ($sheet['expectedWorkHours'] ?? 9) / ($isHalfDay ? 2 : 1);
+                        $hasCompleteTime = !empty($row['timein']) && !empty($row['timeout']) && isset($row['totalhourscalc']);
+                        if ((!empty($row['dayoff']) && !$isHalfDay) || !$hasCompleteTime) {
                             $extra = 0;
                         } else {
                             $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;
                         }
                         // Format extra as +H:MM or -H:MM, but keep empty for off days (except half-day)
-                        if ((!empty($row['dayoff']) && !$isHalfDay) || (empty($row['timein']) && empty($row['timeout'])) || $rowClass === 'unknown') {
+                        if ((!empty($row['dayoff']) && !$isHalfDay) || !$hasCompleteTime || $rowClass === 'unknown') {
                             $extraFormatted = '';
                         } else {
                             $extraSign = $extra >= 0 ? '+' : '-';
@@ -200,10 +212,11 @@
             @php
 
                 // $attendanceRequired is now passed from the controller
-                $dailyHoursRequired = 9;
+                $dailyHoursRequired = $sheet['expectedWorkHours'] ?? 9;
                 $attendanceTotal = collect($sheet['timesheet'])->reduce(function($carry, $row) use ($sheet) {
                     $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
                     if (!$date) return $carry;
+                    if (in_array($row['vacation_type'] ?? null, ['Vacation', 'Sick Leave', 'Holiday', 'Unpaid', 'Off'])) return $carry;
                     if (in_array($date, $sheet['vacations'] ?? [])) return $carry;
                     if (in_array($date, $sheet['sickleave'] ?? [])) return $carry;
                     if (in_array($date, $sheet['offdays'] ?? [])) return $carry;
@@ -243,8 +256,8 @@
                 foreach ($sheet['timesheet'] as $row) {
                     $date = isset($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : null;
                     $isHalfDay = $date && in_array($date, $sheet['halfday'] ?? []);
-                    $expectedHours = $isHalfDay ? 4.5 : 9;
-                    if (!empty($row['dayoff']) && !$isHalfDay) {
+                    $expectedHours = $dailyHoursRequired / ($isHalfDay ? 2 : 1);
+                    if ((!empty($row['dayoff']) && !$isHalfDay) || empty($row['timein']) || empty($row['timeout']) || !isset($row['totalhourscalc'])) {
                         $extra = 0;
                     } else {
                         $extra = isset($row['totalhourscalc']) ? (float)$row['totalhourscalc'] - $expectedHours : 0;

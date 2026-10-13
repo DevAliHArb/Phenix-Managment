@@ -27,9 +27,14 @@ class EmployeeTime extends Model
 
     public function isUnknownAbsence(): bool
     {
-        return $this->reason === 'Unknown'
-            && in_array($this->vacation_type, [null, 'Unknown'], true)
-            && $this->clock_in === null && $this->clock_out === null;
+        if ($this->clock_in !== null || $this->clock_out !== null) {
+            return false;
+        }
+
+        // Recognize new unlabeled gaps as well as both legacy Unknown formats.
+        return ($this->off_day && $this->vacation_type === null && $this->reason === null)
+            || ($this->reason === 'Unknown' && in_array($this->vacation_type, [null, 'Unknown'], true))
+            || ($this->vacation_type === 'Unknown' && $this->reason === null);
     }
 
     public function attendanceResetAttributes(): array

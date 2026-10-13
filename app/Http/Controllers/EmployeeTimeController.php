@@ -10,6 +10,7 @@ use App\Models\VacationDate;
 use App\Models\WorkSchedule;
 use App\Models\Lookup;
 use App\Services\AttendanceGapService;
+use App\Services\MachineAttendanceService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +83,8 @@ class EmployeeTimeController extends Controller
                         ->whereYear('date', $currentYear)
                         ->whereMonth('date', $month);
                     $times = $query->orderBy('date')->get();
+                    $workSchedule = WorkSchedule::orderBy('created_at', 'desc')->first();
+                    $expectedWorkHours = (app(MachineAttendanceService::class)->expectedWorkSeconds($employee, $workSchedule) ?? 32400) / 3600;
 
                     $timesheet = $times->map(function ($row) {
                         $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
@@ -98,7 +101,7 @@ class EmployeeTimeController extends Controller
                         $totalHours = $row->total_time ? $row->total_time : 0;
                         $extra = $totalHourscalc - 9;
                         $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
-                        $notes = $row->off_day ? ($row->reason ?: 'Off') : ($row->reason ?: '');
+                        $notes = $row->reason ?: '';
                         return [
                             'date' => $row->date,
                             'timein' => $row->clock_in,
@@ -106,6 +109,7 @@ class EmployeeTimeController extends Controller
                             'totalhours' => $totalHours,
                             'totalhourscalc' => $totalHourscalc,
                             'status' => $status,
+                            'vacation_type' => strtolower($row->vacation_type ?? '') === 'half day vacation' ? 'Half day vacation' : $row->vacation_type,
                             'extra' => $extraFormatted,
                             'notes' => $notes,
                             'is_weekend' => $isWeekend,
@@ -115,7 +119,6 @@ class EmployeeTimeController extends Controller
                     });
 
                     // Calculate attendanceRequired for this employee/month/year
-                    $workSchedule = \App\Models\WorkSchedule::first();
                     $vacationDates = \App\Models\VacationDate::whereYear('date', $currentYear)->whereMonth('date', $month)->pluck('date')->toArray();
                     $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $currentYear);
                     $attendanceRequiredCount = 0;
@@ -179,6 +182,7 @@ class EmployeeTimeController extends Controller
                         'year' => $currentYear,
                         'attendanceRequired' => $attendanceRequiredCount,
                         'dailyhoursrequired' => $dailyHoursRequired,
+                        'expectedWorkHours' => $expectedWorkHours,
                         'vacations' => $vacations,
                         'sickleave' => $sickleave,
                         'offdays' => $offDays,
@@ -229,6 +233,8 @@ class EmployeeTimeController extends Controller
             ->whereYear('date', $year)
             ->whereMonth('date', $month);
         $times = $query->orderBy('date')->get();
+        $workSchedule = WorkSchedule::orderBy('created_at', 'desc')->first();
+        $expectedWorkHours = (app(MachineAttendanceService::class)->expectedWorkSeconds($employee, $workSchedule) ?? 32400) / 3600;
 
         $timesheet = $times->map(function ($row) {
                 $isWeekend = $row->vacation_type === 'Off' && $row->reason === 'Weekend';
@@ -249,7 +255,7 @@ class EmployeeTimeController extends Controller
             }
             $extra = $totalHourscalc - 9;
             $extraFormatted = ($extra >= 0 ? '+' : '') . number_format($extra, 2);
-            $notes = $row->off_day ? ($row->reason ?: 'Off') : ($row->reason ?: '');
+            $notes = $row->reason ?: '';
             return [
                 'date' => $row->date,
                 'timein' => $row->clock_in,
@@ -257,6 +263,7 @@ class EmployeeTimeController extends Controller
                 'totalhours' => $totalHours,
                 'totalhourscalc' => $totalHourscalc,
                 'status' => $status,
+                'vacation_type' => strtolower($row->vacation_type ?? '') === 'half day vacation' ? 'Half day vacation' : $row->vacation_type,
                 'extra' => $extraFormatted,
                 'notes' => $notes,
                 'is_weekend' => $isWeekend,
@@ -266,7 +273,6 @@ class EmployeeTimeController extends Controller
         });
 
         // Calculate attendanceRequired for this employee/month/year
-        $workSchedule = \App\Models\WorkSchedule::first();
         $vacationDates = \App\Models\VacationDate::whereYear('date', $year)->whereMonth('date', $month)->pluck('date')->toArray();
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
         $attendanceRequiredCount = 0;
@@ -339,6 +345,7 @@ class EmployeeTimeController extends Controller
             'year' => $year,
             'attendanceRequired' => $attendanceRequiredCount,
             'dailyhoursrequired' => $dailyHoursRequired,
+            'expectedWorkHours' => $expectedWorkHours,
             'vacations' => $vacations,
             'sickleave' => $sickleave,
             'offdays' => $offDays,
@@ -356,7 +363,12 @@ class EmployeeTimeController extends Controller
         $employeeTimes = EmployeeTime::with('employee')->get();
         $employees = Employee::where('status', 'active')->get();
         $machineSettings = MachineSettings::orderBy('created_at','desc')->first();
-        return view('employee_times.index', compact('employeeTimes', 'employees' , 'machineSettings'));
+        $workSchedule = WorkSchedule::orderBy('created_at', 'desc')->first();
+        $durationService = app(MachineAttendanceService::class);
+        $expectedWorkHours = $employeeTimes->pluck('employee')->filter()->unique('id')->mapWithKeys(
+            fn ($employee) => [$employee->id => ($durationService->expectedWorkSeconds($employee, $workSchedule) ?? 32400) / 3600]
+        );
+        return view('employee_times.index', compact('employeeTimes', 'employees', 'machineSettings', 'expectedWorkHours'));
     }
 
     public function show($id)
@@ -415,7 +427,7 @@ class EmployeeTimeController extends Controller
             ];
 
             // Set off_day to true if vacation_type is Off, Vacation, Holiday, or Sick Leave
-            $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave'];
+            $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave', 'Half day vacation'];
             $baseData['off_day'] = in_array($baseData['vacation_type'], $offDayTypes)
                 ? true
                 : $request->boolean('off_day');
@@ -487,24 +499,22 @@ class EmployeeTimeController extends Controller
             $validated['break_flag'] = $validated['break_flag'] ?? 'pass';
 
             // Set off_day to true if vacation_type is Off, Vacation, Holiday, or Sick Leave
-            $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave'];
+            $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave', 'Half day vacation'];
             if (in_array($validated['vacation_type'] ?? null, $offDayTypes)) {
                 $validated['off_day'] = true;
             } else {
                 $validated['off_day'] = $request->has('off_day');
             }
             
-            // Recalculate total_time : (last clock out - first clock in) - allowed break -
-            // break diff - leave diff, subtracting the diff values saved above (the manual
-            // edits when the user changed them, otherwise the kept/computed values). The
-            // allowed break is deducted only when break_flag is 'pass'.
+            // Recalculate using the same normal allowance / half-day exemption
+            // as machine calculation, while retaining the submitted leave gaps.
             $validated['total_time'] = $this->recalculateTotalTime(
                 $validated['clock_in'] ?? $model->clock_in,
                 $validated['clock_out'] ?? $model->clock_out,
                 $validated['date'] ?? $model->date,
                 $validated['total_break_diff'],
                 $validated['total_leave_diff'],
-                $validated['break_flag'] ?? $model->break_flag
+                $validated['vacation_type'] ?? $model->vacation_type
             );
 
             $model->update($validated);
@@ -559,10 +569,10 @@ class EmployeeTimeController extends Controller
     /**
      * Recalculate total_time as :
      *   (clock out - clock in) - break diff - leave diff
-     * The allowed break (from the work schedule, default 1 hour) is deducted only when
-     * break_flag is 'pass'. The result is clamped at 0 and formatted as HH:MM:SS.
+     * Normal days deduct the allowed break and excess break time; half-day
+     * vacation deducts neither. The result is clamped at 0.
      */
-    private function recalculateTotalTime($clockIn, $clockOut, $date, $breakDiff, $leaveDiff, $breakFlag = null)
+    private function recalculateTotalTime($clockIn, $clockOut, $date, $breakDiff, $leaveDiff, $vacationType = null)
     {
         $zero = '00:00:00';
         if (!$clockIn || !$clockOut) {
@@ -579,22 +589,18 @@ class EmployeeTimeController extends Controller
             return $zero;
         }
 
-        // allowed break (default 1 hour when the schedule doesn't define one) is
-        // deducted only when break_flag is 'pass' - all other flags ('Only In',
-        // 'Only Out', 'No Break', empty...) leave it out of the total time.
+        // Do not deduct breaks again when a saved half-day is edited.
         $allowedBreakSeconds = 0;
-        if ($breakFlag === 'pass') {
-            $allowedBreakSeconds = 3600;
+        $halfDay = strtolower($vacationType ?? '') === 'half day vacation';
+        if (!$halfDay) {
             $workSchedule = WorkSchedule::orderBy('created_at', 'desc')->first();
-            if ($workSchedule && $workSchedule->break_duration) {
-                $allowedBreakSeconds = ((int) $workSchedule->break_duration) * 60;
-            }
+            $allowedBreakSeconds = app(MachineAttendanceService::class)->allowedBreakSeconds($workSchedule);
         }
 
         $totalSeconds = max(0,
             $grossSeconds
             - $allowedBreakSeconds
-            - $this->hmsToSeconds($breakDiff)
+            - ($halfDay ? 0 : $this->hmsToSeconds($breakDiff))
             - $this->hmsToSeconds($leaveDiff)
         );
 
@@ -850,7 +856,8 @@ class EmployeeTimeController extends Controller
             // Determine off_day based on vacation_type
             $offDay = false;
             $offDayTypes = ['Off', 'Vacation', 'Holiday', 'Sick Leave', 'Unpaid', 'Half Day Vacation'];
-            if (isset($validated['vacation_type']) && in_array($validated['vacation_type'], $offDayTypes)) {
+            if (isset($validated['vacation_type'])
+                && in_array(strtolower($validated['vacation_type']), array_map('strtolower', $offDayTypes), true)) {
                 $offDay = true;
             }
             // Create a record for each employee
@@ -1427,7 +1434,8 @@ class EmployeeTimeController extends Controller
                         return;
                     }
 
-                    $attendanceAttributes = ($relatedEmployeeTime ?? new EmployeeTime())->machineAttendanceAttributes();
+                    $attendanceAttributes = $totalTimeResponse['attendance_attributes']
+                        ?? ($relatedEmployeeTime ?? new EmployeeTime())->machineAttendanceAttributes();
 
                     $employeeTime = EmployeeTime::updateOrCreate(
                         ['employee_id' => $employeeId, 'date' => $date],
@@ -1595,7 +1603,7 @@ class EmployeeTimeController extends Controller
             'total_break_diff' => $data['break_duration'] ?? null,
             'flagged'=> true, 
             'break_flag' => $data['break_flag']
-        ] + ($existingAttendance ?? new EmployeeTime())->machineAttendanceAttributes()) ;
+        ] + ($data['attendance_attributes'] ?? ($existingAttendance ?? new EmployeeTime())->machineAttendanceAttributes())) ;
         
         //sets the machine record's  calculated as true and links it to the employeeTime record that was just created / updated 
         MachineRecord::whereIn('id' , $events->pluck('id'))->update(['employee_time_id'=>$employeeTime->id , 'calculated' => true]);
@@ -1705,13 +1713,10 @@ class EmployeeTimeController extends Controller
 
         // intermediate values needed to mirror calculateTotalTime's final total_time
         $totalIntervalTime = 0;   // gaps between consecutive clock-out/clock-in pairs
-        $BreakAllowedDuration = 0;
-        if ($workSchedule && $workSchedule->break_duration) {
-            $BreakAllowedDuration = ((int) $workSchedule->break_duration) * 60;
-        }
+        $BreakAllowedDuration = app(MachineAttendanceService::class)->allowedBreakSeconds($workSchedule);
 
         // only compute what classifySequence says is salvageable
-        $totalTime = null;
+        $workedSeconds = null;
         $totalBreakTime = 0;
         if(in_array('totalTime', $attributes) && $clockInCarbon && $clockOutCarbon){
 
@@ -1738,10 +1743,7 @@ class EmployeeTimeController extends Controller
                 }
             }
 
-            $breakDiff = $BreakAllowedDuration - $totalBreakTime;
-            // same as calculateTotalTime : gross span - interval - over-break
-            $net = $clockOutCarbon->diffInSeconds($clockInCarbon) - $totalIntervalTime + min($breakDiff, 0);
-            $totalTime = gmdate('H:i:s', $net);
+            $workedSeconds = max(0, $clockOutCarbon->getTimestamp() - $clockInCarbon->getTimestamp() - $totalIntervalTime);
         }
 
         $breakDuration = null;
@@ -1777,12 +1779,22 @@ class EmployeeTimeController extends Controller
         else
             $breakFlag = 'pass';
 
+        $employee = $orderedEvents->first()->employee;
+        $date = Carbon::parse($orderedEvents->first()->timestamp)->toDateString();
+        $existing = EmployeeTime::where('employee_id', $employee->id)->where('date', $date)->first();
+        $calculated = app(MachineAttendanceService::class)->calculate(
+            $employee, $date, $existing,
+            $clockInCarbon?->format('H:i:s'), $clockOutCarbon?->format('H:i:s'),
+            $workedSeconds, (int) $totalBreakTime, $workSchedule
+        );
+
         return [
             'clock_in' => $clockInCarbon ? $clockInCarbon->format('H:i:s') : null,
             'clock_out' => $clockOutCarbon ? $clockOutCarbon->format('H:i:s') : null,
             'break_flag' => $breakFlag,
-            'total_time' => $totalTime,
-            'break_duration' => $breakDuration,
+            'total_time' => $calculated['total_time'],
+            'break_duration' => $calculated['total_break_diff'] ?? $breakDuration,
+            'attendance_attributes' => $calculated['attendance_attributes'],
             'state' => $classification['state'],
             'attributes' => $attributes
         ];
@@ -1860,7 +1872,7 @@ class EmployeeTimeController extends Controller
                 'total_break_diff' => $totalTimeResponse['total_break_diff'],
                 'flagged'=> $totalTimeResponse['abnormality']? true : false , 
                 'break_flag' => $totalTimeResponse['break_flag']?? 'pass'
-            ] + ($existingAttendance ?? new EmployeeTime())->machineAttendanceAttributes()) ;
+            ] + ($totalTimeResponse['attendance_attributes'] ?? ($existingAttendance ?? new EmployeeTime())->machineAttendanceAttributes())) ;
 
             //update the machine records  'calculated' to true and link to the employeeTime record
             MachineRecord::whereIn('id', $orderedEvents->pluck('id')->filter())
@@ -2251,12 +2263,6 @@ class EmployeeTimeController extends Controller
 
         $lastInstance=null;
         $lastBreakInstance=null;
-        $BreakAllowedDuration = 0;
-
-        //Get the allowed Break Duration
-        if ($workSchedule && $workSchedule->break_duration) {
-            $BreakAllowedDuration = ((int) $workSchedule->break_duration) * 60;
-        }
         $totalIntervalTime = 0;
         $totalBreakTime =0;
         
@@ -2295,17 +2301,20 @@ class EmployeeTimeController extends Controller
             }
         }
 
-        //calculate the total break diff and total time
-        $breakDiff = $BreakAllowedDuration - $totalBreakTime;
-        $totalTime = $totalTime - $totalIntervalTime +min($breakDiff,0);
-        
-        //format the total time and diffs
-        $formattedTotalTime = gmdate('H:i:s', $totalTime);        
-        $formattedBreakDiff = gmdate('H:i:s', abs(min($breakDiff, 0)));
+        // Determine half-day eligibility before deducting the normal allowance.
+        $employee = $finalInEvent->employee;
+        $date = Carbon::parse($finalInEvent->timestamp)->toDateString();
+        $existing = $relatedEmployeeTime ?? EmployeeTime::where('employee_id', $employee->id)->where('date', $date)->first();
+        $calculated = app(MachineAttendanceService::class)->calculate(
+            $employee, $date, $existing, $clockInFinal, $clockOutFinal,
+            max(0, (int) ($totalTime - $totalIntervalTime)), (int) $totalBreakTime, $workSchedule
+        );
+
         $formattedIntervalDiff = gmdate('H:i:s', $totalIntervalTime);
-        return ['totalTime' => $formattedTotalTime,
+        return ['totalTime' => $calculated['total_time'],
                 'total_leave_diff' => $formattedIntervalDiff,
-                'total_break_diff'=>$formattedBreakDiff,
+                'total_break_diff' => $calculated['total_break_diff'],
+                'attendance_attributes' => $calculated['attendance_attributes'],
                 'abnormality' => $abnormality,
                 'conflicts' => $conflicts,
                 'clock_in' => $clockInFinal,

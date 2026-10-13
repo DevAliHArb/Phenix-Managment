@@ -183,7 +183,6 @@ class AttendanceGapService
 
             if ($details['vacation_type'] === null) {
                 $details['off_day'] = true;
-                $details['reason'] = 'Unknown';
             }
 
             $record = EmployeeTime::firstOrCreate(
