@@ -45,7 +45,10 @@ class YearlyVacationController extends Controller
             $employeeTime = \App\Models\EmployeeTime::where('employee_id', $validated['employee_id'])
                 ->where('date', $validated['date'])
                 ->first();
-            if ($employeeTime && !$employeeTime->off_day) {
+            if ($employeeTime && (!$employeeTime->off_day || $employeeTime->isUnknownAbsence())) {
+                if ($employeeTime->isUnknownAbsence()) {
+                    $employeeTime->vacation_type = 'Vacation';
+                }
                 $employeeTime->off_day = true;
                 $employeeTime->reason = 'Vacation';
                 $employeeTime->save();

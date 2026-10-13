@@ -25,6 +25,36 @@ class EmployeeTime extends Model
         
     ];
 
+    public function isUnknownAbsence(): bool
+    {
+        if ($this->clock_in !== null || $this->clock_out !== null) {
+            return false;
+        }
+
+        // Recognize new unlabeled gaps as well as both legacy Unknown formats.
+        return ($this->off_day && $this->vacation_type === null && $this->reason === null)
+            || ($this->reason === 'Unknown' && in_array($this->vacation_type, [null, 'Unknown'], true))
+            || ($this->vacation_type === 'Unknown' && $this->reason === null);
+    }
+
+    public function attendanceResetAttributes(): array
+    {
+        return $this->isUnknownAbsence()
+            ? ['off_day' => false, 'reason' => null, 'vacation_type' => null]
+            : [];
+    }
+
+    public function machineAttendanceAttributes(): array
+    {
+        // A saved machine-event day is attended, unless an existing leave/off
+        // label must be preserved. Unknown absence placeholders become attended.
+        return [
+            'vacation_type' => $this->isUnknownAbsence()
+                ? 'Attended'
+                : ($this->vacation_type ?: 'Attended'),
+        ] + $this->attendanceResetAttributes();
+    }
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);

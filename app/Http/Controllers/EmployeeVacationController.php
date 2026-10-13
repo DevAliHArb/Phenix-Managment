@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmployeeTime;
+use App\Services\AttendanceGapService;
 use Illuminate\Http\Request;
 
 class EmployeeVacationController extends Controller
@@ -84,9 +86,10 @@ class EmployeeVacationController extends Controller
             // Update employee vacation counters
             $employee = \App\Models\Employee::find($validated['employee_id']);
             if ($employee) {
-                if ($vacationType === 'Vacation') {
-                    $employee->yearly_vacations_used = ($employee->yearly_vacations_used ?? 0) + 1;
-                    $employee->yearly_vacations_left = max(0, ($employee->yearly_vacations_left ?? 0) - 1);
+                if (in_array($vacationType, ['Vacation', 'Half day vacation'], true)) {
+                    $days = $vacationType === 'Half day vacation' ? 0.5 : 1;
+                    $employee->yearly_vacations_used = ($employee->yearly_vacations_used ?? 0) + $days;
+                    $employee->yearly_vacations_left = max(0, ($employee->yearly_vacations_left ?? 0) - $days);
                 } elseif ($vacationType === 'Sick Leave') {
                     $employee->sick_leave_used = ($employee->sick_leave_used ?? 0) + 1;
                 }
@@ -111,7 +114,7 @@ class EmployeeVacationController extends Controller
                     'vacation_type' => $vacationType,
                 ]);
             }
-            $returnUrl = route('employee-vacations.index');
+            $returnUrl = $request->get('return_url', route('employee-vacations.index'));
             if ($request->boolean('save_and_continue')) {
                 $returnUrl = route('employee-vacations.create', [
                     'employee_id' => $validated['employee_id'],
@@ -180,16 +183,8 @@ class EmployeeVacationController extends Controller
                 }
                 return back()->withInput()->withErrors(['date' => $message]);
             }
-            // Revert old date: set off_day = false, reason = null, vacation_type = null
-            $oldEmployeeTime = \App\Models\EmployeeTime::where('employee_id', $model->employee_id)
-                ->where('date', $model->date)
-                ->first();
-            if ($oldEmployeeTime && $oldEmployeeTime->off_day) {
-                $oldEmployeeTime->off_day = false;
-                $oldEmployeeTime->reason = null;
-                $oldEmployeeTime->vacation_type = null;
-                $oldEmployeeTime->save();
-            }
+            $oldEmployeeId = $model->employee_id;
+            $oldDate = $model->date;
 
             // Revert employee vacation counters for old type
             $oldEmployee = \App\Models\Employee::find($model->employee_id);
@@ -217,6 +212,9 @@ class EmployeeVacationController extends Controller
                 unset($validated['attachment']);
             }
             $model->update($validated);
+            if ($oldEmployeeId != $model->employee_id || $oldDate !== $model->date) {
+                $this->restoreAttendanceAfterLeave($oldEmployeeId, $oldDate);
+            }
 
             // Set vacation_type based on lookup_type_id
             $vacationType = null;
@@ -224,6 +222,10 @@ class EmployeeVacationController extends Controller
                 $vacationType = 'Vacation';
             } elseif ($validated['lookup_type_id'] == 32) {
                 $vacationType = 'Sick Leave';
+            } elseif ($validated['lookup_type_id'] == 33) {
+                $vacationType = 'Holiday';
+            } elseif ($validated['lookup_type_id'] == 34) {
+                $vacationType = 'Unpaid';
             } elseif ($validated['lookup_type_id'] == 35) {
                 $vacationType = 'Half day vacation';
             }
@@ -231,9 +233,10 @@ class EmployeeVacationController extends Controller
             // Update employee vacation counters for new type
             $employee = \App\Models\Employee::find($validated['employee_id']);
             if ($employee) {
-                if ($vacationType === 'Vacation') {
-                    $employee->yearly_vacations_used = ($employee->yearly_vacations_used ?? 0) + 1;
-                    $employee->yearly_vacations_left = max(0, ($employee->yearly_vacations_left ?? 0) - 1);
+                if (in_array($vacationType, ['Vacation', 'Half day vacation'], true)) {
+                    $days = $vacationType === 'Half day vacation' ? 0.5 : 1;
+                    $employee->yearly_vacations_used = ($employee->yearly_vacations_used ?? 0) + $days;
+                    $employee->yearly_vacations_left = max(0, ($employee->yearly_vacations_left ?? 0) - $days);
                 } elseif ($vacationType === 'Sick Leave') {
                     $employee->sick_leave_used = ($employee->sick_leave_used ?? 0) + 1;
                 }
@@ -279,14 +282,6 @@ class EmployeeVacationController extends Controller
         try {
             $item = \App\Models\EmployeeVacation::findOrFail($id);
             
-            // Revert employee_times: set off_day = false, reason = null, vacation_type = null
-            $employeeTime = \App\Models\EmployeeTime::where('employee_id', $item->employee_id)
-                ->where('date', $item->date)
-                ->first();
-            if ($employeeTime && $employeeTime->off_day) {
-                $employeeTime->delete();
-            }
-
             // Revert employee vacation counters
             $employee = \App\Models\Employee::find($item->employee_id);
             if ($employee) {
@@ -303,10 +298,31 @@ class EmployeeVacationController extends Controller
             }
             
             $item->delete();
+            $this->restoreAttendanceAfterLeave($item->employee_id, $item->date);
             
             return redirect()->back()->with('success', 'Employee vacation deleted successfully');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to delete employee vacation: ' . $e->getMessage());
         }
+    }
+
+    private function restoreAttendanceAfterLeave($employeeId, $date): void
+    {
+        $attendance = EmployeeTime::with('employee')->where('employee_id', $employeeId)
+            ->where('date', $date)->first();
+        if (!$attendance || !$attendance->employee) {
+            return;
+        }
+
+        // Restore any remaining calendar classification without deleting punches.
+        $gaps = app(AttendanceGapService::class);
+        $details = $gaps->dayDetails($attendance->employee, $date,
+            $gaps->calendar($attendance->employee, $date, $date));
+        if ($details['vacation_type'] === null) {
+            $hasPunches = $attendance->clock_in !== null || $attendance->clock_out !== null;
+            $details['off_day'] = !$hasPunches;
+            $details['vacation_type'] = $hasPunches ? 'Attended' : null;
+        }
+        $attendance->update($details);
     }
 }
